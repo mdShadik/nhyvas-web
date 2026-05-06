@@ -1,0 +1,468 @@
+{
+  "app": {
+    "common": {
+      "welcome_title": "Welcome to Nhyvas"
+    }
+  },
+  "admin": {
+    "master_data": {
+      "translation_keys": "Translation Keys"
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel"
+  },
+  "property": {
+    "details": {
+      "details_title": "Details",
+      "negotiable_label": "Negotiable"
+    },
+    "loading_listing": "Loading listing...",
+    "carpet_area": "Carpet Area: {{value}} sqft",
+    "overview": "Overview",
+    "no_amenities": "No amenities listed.",
+    "details_title": "Details",
+    "last_updated_on": "Last updated on",
+    "no_of_floors": "No of Floors",
+    "description_title": "Description",
+    "see_more": "See more",
+    "see_less": "See less",
+    "not_found": "Listing not found.",
+    "fallback_title": "Property",
+    "unique_viewers": "Unique Viewers",
+    "no_viewers": "No viewers yet.",
+    "user": "User",
+    "actions": {
+      "chat": "Chat",
+      "interested": "Interested",
+      "im_interested": "I'm Interested",
+      "my_interested": "My Interested",
+      "interested_success": "Your interest has been sent to the landlord.",
+      "interested_failed": "Could not send your interest.",
+      "failed": "Failed",
+      "chat_failed": "Chat Failed",
+      "chat_failed_message": "Could not initiate chat."
+    }
+  },
+  "map": {
+    "view_map_title": "View map",
+    "privacy_exact": "Opens full screen. Shows exact pin location.",
+    "privacy_approx": "Opens full screen. For privacy, shows approximate 200m area.",
+    "unavailable_title": "Map unavailable",
+    "unavailable_body": "This listing doesn’t have location coordinates available."
+  },
+  "navigation": {
+    "support_chats": "Support Chats",
+    "addresses": "Addresses",
+    "pick_address": "Pick Address",
+    "onboarding_details": "Onboarding Details"
+  },
+  "tabs": {
+    "saved": "Saved",
+    "explore": "Explore",
+    "home": "Home",
+    "chat": "Chat",
+    "profile": "Profile"
+  },
+  "support": {
+    "title": "Support Chats",
+    "subtitle": "View your raised tickets and continue conversation.",
+    "status_open": "Open",
+    "status_closed": "Closed",
+    "no_tickets": "No {{status}} tickets",
+    "no_tickets_hint": "Tap + to raise your first support ticket.",
+    "last_updated": "Last updated: {{date}}",
+    "create_ticket": "Create Support Ticket",
+    "create_ticket_hint": "Tell us what happened and we will get back to you.",
+    "subject_placeholder": "Subject",
+    "description_placeholder": "Describe your issue",
+    "image_attached": "Image attached",
+    "attach_image": "Attach image (optional)",
+    "attachment": "Attachment",
+    "change_image_hint": "Tap above to change image.",
+    "creating": "Creating...",
+    "create_ticket_cta": "Create Ticket",
+    "cancel": "Cancel",
+    "failed_create_title": "Failed to create ticket",
+    "failed_create_fallback": "Please try again."
+  },
+  "help_center": {
+    "title": "Help Center",
+    "faq": "FAQ",
+    "empty_faq": "No FAQs available right now.",
+    "support_title": "Support",
+    "support_hint": "Need help beyond FAQ? Open support chat and raise a ticket.",
+    "open_support_chat": "Open Support Chat",
+    "whatsapp_support": "WhatsApp Support"
+  },
+  "terms": {
+    "loading": "Loading terms...",
+    "load_failed": "Could not load Terms & Conditions",
+    "retry": "Retry",
+    "last_updated": "Last updated: {{date}}"
+  },
+  "addresses": {
+    "add_address": "Add address",
+    "empty_title": "No addresses yet",
+    "empty_hint": "Add your first address to speed up property posting.",
+    "default": "Default",
+    "set_default": "Set default",
+    "deleted": "Address deleted"
+  },
+  "explore": {
+    "title": "Explore Properties",
+    "subtitle": "Recommended listings based on your preferences",
+    "for_landlords": "For Landlords",
+    "list_property": "List your property here",
+    "empty_title": "No properties found",
+    "empty_hint": "Try adjusting filters to broaden results.",
+    "refine_search": "Refine Search",
+    "category": "Category",
+    "select_category": "Select category",
+    "subcategory": "Subcategory",
+    "select_subcategory": "Select subcategory",
+    "select_category_first": "Select category first",
+    "location": "Location",
+    "search_location": "Search location...",
+    "price_range": "Price Range ({{currency}})",
+    "reset": "Reset",
+    "apply_filters": "Apply Filters"
+  },
+  "landlord": {
+    "category": {
+      "title": "What are you listing?",
+      "subtitle": "Select the category that best fits your property. We will guide you through the process right after."
+    },
+    "create": {
+      "negotiable": "Negotiable",
+      "show_exact_location": "Show my exact location",
+      "show_exact_location_help": "If off, we show an approximate 200m area for privacy.",
+      "enable_property_story": "Allow 24-hour walkthrough story",
+      "enable_property_story_help": "After moderation approves this listing, you may post one short story that disappears after 24 hours.",
+      "country_nepal": "Nepal",
+      "loading_listing": "Loading listing details...",
+      "preparing_form": "Preparing form...",
+      "step_of": "Step {{current}} of {{total}}",
+      "basic_details": "Basic Details",
+      "category": "Category",
+      "subcategory": "Subcategory *",
+      "no_subcategories": "No subcategories found",
+      "select_subcategory": "Select subcategory",
+      "ad_title": "Ad Title *",
+      "description": "Description *",
+      "price_label": "Price ({{currency}}) *",
+      "total_floor": "Total Floor (Optional)",
+      "property_floor": "Property Floor (Optional)",
+      "total_area": "Total Area (sqft) (Optional)",
+      "carpet_area": "Carpet Area (sqft) (Optional)",
+      "location": "Location",
+      "selected_address": "Selected address *",
+      "saving": "Saving...",
+      "submitting": "Submitting...",
+      "save_changes": "Save Changes",
+      "submit_for_review": "Submit for Review",
+      "continue": "Continue",
+      "choose_address": "Choose Address",
+      "default_badge": "DEFAULT",
+      "fix_fields_title": "Fix highlighted fields",
+      "fix_fields_message": "Please correct the errors and try again.",
+      "add_address_btn": "Add Address",
+      "manage_btn": "Manage",
+      "change_address_btn": "Change address",
+      "location_label": "Location *",
+      "add_address_to_continue": "Add an address to continue",
+      "select_address_to_continue": "Select an Address",
+      "error_message_fix": "Fix highlighted fields",
+      "error_message_submit": "Please correct the errors and try again.",
+      "placeholder": {
+        "add_address": "Add an address to continue",
+        "ad_title": "e.g. Spacious 2BHK in Downtown",
+        "description": "Describe your property...",
+        "price_label": "e.g. 22000",
+        "total_floor": "e.g. 10",
+        "property_floor": "e.g. 3",
+        "total_area": "e.g. 1200",
+        "carpet_area": "e.g. 1000"
+      },
+      "validation": {
+        "category_required": "Category is required.",
+        "subcategory_required": "Subcategory is required.",
+        "ad_title_required": "Ad title is required.",
+        "description_required": "Description is required.",
+        "price_required": "Price is required.",
+        "valid_total_area": "Total area must be a number (0 or more).",
+        "valid_carpet_area": "Carpet area must be a number (0 or more).",
+        "valid_carpet_area_v2": "Carpet area must be less than total area.",
+        "valid_total_floor": "Total floor must be a whole number (0 or more).",
+        "valid_property_floor": "Property floor must be a whole number (0 or more).",
+        "valid_property_floor_v2": "Property floor must less than total floor.",
+        "valid_price": "Enter a valid price (0 or more).",
+        "location_required": "Location is required.",
+        "selected_address_from": "Select an address to post from."
+      }
+    }
+  },
+  "profile": {
+    "language": {
+      "title": "Language",
+      "sheet_title": "Choose language"
+    },
+    "guest_user": "Guest User",
+    "no_email": "No email added",
+    "sections": { "manage": "Manage", "activity": "Activity", "account": "Account", "support": "Support", "danger": "Danger Zone" },
+    "menu": {
+      "my_ads": "My Ads / My Listings",
+      "my_leads": "My Interested Leads",
+      "shortlisted": "Shortlisted Properties",
+      "recently_viewed": "Recently Viewed",
+      "edit_profile": "Edit Profile & Preferences",
+      "terms": "Terms & Conditions"
+    },
+    "form": {
+      "avatar": "Avatar",
+      "upload_avatar": "Upload Avatar",
+      "full_name": "Full Name",
+      "full_name_placeholder": "John Doe",
+      "email": "Email",
+      "email_placeholder": "john@example.com"
+    },
+    "preferences": {
+      "title": "Recommendation Preferences",
+      "subtitle": "Personalize your feed based on what you are looking for.",
+      "preferred_category": "Preferred Category",
+      "select_category": "Select a category",
+      "min_price": "Min Price",
+      "max_price": "Max Price",
+      "saving": "Saving...",
+      "save": "Save Profile & Preferences"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "system_default": "System Default",
+      "system": "System Mode",
+      "light": "Light Mode",
+      "dark": "Dark Mode"
+    },
+    "completeness": {
+      "title": "Profile Completeness",
+      "hint_prefix": "Complete your profile by adding"
+    },
+    "validation": {
+      "full_name_required": "Full name is required.",
+      "valid_email": "Enter a valid email."
+    },
+    "logout": {
+      "success": "Logout successful",
+      "failed": "Logout failed",
+      "logging_out": "Logging out...",
+      "log_out": "Log Out",
+      "confirm_title": "Confirm Logout",
+      "confirm_message": "Are you sure you want to log out from your account?"
+    },
+    "delete": {
+      "error": "Error deleting account",
+      "deleting": "Deleting...",
+      "delete_account": "Delete Account",
+      "delete": "Delete",
+      "confirm_title": "Confirm Delete",
+      "confirm_message": "Are you sure you want to delete your account?"
+    }
+  },
+  "saved": {
+    "title": "Saved Properties",
+    "subtitle": "Your favourite listings in one place",
+    "empty_title": "No saved listings yet",
+    "empty_hint": "Tap the heart icon on Explore to save properties here."
+  },
+  "leads": {
+    "title": "My Interested Leads",
+    "subtitle": "Users who messaged about your properties or vice versa",
+    "empty_title": "No leads found",
+    "empty_hint": "When users reach out about your property, they will appear here.",
+    "property_fallback": "Property",
+    "interested_user": "Interested User",
+    "date": "Date: {{date}}",
+    "status": "Status: {{status}}"
+  },
+  "my_ads": {
+    "filters": { "all": "All", "approved": "Approved", "pending": "Pending", "changes": "Changes", "rejected": "Rejected" },
+    "status": { "approved": "Approved", "pending": "Pending Review", "changes_requested": "Changes Requested", "rejected": "Rejected", "unknown": "Unknown" },
+    "empty_title": "No listings found",
+    "empty_hint_all": "Ready to rent out your place? Return to the Landlord hub.",
+    "empty_hint_filtered": "You have no {{status}} listings.",
+    "boost_title": "Boost Listing",
+    "boost_message": "Boosting will push your property to the top of search results. Coming soon!",
+    "boost": "Boost",
+    "view_moderator_note": "View Moderator Note",
+    "currently_rented": "Currently Rented (Hidden)",
+    "mark_as_rented": "Mark as Rented"
+  },
+  "recently_viewed": {
+    "empty_title": "No recently viewed properties",
+    "empty_hint": "Explore listings to see your history here.",
+    "filter_all": "All",
+    "filter_today": "Today",
+    "filter_7d": "Last 7 days",
+    "filter_30d": "Last 30 days",
+    "filter_range": "Date range",
+    "date_placeholder": "YYYY-MM-DD",
+    "no_results": "No results",
+    "no_results_hint": "Try a different date range.",
+    "viewed_on": "Viewed on {{date}}"
+  },
+  "notifications": {
+    "empty_title": "No notifications yet",
+    "empty_hint": "New leads and chat replies will appear here."
+  },
+  "chat": {
+    "messages": "Messages",
+    "unknown_user": "Unknown User",
+    "no_messages_yet": "No messages yet",
+    "re_property": "Re: {{title}}",
+    "empty_title": "No messages yet",
+    "empty_hint": "When you contact a landlord or a tenant reaches out, your conversations will appear here."
+  },
+  "home": {
+    "verified_featured": "Verified & Featured",
+    "loading_featured_homes": "Loading featured homes...",
+    "no_featured_properties": "No featured properties yet",
+    "featured_coming_soon": "New verified and featured homes will show up here soon.",
+    "badge_verified": "Verified",
+    "badge_featured": "Featured",
+    "browse_categories": "Browse Categories",
+    "find_by": "Find By",
+    "category": "Category",
+    "for_landlords": "For Landlords",
+    "list_property_here": "List your property here",
+    "jump_filtered_discovery": "Jump straight into filtered property discovery.",
+    "no_categories": "No categories available",
+    "categories_added_by_admin": "Categories added by admins will appear here automatically.",
+    "property_fallback": "Property",
+    "category_explore_near_you": "Explore {{category}} listings near you"
+  },
+  "headers": {
+    "properties": "Properties",
+    "property_details": "Property Details",
+    "complete_profile": "Complete Profile",
+    "new_listing": "New Listing",
+    "edit_listing": "Edit Listing",
+    "landlord": "Landlord",
+    "details": "Details",
+    "notifications": "Notifications"
+  },
+  "listing_amenities": {
+    "title": "Select Amenities",
+    "subtitle": "Highlight what makes your property special.",
+    "loading": "Loading amenities..."
+  },
+  "master_data": {
+    "amenity_categories": {
+      "UTILITIES_ESSENTIAL": "Utilities (Essential)",
+      "INTERIOR_FURNITURE": "Interior/Furniture",
+      "BUILDING_SHARED": "Building/Shared",
+      "POLICY_VIBE": "Policy/Vibe"
+    },
+    "amenities": {
+      "WATER_24_7": "24/7 Water",
+      "NO_LOAD_SHEDDING": "No Load-shedding (Inverter/Generator)",
+      "SOLAR_WATER_HEATER": "Solar Water Heater",
+      "GARBAGE_COLLECTION": "Garbage Collection",
+      "ATTACHED_BATHROOM": "Attached Bathroom",
+      "BALCONY": "Balcony",
+      "ATTACHED_KITCHEN": "Modular Kitchen",
+      "WARDROBE": "Wardrobe",
+      "WIFI": "WiFi",
+      "BATHROOM_GEYSER": "Bathroom Geyser",
+      "AIR_CONDITIONER": "Air Conditioner",
+      "PARKING": "Parking (2-wheeler/4-wheeler)",
+      "CCTV_SECURITY": "CCTV Security",
+      "LIFT_ELEVATOR": "Lift/Elevator",
+      "TERRACE_ACCESS": "Terrace Access",
+      "GYM": "Gym",
+      "POOL": "Pool",
+      "LAUNDRY": "Laundry",
+      "PET_FRIENDLY": "Pet Friendly",
+      "COUPLE_FRIENDLY": "Couple Friendly",
+      "NO_SMOKING": "No Smoking",
+      "ACCESS_24_7": "24/7 Access (No gate locking time)",
+      "NON_VEG_ALLOWED": "Non-Veg Allowed",
+      "NON_VEG_NOT_ALLOWED": "Non-Veg Not Allowed"
+    },
+    "property_categories": {
+      "FLAT_APARTMENT": "Flat/Apartment",
+      "ROOM": "Room",
+      "VILLA_HOUSE": "Villa/House",
+      "LAND_PLOT": "Land/Plot",
+      "COMMERCIAL": "Commercial"
+    },
+    "property_subcategories": {
+      "STUDIO": "Studio",
+      "1_BHK": "1 BHK",
+      "2_BHK": "2 BHK",
+      "3_BHK": "3 BHK",
+      "4PLUS_BHK": "4+ BHK",
+      "PENTHOUSE": "Penthouse",
+      "DUPLEX_APARTMENT": "Duplex Apartment",
+      "1_RK": "1 RK",
+      "2_RK": "2 RK",
+      "PRIVATE_ROOM": "Private Room",
+      "SHARED_ROOM": "Shared Room",
+      "HOSTEL_ROOM": "Hostel/PG Room",
+      "BUNGALOW": "Bungalow",
+      "ROW_HOUSE": "Row House",
+      "DETACHED_HOUSE": "Detached House",
+      "VILLA": "Villa",
+      "DUPLEX_HOUSE": "Duplex House",
+      "RESIDENTIAL_PLOT": "Residential Plot",
+      "COMMERCIAL_PLOT": "Commercial Plot",
+      "AGRICULTURAL_LAND": "Agricultural Land",
+      "SHOP_SHUTTER": "Shop/Shutter",
+      "OFFICE_SPACE": "Office Space",
+      "WAREHOUSE": "Warehouse"
+    },
+    "price_ranges": {
+      "mobile_search_default": "Mobile Search Default"
+    }
+  },
+  "stories": {
+    "bar_title": "Walkthroughs",
+    "add": "Add",
+    "landlord": "Host",
+    "view_property": "View property",
+    "trim_title": "Walkthrough",
+    "trim_subtitle": "Trim to 15s or less, then we compress for quick loading.",
+    "mute_walkthrough": "Mute (no audio)",
+    "trim_and_publish": "Trim & publish 24h story",
+    "picking_video": "Opening your video library…",
+    "phase_trim": "Trimming…",
+    "phase_compress": "Compressing…",
+    "phase_upload": "Uploading…",
+    "published_title": "Live",
+    "published_body": "Your 24h walkthrough is now on the home feed.",
+    "failed_title": "Could not publish",
+    "missing_title": "Missing details",
+    "missing_body": "Select a property and a video first.",
+    "permission_denied_title": "Library access",
+    "permission_denied_body": "Allow photo/video access to upload a walkthrough.",
+    "pick_listing_title": "Choose a listing",
+    "loading_listings": "Loading your listings…",
+    "no_active_listings": "You need an approved listing that is not marked rented.",
+    "no_story_enabled_listings": "Turn on \"Allow walkthrough story\" while creating or editing a pending listing.",
+    "manage_title": "Manage walkthrough",
+    "badge_live": "Live",
+    "cta_add": "Add a 24h walkthrough to boost views.",
+    "cta_replace": "Replace walkthrough video",
+    "cta_add_walkthrough": "Add a video walkthrough",
+    "increase_engagement": "Increase engagement by showing the interior.",
+    "expires_hint": "Stories expire after 24 hours.",
+    "post_story": "Post Story",
+    "processing_title": "Processing Story",
+    "please_wait": "This may take a moment...",
+    "picking_media": "Opening your library..."
+  },
+  "currency": {
+    "npr": "Rs."
+  }
+}

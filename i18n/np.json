@@ -1,0 +1,468 @@
+{
+  "app": {
+    "common": {
+      "welcome_title": "न्हीवास मा स्वागत छ"
+    }
+  },
+  "admin": {
+    "master_data": {
+      "translation_keys": "Translation Keys"
+    }
+  },
+  "common": {
+    "yes": "अवश्य",
+    "no": "छैन",
+    "cancel": "रद्द गर्नुहोस्"
+  },
+  "property": {
+    "details": {
+      "details_title": "विवरणहरू",
+      "negotiable_label": "नेगोसीएबल"
+    },
+    "loading_listing": "सूची लोड हुँदैछ...",
+    "carpet_area": "कार्पेट क्षेत्रफल: {{value}} sqft",
+    "overview": "अवलोकन",
+    "no_amenities": "सुविधा सूची छैन।",
+    "details_title": "विवरण",
+    "last_updated_on": "अन्तिम अपडेट",
+    "no_of_floors": "तल्ला संख्या",
+    "description_title": "विवरण",
+    "see_more": "थप हेर्नुहोस्",
+    "see_less": "कम हेर्नुहोस्",
+    "not_found": "सूची फेला परेन।",
+    "fallback_title": "सम्पत्ति",
+    "unique_viewers": "अद्वितीय दर्शकहरू",
+    "no_viewers": "अहिलेसम्म दर्शक छैनन्।",
+    "user": "प्रयोगकर्ता",
+    "actions": {
+      "chat": "च्याट",
+      "interested": "रुचि",
+      "im_interested": "म रुचि राख्छु",
+      "my_interested": "मेरो रुचि",
+      "interested_success": "तपाईंको रुचि घरधनीलाई पठाइयो।",
+      "interested_failed": "रुचि पठाउन सकिएन।",
+      "failed": "असफल",
+      "chat_failed": "च्याट असफल",
+      "chat_failed_message": "च्याट सुरु गर्न सकिएन।"
+    }
+  },
+  "map": {
+    "view_map_title": "म्याप देख्नुहोस",
+    "privacy_exact": "पूर्ण स्क्रिनमा खुल्छ। पिनको सही स्थान देखाउँछ।",
+    "privacy_approx": "पूर्ण स्क्रिनमा खुल्छ। प्राएभेसीको लागि, लगभग २०० मिटर क्षेत्र देखाउँछ।",
+    "unavailable_title": "म्याप उपलब्ध छैन",
+    "unavailable_body": "यो सूचीमा स्थान निर्देशांकहरू उपलब्ध छैनन्।"
+  },
+  "navigation": {
+    "support_chats": "सहयोग च्याटहरू",
+    "addresses": "ठेगानाहरू",
+    "pick_address": "ठेगाना छान्नुहोस्",
+    "onboarding_details": "सुरुवाती विवरण"
+  },
+  "tabs": {
+    "saved": "सेभ गरिएको",
+    "explore": "खोज्नुहोस्",
+    "home": "होम",
+    "chat": "च्याट",
+    "profile": "प्रोफाइल"
+  },
+  "support": {
+    "title": "सहयोग च्याटहरू",
+    "subtitle": "तपाईंले उठाएका टिकटहरू हेर्नुहोस् र कुराकानी जारी राख्नुहोस्।",
+    "status_open": "खुला",
+    "status_closed": "बन्द",
+    "no_tickets": "{{status}} टिकट छैन",
+    "no_tickets_hint": "+ थिचेर पहिलो सहयोग टिकट बनाउनुहोस्।",
+    "last_updated": "अन्तिम अपडेट: {{date}}",
+    "create_ticket": "सहयोग टिकट बनाउनुहोस्",
+    "create_ticket_hint": "के भयो हामीलाई बताउनुहोस्, हामी तपाईंसँग छिट्टै सम्पर्क गर्छौं।",
+    "subject_placeholder": "विषय",
+    "description_placeholder": "समस्या विवरण लेख्नुहोस्",
+    "image_attached": "तस्विर जोडियो",
+    "attach_image": "तस्विर जोड्नुहोस् (वैकल्पिक)",
+    "attachment": "संलग्नक",
+    "change_image_hint": "तस्विर बदल्न माथि थिच्नुहोस्।",
+    "creating": "बनाइँदैछ...",
+    "create_ticket_cta": "टिकट बनाउनुहोस्",
+    "cancel": "रद्द गर्नुहोस्",
+    "failed_create_title": "टिकट बनाउन असफल",
+    "failed_create_fallback": "कृपया फेरि प्रयास गर्नुहोस्।"
+  },
+  "help_center": {
+    "title": "सहायता केन्द्र",
+    "faq": "प्रश्नोत्तर",
+    "empty_faq": "अहिले कुनै प्रश्नोत्तर उपलब्ध छैन।",
+    "support_title": "सहयोग",
+    "support_hint": "FAQ भन्दा बाहिर सहयोग चाहिन्छ? सहयोग च्याट खोल्नुहोस् र टिकट बनाउनुहोस्।",
+    "open_support_chat": "सहयोग च्याट खोल्नुहोस्",
+    "whatsapp_support": "व्हाट्सएप सहयोग"
+  },
+  "terms": {
+    "loading": "सर्तहरू लोड हुँदैछन्...",
+    "load_failed": "सर्त तथा नियम लोड गर्न सकिएन",
+    "retry": "पुन: प्रयास",
+    "last_updated": "अन्तिम अपडेट: {{date}}"
+  },
+  "addresses": {
+    "add_address": "ठेगाना थप्नुहोस्",
+    "empty_title": "अहिलेसम्म ठेगाना छैन",
+    "empty_hint": "सम्पत्ति पोस्टिङ छिटो बनाउन पहिलो ठेगाना थप्नुहोस्।",
+    "default": "डिफल्ट",
+    "set_default": "डिफल्ट बनाउनुहोस्",
+    "deleted": "ठेगाना मेटाइयो"
+  },
+  "explore": {
+    "title": "सम्पत्ति खोज्नुहोस्",
+    "subtitle": "तपाईंको रुचिअनुसार सिफारिस गरिएको सूची",
+    "for_landlords": "घरधनीका लागि",
+    "list_property": "आफ्नो सम्पत्ति यहाँ सूचीकृत गर्नुहोस्",
+    "empty_title": "सम्पत्ति फेला परेन",
+    "empty_hint": "थप नतिजाका लागि फिल्टर परिवर्तन गर्नुहोस्।",
+    "refine_search": "खोज परिमार्जन",
+    "category": "श्रेणी",
+    "select_category": "श्रेणी छान्नुहोस्",
+    "subcategory": "उपश्रेणी",
+    "select_subcategory": "उपश्रेणी छान्नुहोस्",
+    "select_category_first": "पहिले श्रेणी छान्नुहोस्",
+    "location": "स्थान",
+    "search_location": "स्थान खोज्नुहोस्...",
+    "price_range": "मूल्य दायरा ({{currency}})",
+    "reset": "रिसेट",
+    "apply_filters": "फिल्टर लागू गर्नुहोस्"
+  },
+  "landlord": {
+    "category": {
+      "title": "तपाईं के सूचीकृत गर्दै हुनुहुन्छ?",
+      "subtitle": "तपाईंको सम्पत्तिलाई उपयुक्त पर्ने श्रेणी छान्नुहोस्। त्यसपछि हामी मार्गदर्शन गर्छौं।"
+    },
+    "create": {
+      "negotiable": "मिलेमतो योग्य",
+      "show_exact_location": "मेरो सही स्थान देखाउनुहोस्",
+      "show_exact_location_help": "बन्द भएमा गोपनीयताका लागि करिब २०० मिटर क्षेत्र मात्र देखाइन्छ।",
+      "enable_property_story": "२४-घण्टे वाकथ्रु स्टोरी अनुमति दिनुहोस्",
+      "enable_property_story_help": "समीक्षा पछि स्वीकृत भएपछि तपाईंले छोटो भिडियो स्टोरी पोस्ट गर्न सक्नुहुन्छ; २४ घण्टामा हट्छ।",
+      "country_nepal": "नेपाल",
+      "loading_listing": "सूची विवरण लोड हुँदैछ...",
+      "preparing_form": "फारम तयार हुँदैछ...",
+      "step_of": "चरण {{current}} / {{total}}",
+      "basic_details": "आधारभूत विवरण",
+      "category": "श्रेणी",
+      "subcategory": "उपश्रेणी *",
+      "no_subcategories": "उपश्रेणी फेला परेन",
+      "select_subcategory": "उपश्रेणी छान्नुहोस्",
+      "ad_title": "विज्ञापन शीर्षक *",
+      "description": "विवरण *",
+      "price_label": "मूल्य ({{currency}}) *",
+      "total_floor": "कुल तल्ला (वैकल्पिक)",
+      "property_floor": "सम्पत्ति तल्ला (वैकल्पिक)",
+      "total_area": "कुल क्षेत्रफल (sqft) (वैकल्पिक)",
+      "carpet_area": "कार्पेट क्षेत्रफल (sqft) (वैकल्पिक)",
+      "location": "स्थान",
+      "selected_address": "छानिएको ठेगाना *",
+      "saving": "सेभ हुँदैछ...",
+      "submitting": "पेश हुँदैछ...",
+      "save_changes": "परिवर्तन सेभ गर्नुहोस्",
+      "submit_for_review": "समीक्षाका लागि पठाउनुहोस्",
+      "continue": "स्थान \u00A0*",
+      "choose_address": "ठेगाना छान्नुहोस्",
+      "default_badge": "डिफल्ट",
+      "fix_fields_title": "त्रुटि भएका फाँट मिलाउनुहोस्",
+      "fix_fields_message": "कृपया त्रुटि सुधारेर फेरि प्रयास गर्नुहोस्।",
+      "add_address_btn": "ठेगाना थप्नुहोस्",
+      "manage_btn": "व्यवस्थापन गर्नुहोस्",
+      "error_message_fix": "हाइलाइट गरिएका फाँटहरू सच्याउनुहोस्",
+      "error_message_submit": "कृपया त्रुटिहरू सच्याउनुहोस् र फेरि प्रयास गर्नुहोस्।",
+      "change_address_btn": "ठेगाना परिवर्तन गर्नुहोस्",
+      "location_label": "स्थान*",
+      "add_address_to_continue": "अगाडि बढ्नको लागि ठेगाना थप्नुहोस्",
+      "select_address_to_continue": "एउटा ठेगाना चयन गर्नुहोस्",
+      "placeholder": {
+        "add_address": "अगाडि बढ्नको लागि एउटा ठेगाना थप्नुहोस्",
+        "ad_title": "जस्तै: डाउनटाउनमा ठूलो २ बीएचके (2BHK)",
+        "description": "तपाईंको प्रोपर्टीको विवरण दिनुहोस्...",
+        "price_label": "जस्तै: २२०००",
+        "total_floor": "जस्तै: १०",
+        "property_floor": "जस्तै: ३",
+        "total_area": "जस्तै: १२००",
+        "carpet_area": "जस्तै: १०००"
+      },
+      "validation": {
+        "category_required": "वर्ग चयन गर्न आवश्यक छ।",
+        "subcategory_required": "उपवर्ग चयन गर्न आवश्यक छ।",
+        "ad_title_required": "विज्ञापनको शीर्षक आवश्यक छ।",
+        "description_required": "विवरण आवश्यक छ।",
+        "price_required": "मूल्य आवश्यक छ।",
+        "valid_total_area": "कुल क्षेत्रफल संख्यामा हुनुपर्छ (० वा बढी)।",
+        "valid_carpet_area": "कार्पेट एरिया संख्यामा हुनुपर्छ (० वा बढी)।",
+        "valid_carpet_area_v2": "कार्पेट एरिया कुल क्षेत्रफल भन्दा कम हुनुपर्छ।",
+        "valid_total_floor": "कुल तला संख्यामा हुनुपर्छ (० वा बढी)।",
+        "valid_property_floor": "प्रोपर्टीको तला संख्यामा हुनुपर्छ (० वा बढी)।",
+        "valid_property_floor_v2": "प्रोपर्टीको तला कुल तला भन्दा कम हुनुपर्छ।",
+        "valid_price": "कृपया मान्य मूल्य प्रविष्ट गर्नुहोस् (० वा बढी)।",
+        "location_required": "स्थान आवश्यक छ।",
+        "selected_address_from": "पोष्ट गर्नको लागि एउटा ठेगाना चयन गर्नुहोस्।"
+      }
+    }
+  },
+  "saved": {
+    "title": "सेभ गरिएका सम्पत्तिहरू",
+    "subtitle": "तपाईंका मनपर्ने सूचीहरू एकै ठाउँमा",
+    "empty_title": "अहिलेसम्म सेभ गरिएको सूची छैन",
+    "empty_hint": "सम्पत्ति सेभ गर्न Explore मा हार्ट आइकन थिच्नुहोस्।"
+  },
+  "leads": {
+    "title": "मेरो रुचि लिडहरू",
+    "subtitle": "तपाईंको सम्पत्तिबारे सन्देश गर्ने प्रयोगकर्ताहरू",
+    "empty_title": "लिड फेला परेन",
+    "empty_hint": "प्रयोगकर्ताले सम्पत्तिबारे सम्पर्क गर्दा यहाँ देखिन्छ।",
+    "property_fallback": "सम्पत्ति",
+    "interested_user": "रुचि भएका प्रयोगकर्ता",
+    "date": "मिति: {{date}}",
+    "status": "स्थिति: {{status}}"
+  },
+  "my_ads": {
+    "filters": { "all": "सबै", "approved": "स्वीकृत", "pending": "पेन्डिङ", "changes": "परिवर्तन", "rejected": "अस्वीकृत" },
+    "status": { "approved": "स्वीकृत", "pending": "समीक्षा पेन्डिङ", "changes_requested": "परिवर्तन आवश्यक", "rejected": "अस्वीकृत", "unknown": "अज्ञात" },
+    "empty_title": "सूची फेला परेन",
+    "empty_hint_all": "भाडामा दिन तयार हुनुहुन्छ? Landlord hub मा फर्कनुहोस्।",
+    "empty_hint_filtered": "तपाईंको {{status}} सूची छैन।",
+    "boost_title": "बुस्ट सूची",
+    "boost_message": "बुस्टले तपाईंको सूचीलाई खोज नतिजाको माथि देखाउँछ। छिट्टै आउँदैछ!",
+    "boost": "बुस्ट",
+    "view_moderator_note": "मोडरेटर नोट हेर्नुहोस्",
+    "currently_rented": "हाल भाडामा (लुकाइएको)",
+    "mark_as_rented": "भाडामा दिएको चिन्ह लगाउनुहोस्"
+  },
+  "recently_viewed": {
+    "empty_title": "हालै हेरिएका सम्पत्ति छैनन्",
+    "empty_hint": "इतिहास हेर्न Explore मा सम्पत्ति हेर्नुहोस्।",
+    "filter_all": "सबै",
+    "filter_today": "आज",
+    "filter_7d": "पछिल्ला ७ दिन",
+    "filter_30d": "पछिल्ला ३० दिन",
+    "filter_range": "मिति दायरा",
+    "date_placeholder": "YYYY-MM-DD",
+    "no_results": "नतिजा छैन",
+    "no_results_hint": "फरक मिति दायरा प्रयास गर्नुहोस्।",
+    "viewed_on": "{{date}} मा हेर्नुभयो"
+  },
+  "notifications": {
+    "empty_title": "अहिले सूचना छैन",
+    "empty_hint": "नयाँ लिड र च्याट जवाफ यहाँ देखिनेछन्।"
+  },
+  "chat": {
+    "messages": "सन्देशहरू",
+    "unknown_user": "अज्ञात प्रयोगकर्ता",
+    "no_messages_yet": "अहिले सन्देश छैन",
+    "re_property": "सम्पत्ति: {{title}}",
+    "empty_title": "अहिले सन्देश छैन",
+    "empty_hint": "तपाईंले सम्पर्क गरेपछि कुराकानी यहाँ देखिन्छ।"
+  },
+  "home": {
+    "verified_featured": "प्रमाणित र विशेष",
+    "loading_featured_homes": "विशेष घरहरू लोड हुँदैछन्...",
+    "no_featured_properties": "अहिलेसम्म विशेष सम्पत्ति छैन",
+    "featured_coming_soon": "नयाँ प्रमाणित र विशेष सम्पत्ति छिट्टै देखिनेछ।",
+    "badge_verified": "प्रमाणित",
+    "badge_featured": "विशेष",
+    "browse_categories": "श्रेणी हेर्नुहोस्",
+    "find_by": "श्रेणी द्वारा",
+    "category": "खोज्नुहोस्",
+    "for_landlords": "घरधनीका लागि",
+    "list_property_here": "आफ्नो सम्पत्ति यहाँ राख्नुहोस्",
+    "jump_filtered_discovery": "फिल्टर गरिएको सम्पत्ति खोजाइमा सीधा जानुहोस्।",
+    "no_categories": "श्रेणी उपलब्ध छैन",
+    "categories_added_by_admin": "एडमिनले थपेका श्रेणी यहाँ स्वतः देखिन्छन्।",
+    "property_fallback": "सम्पत्ति",
+    "category_explore_near_you": "तपाईं नजिकका {{category}} सूची हेर्नुहोस्"
+  },
+  "headers": {
+    "properties": "सम्पत्तिहरू",
+    "property_details": "सम्पत्ति विवरण",
+    "complete_profile": "प्रोफाइल पूरा गर्नुहोस्",
+    "new_listing": "नयाँ सूची",
+    "edit_listing": "सूची सम्पादन",
+    "landlord": "घरधनी",
+    "details": "विवरण",
+    "notifications": "सूचनाहरू"
+  },
+  "listing_amenities": {
+    "title": "सुविधाहरू छान्नुहोस्",
+    "subtitle": "तपाईंको सम्पत्ति किन विशेष छ, देखाउनुहोस्।",
+    "loading": "सुविधाहरू लोड हुँदैछ..."
+  },
+  "profile": {
+    "language": {
+      "title": "भाषा",
+      "sheet_title": "भाषा छान्नुहोस्"
+    },
+    "sections": { "manage": "व्यवस्थापन", "activity": "गतिविधि", "account": "खाता", "support": "सहयोग", "danger": "जोखिम क्षेत्र" },
+    "menu": {
+      "my_ads": "मेरो विज्ञापन / सूची",
+      "my_leads": "मेरो रुचि लिडहरू",
+      "shortlisted": "छोटकरीमा राखिएका सम्पत्ति",
+      "recently_viewed": "हालै हेरिएका",
+      "edit_profile": "प्रोफाइल र प्राथमिकता सम्पादन",
+      "terms": "सर्त तथा नियम"
+    },
+    "guest_user": "अतिथि प्रयोगकर्ता",
+    "no_email": "इमेल थपिएको छैन",
+    "validation": {
+      "full_name_required": "पूरा नाम आवश्यक छ।",
+      "valid_email": "मान्य इमेल लेख्नुहोस्।"
+    },
+    "logout": {
+      "success": "लगआउट सफल",
+      "failed": "लगआउट असफल",
+      "logging_out": "लगआउट हुँदैछ...",
+      "log_out": "लगआउट",
+      "confirm_title": "लगआउट पुष्टि",
+      "confirm_message": "के तपाईं खाताबाट लगआउट गर्न चाहनुहुन्छ?"
+    },
+    "delete": {
+      "error": "खाता मेटाउँदा त्रुटि",
+      "deleting": "मेट्दैछ...",
+      "delete_account": "खाता मेटाउनुहोस्",
+      "delete": "मेटाउनुहोस्",
+      "confirm_title": "मेटाउने पुष्टि",
+      "confirm_message": "के तपाईं खातालाई स्थायी रूपमा मेटाउन चाहनुहुन्छ?"
+    },
+    "appearance": {
+      "title": "रूपरंग",
+      "system_default": "सिस्टम पूर्वनिर्धारित",
+      "system": "सिस्टम मोड",
+      "light": "उज्यालो मोड",
+      "dark": "गाढा मोड"
+    },
+    "form": {
+      "avatar": "अवतार",
+      "upload_avatar": "अवतार अपलोड",
+      "full_name": "पूरा नाम",
+      "full_name_placeholder": "राम शर्मा",
+      "email": "इमेल",
+      "email_placeholder": "ram@example.com"
+    },
+    "preferences": {
+      "title": "सिफारिस प्राथमिकता",
+      "subtitle": "तपाईंले खोजिरहनु भएको आधारमा फिड व्यक्तिगत बनाउनुहोस्।",
+      "preferred_category": "मनपर्ने श्रेणी",
+      "select_category": "श्रेणी छान्नुहोस्",
+      "min_price": "न्यूनतम मूल्य",
+      "max_price": "अधिकतम मूल्य",
+      "saving": "सेभ हुँदैछ...",
+      "save": "प्रोफाइल र प्राथमिकता सेभ गर्नुहोस्"
+    },
+    "completeness": {
+      "title": "प्रोफाइल पूर्णता",
+      "hint_prefix": "यी थपेर प्रोफाइल पूरा गर्नुहोस्"
+    }
+  },
+  "master_data": {
+    "amenity_categories": {
+      "UTILITIES_ESSENTIAL": "उपयोगिता (आवश्यक)",
+      "INTERIOR_FURNITURE": "भित्री/फर्निचर",
+      "BUILDING_SHARED": "भवन/साझा",
+      "POLICY_VIBE": "नीति/वातावरण"
+    },
+    "amenities": {
+      "WATER_24_7": "२४/७ पानी",
+      "NO_LOAD_SHEDDING": "लोडसेडिङ छैन (इनभरटर/जेनेरेटर)",
+      "SOLAR_WATER_HEATER": "सौर्य पानी तताउने",
+      "GARBAGE_COLLECTION": "फोहोर संकलन",
+      "ATTACHED_BATHROOM": "जोडिएको बाथरुम",
+      "BALCONY": "बाल्कोनी",
+      "ATTACHED_KITCHEN": "मोड्युलर किचन",
+      "WARDROBE": "वार्डरोब",
+      "WIFI": "वाईफाई",
+      "BATHROOM_GEYSER": "बाथरुम गिजर",
+      "AIR_CONDITIONER": "एयर कन्डिसनर",
+      "PARKING": "पार्किङ (२-पाङ्ग्रे/४-पाङ्ग्रे)",
+      "CCTV_SECURITY": "सीसीटिभी सुरक्षा",
+      "LIFT_ELEVATOR": "लिफ्ट/एलिभेटर",
+      "TERRACE_ACCESS": "छत पहुँच",
+      "GYM": "जिम",
+      "POOL": "पुल",
+      "LAUNDRY": "लन्ड्री",
+      "PET_FRIENDLY": "पाल्तु जनावरमैत्री",
+      "COUPLE_FRIENDLY": "जोडीमैत्री",
+      "NO_SMOKING": "धूम्रपान निषेध",
+      "ACCESS_24_7": "२४/७ पहुँच (गेट बन्द समय छैन)",
+      "NON_VEG_ALLOWED": "मासाहार अनुमति",
+      "NON_VEG_NOT_ALLOWED": "मासाहार अनुमति छैन"
+    },
+    "property_categories": {
+      "FLAT_APARTMENT": "फ्ल्याट/अपार्टमेन्ट",
+      "ROOM": "कोठा",
+      "VILLA_HOUSE": "भिल्ला/घर",
+      "LAND_PLOT": "जग्गा/प्लट",
+      "COMMERCIAL": "व्यावसायिक"
+    },
+    "property_subcategories": {
+      "STUDIO": "स्टुडियो",
+      "1_BHK": "१ बीएचके",
+      "2_BHK": "२ बीएचके",
+      "3_BHK": "३ बीएचके",
+      "4PLUS_BHK": "४+ बीएचके",
+      "PENTHOUSE": "पेन्टहाउस",
+      "DUPLEX_APARTMENT": "डुप्लेक्स अपार्टमेन्ट",
+      "1_RK": "१ आरके",
+      "2_RK": "२ आरके",
+      "PRIVATE_ROOM": "निजी कोठा",
+      "SHARED_ROOM": "साझा कोठा",
+      "HOSTEL_ROOM": "हस्टेल/पीजी कोठा",
+      "BUNGALOW": "बंगलो",
+      "ROW_HOUSE": "रो हाउस",
+      "DETACHED_HOUSE": "अलग घर",
+      "VILLA": "भिल्ला",
+      "DUPLEX_HOUSE": "डुप्लेक्स घर",
+      "RESIDENTIAL_PLOT": "आवासीय प्लट",
+      "COMMERCIAL_PLOT": "व्यावसायिक प्लट",
+      "AGRICULTURAL_LAND": "कृषि जमिन",
+      "SHOP_SHUTTER": "पसल/शटर",
+      "OFFICE_SPACE": "कार्यालय ठाउँ",
+      "WAREHOUSE": "गोदाम"
+    },
+    "price_ranges": {
+      "mobile_search_default": "मोबाइल खोज पूर्वनिर्धारित"
+    }
+  },
+  "currency": {
+    "npr": "रु"
+  },
+  "stories": {
+    "bar_title": "वाकथ्रुहरू",
+    "add": "थप्नुहोस्",
+    "landlord": "घरधनी",
+    "view_property": "सम्पत्ति हेर्नुहोस्",
+    "trim_title": "वाकथ्रु",
+    "trim_subtitle": "१५ सेकेन्ड वा सोभन्दा कममा काट्नुहोस्, त्यसपछि हामी छिटो लोड हुनका लागि कम्प्रेस गर्छौं।",
+    "mute_walkthrough": "म्युट (आवाज बिना)",
+    "trim_and_publish": "ट्रिम र स्टोरी पोस्ट गर्नुहोस्",
+    "picking_video": "तपाईंको भिडियो लाइब्रेरी खोलिँदैछ…",
+    "phase_trim": "ट्रिम हुँदैछ…",
+    "phase_compress": "कम्प्रेस हुँदैछ…",
+    "phase_upload": "अपलोड हुँदैछ…",
+    "published_title": "लाइभ",
+    "published_body": "तपाईंको २४-घण्टे वाकथ्रु अहिले होम फिडमा छ।",
+    "failed_title": "प्रकाशित गर्न सकिएन",
+    "missing_title": "विवरण पुगेन",
+    "missing_body": "पहिले सम्पत्ति र भिडियो छान्नुहोस्।",
+    "permission_denied_title": "लाइब्रेरी पहुँच",
+    "permission_denied_body": "वाकथ्रु अपलोड गर्न फोटो/भिडियो पहुँच अनुमति दिनुहोस्।",
+    "pick_listing_title": "सूची छान्नुहोस्",
+    "loading_listings": "तपाईंका सूचीहरू लोड हुँदैछन्…",
+    "no_active_listings": "तपाईंलाई स्वीकृत सूची चाहिन्छ जुन भाडामा दिइएको छैन।",
+    "no_story_enabled_listings": "सूची बनाउँदा वा सम्पादन गर्दा \"वाकथ्रु स्टोरी अनुमति दिनुहोस्\" अन गर्नुहोस्।",
+    "manage_title": "वाकथ्रु व्यवस्थापन",
+    "badge_live": "लाइभ",
+    "cta_add": "थप भ्युजका लागि २४-घण्टे वाकथ्रु थप्नुहोस्।",
+    "cta_replace": "वाकथ्रु भिडियो बदल्नुहोस्",
+    "cta_add_walkthrough": "भिडियो वाकथ्रु थप्नुहोस्",
+    "increase_engagement": "भित्री भाग देखाएर रुचि बढाउनुहोस्।",
+    "expires_hint": "स्टोरीहरू २४ घण्टापछि हट्छन्।",
+    "post_story": "स्टोरी पोस्ट गर्नुहोस्",
+    "processing_title": "स्टोरी प्रशोधन हुँदैछ",
+    "please_wait": "कृपया केही समय पर्खनुहोस्...",
+    "picking_media": "लाइब्रेरी खोलिँदैछ..."
+  }
+}
