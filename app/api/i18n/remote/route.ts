@@ -67,8 +67,9 @@ export async function POST(req: Request) {
       continue;
     }
 
-    const existingRank = localeCodes.indexOf(existing.locale_code as any);
-    const nextRank = localeCodes.indexOf(row.locale_code as any);
+    const localeCodesArr = localeCodes as readonly string[];
+    const existingRank = localeCodesArr.indexOf(existing.locale_code);
+    const nextRank = localeCodesArr.indexOf(row.locale_code);
     const shouldReplace = nextRank !== -1 && (existingRank === -1 || nextRank < existingRank);
     if (shouldReplace) {
       valueByKeyId.set(row.translation_key_id, { locale_code: row.locale_code, value: row.value });

@@ -6,15 +6,15 @@ import { cookies } from "next/headers";
 import { env } from "@/lib/env";
 import { authCookieNames } from "@/lib/authCookies";
 
-function assertServiceRoleKey(): string {
-  if (!env.supabaseServiceRoleKey) {
-    throw new Error("Missing server env var: SUPABASE_SERVICE_ROLE_KEY");
-  }
-  return env.supabaseServiceRoleKey;
-}
+// function assertServiceRoleKey(): string {
+//   if (!env.supabaseServiceRoleKey) {
+//     throw new Error("Missing server env var: SUPABASE_SERVICE_ROLE_KEY");
+//   }
+//   return env.supabaseServiceRoleKey;
+// }
 
 export function createSupabaseAdminClient(): SupabaseClient {
-  return createClient(env.supabaseUrl, assertServiceRoleKey(), {
+  return createClient(env.supabaseUrl, env.supabasePublishableKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -23,10 +23,11 @@ export function createSupabaseAdminClient(): SupabaseClient {
   });
 }
 
-export function getRequestAuthTokens():
+export async function getRequestAuthTokens(): Promise<
   | { accessToken: string; refreshToken: string }
-  | { accessToken: null; refreshToken: null } {
-  const jar = cookies();
+  | { accessToken: null; refreshToken: null }
+> {
+  const jar = await cookies();
   const accessToken = jar.get(authCookieNames.accessToken)?.value ?? null;
   const refreshToken = jar.get(authCookieNames.refreshToken)?.value ?? null;
   if (!accessToken || !refreshToken) return { accessToken: null, refreshToken: null };
@@ -34,7 +35,7 @@ export function getRequestAuthTokens():
 }
 
 export async function createSupabaseUserClientOrThrow(): Promise<SupabaseClient> {
-  const { accessToken, refreshToken } = getRequestAuthTokens();
+  const { accessToken, refreshToken } = await getRequestAuthTokens();
   if (!accessToken || !refreshToken) {
     throw new Error("UNAUTHENTICATED");
   }
@@ -63,7 +64,7 @@ export async function createSupabaseUserClientOrThrow(): Promise<SupabaseClient>
     }
 
     if (data.session?.access_token && data.session?.refresh_token) {
-      const jar = cookies();
+      const jar = await cookies();
       jar.set(authCookieNames.accessToken, data.session.access_token, {
         httpOnly: true,
         sameSite: "lax",

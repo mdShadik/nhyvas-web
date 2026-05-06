@@ -3,9 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "env-cmd -f .env.development next dev",
+    "dev:staging": "env-cmd -f .env.staging next dev",
+    "dev:prod": "env-cmd -f .env.production next dev",
+    "build": "env-cmd -f .env.development next build",
+    "build:staging": "env-cmd -f .env.staging next build",
+    "build:prod": "env-cmd -f .env.production next build",
+    "start": "env-cmd -f .env.development next start",
+    "start:staging": "env-cmd -f .env.staging next start",
+    "start:prod": "env-cmd -f .env.production next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -22,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "env-cmd": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
