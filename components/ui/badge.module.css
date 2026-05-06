@@ -1,0 +1,41 @@
+.uiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.7rem;
+  padding: 0.2rem 0.58rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.uiBadgeDefault {
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface) 88%);
+  color: var(--foreground);
+}
+
+.uiBadgeSuccess {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #64d98a;
+}
+
+.uiBadgeWarning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f5b84e;
+}
+
+.uiBadgeDanger {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.32);
+  color: #ff8b8b;
+}
+
+.uiBadgeMuted {
+  background: color-mix(in oklab, var(--surface-soft) 84%, transparent);
+  color: var(--muted);
+}
+

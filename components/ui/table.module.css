@@ -1,0 +1,82 @@
+.uiTableWrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-top: 0;
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--surface-soft) 34%, transparent), transparent 18%),
+    color-mix(in oklab, var(--surface) 96%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.uiTable {
+  width: max-content;
+  min-width: max(100%, 920px);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.uiTableHeadCell,
+.uiTableCell {
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 0.9rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.uiTableHeadCell {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: color-mix(in oklab, var(--surface-soft) 88%, transparent);
+  white-space: nowrap;
+}
+
+.uiTableHeadCellFirst {
+  border-top-left-radius: 1rem;
+}
+
+.uiTableHeadCellLast {
+  border-top-right-radius: 1rem;
+}
+
+.uiTableCell {
+  background: color-mix(in oklab, var(--surface) 96%, transparent);
+}
+
+.uiTableRowHover .uiTableCell {
+  background: color-mix(in oklab, var(--surface-soft) 22%, var(--surface) 78%);
+}
+
+.uiTableBodyLastRow .uiTableCell {
+  border-bottom: 0;
+}
+
+.uiPagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+}
+
+.uiPaginationMeta,
+.uiPaginationPage {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.uiPaginationActions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+

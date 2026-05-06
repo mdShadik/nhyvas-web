@@ -1,0 +1,22 @@
+.uiInput {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 82%, var(--background) 18%);
+  color: var(--foreground);
+  padding: 0.72rem 0.9rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.uiInputPlaceholder {
+  color: color-mix(in oklab, var(--muted) 82%, transparent);
+}
+
+.uiInputFocus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+

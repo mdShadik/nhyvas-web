@@ -6,6 +6,8 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { exploreService } from "@/services/apiService";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { NavBar } from "@/components/common/NavBar/NavBar";
 
 type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
@@ -104,31 +106,9 @@ export default function HomePage() {
   }, [categories, search]);
 
   return (
-    <main className="flex-1 bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-100">
+    <main className="flex-1 bg-zinc-50 text-zinc-900 dark:bg-linear-to-tl dark:from-secondary-900 dark:to-secondary-800 dark:text-zinc-100">
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        <header className="flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-600 text-sm font-bold text-white">
-              N
-            </div>
-            <div className="text-base font-semibold tracking-tight">Nhyvas</div>
-          </Link>
-          <nav className="flex items-center gap-2">
-            <Link
-              href="/explore"
-              className="rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-900/5 dark:text-zinc-200 dark:hover:bg-zinc-100/10"
-            >
-              Explore
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
-            >
-              Login
-            </Link>
-          </nav>
-        </header>
-
+        <NavBar />
         <section className="mt-10 grid gap-8 lg:grid-cols-2 lg:items-center">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find your next place in Nepal</h1>
