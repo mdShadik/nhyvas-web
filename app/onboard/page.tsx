@@ -1,0 +1,170 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { AvatarUpload } from "@/components/common/AvatarUpload";
+import darkLogo from "@/public/assets/images/logo-horizontal-d.png";
+import lightLogo from "@/public/assets/images/logo-horizontal-l.png";
+import { useTheme } from "@/context/ThemeContext";
+
+export default function OnboardPage() {
+  const router = useRouter();
+  const { theme } = useTheme();
+  const logoUrl = theme === "dark" ? darkLogo : lightLogo;
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await fetch("/api/profile/bootstrap", { method: "POST" });
+        if (!res.ok) throw new Error("Failed to load profile");
+
+        const { data } = await res.json();
+        const profile = data?.row;
+
+        if (profile?.role === "user") {
+          window.location.href = "/";
+          return;
+        }
+
+        if (profile?.full_name) setFullName(profile.full_name);
+        if (profile?.email) setEmail(profile.email);
+        if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+      } catch (err: any) {
+        setError("Failed to load your profile details. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName.trim()) {
+      setError("Full Name is required.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/profile/complete-onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email, avatarUrl }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to complete onboarding");
+      }
+
+      // Save to local storage as requested
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user_email", email);
+        localStorage.setItem("user_name", fullName);
+        localStorage.setItem("remoteTranslationsKey", "default");
+      }
+
+      window.location.href = "/";
+    } catch (err: any) {
+      setError(err.message);
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+      <header className="flex items-center justify-between p-4 sm:p-6">
+        <Link href="/" className="flex items-center gap-2">
+          <Image src={logoUrl.src} alt="Nhyvas" width={120} height={60} />
+        </Link>
+        <ThemeToggle />
+      </header>
+
+      <main className="flex flex-1 items-center justify-center p-4">
+        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl sm:p-8">
+          <div className="mb-2">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
+              Complete Your Profile
+            </h1>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              Add your details to continue to Nhyvas.
+            </p>
+          </div>
+
+          <AvatarUpload
+            currentAvatarUrl={avatarUrl}
+            onAvatarChange={setAvatarUrl}
+            className="mb-6"
+          />
+
+          {error && (
+            <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-[var(--color-text-primary)]">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--color-bg-input)] px-4 py-3.5 text-base text-[var(--color-text-primary)] placeholder-[var(--color-placeholder)] outline-none transition ring-[var(--accent)]/20 focus:border-[var(--accent)] focus:ring-4"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[var(--color-text-primary)]">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                disabled
+                className="w-full cursor-not-allowed rounded-2xl border border-[var(--border)] bg-[var(--border)]/30 px-4 py-3.5 text-base text-[var(--color-text-secondary)] outline-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting || !fullName.trim()}
+              className="mt-6 flex w-full items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-[var(--accent)]/90 disabled:opacity-50"
+            >
+              {submitting ? "Saving..." : "Continue"}
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
+  );
+}
