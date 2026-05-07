@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
+import { useEffect, useState } from "react";
 
 function SunIcon({ className }: { className: string }) {
   return (
@@ -46,6 +47,17 @@ function MoonIcon({ className }: { className: string }) {
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="h-11 w-[88px] rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 opacity-0" />
+    );
+  }
 
   return (
     <button

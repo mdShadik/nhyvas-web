@@ -34,7 +34,6 @@ function isRouteActive(pathname: string, href: string) {
 
 function BrandLogo({ playTrigger }: { playTrigger: number }) {
   const { theme } = useTheme();
-  const logoUrl = theme === "dark" ? darkLogo : lightLogo;
 
   const [showAnimated, setShowAnimated] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -68,7 +67,11 @@ function BrandLogo({ playTrigger }: { playTrigger: number }) {
     }
   }, [playTrigger]);
 
-  if (mounted && showAnimated) {
+  if (!mounted) {
+    return <div className="h-10 w-[144px] sm:h-11" />;
+  }
+
+  if (showAnimated) {
     return (
       <div className="h-10 w-[132px] overflow-hidden sm:h-11 sm:w-[144px]">
         <DotLottieReact
@@ -80,6 +83,8 @@ function BrandLogo({ playTrigger }: { playTrigger: number }) {
       </div>
     );
   }
+
+  const logoUrl = theme === "dark" ? darkLogo : lightLogo;
 
   return (
     <Image
