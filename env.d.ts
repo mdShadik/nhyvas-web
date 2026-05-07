@@ -19,4 +19,3 @@ declare namespace NodeJS {
     SUPABASE_SERVICE_ROLE_KEY?: string;
   }
 }
-

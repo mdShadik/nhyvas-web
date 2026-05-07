@@ -113,9 +113,6 @@ export default function ExplorePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
-      <div className="px-4 sm:px-6">
-        <NavBar />
-      </div>
 
       <main className="flex flex-1 gap-6 p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto w-full">
         {/* Main Content Area */}
