@@ -21,11 +21,11 @@ export async function POST(req: Request) {
     const admin = createSupabaseAdminClient();
     const { data: existingProfile } = await admin
       .from("profiles")
-      .select("role")
+      .select("is_onboarded")
       .eq("id", user.id)
       .single();
 
-    if (existingProfile?.role === "user") {
+    if (existingProfile?.is_onboarded) {
       needsOnboarding = false;
     } else {
       // Ensure profile exists (server-side upsert) for new or pending users

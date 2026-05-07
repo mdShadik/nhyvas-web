@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     email: typeof body?.email === "string" && body.email.trim() ? body.email.trim() : null,
     role: "user",
     profile_type: "app_user",
+    is_onboarded: true,
   };
   if (typeof body?.avatarUrl === "string") payload.avatar_url = body.avatarUrl;
 

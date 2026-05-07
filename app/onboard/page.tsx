@@ -10,6 +10,9 @@ import darkLogo from "@/public/assets/images/logo-horizontal-d.png";
 import lightLogo from "@/public/assets/images/logo-horizontal-l.png";
 import { useTheme } from "@/context/ThemeContext";
 
+import { createClient } from "@supabase/supabase-js";
+import { env } from "@/lib/env";
+
 export default function OnboardPage() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -32,14 +35,24 @@ export default function OnboardPage() {
         const { data } = await res.json();
         const profile = data?.row;
 
-        if (profile?.role === "user") {
+        if (profile?.is_onboarded) {
           window.location.href = "/";
           return;
         }
 
-        if (profile?.full_name) setFullName(profile.full_name);
-        if (profile?.email) setEmail(profile.email);
-        if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+        // Fetch Google OAuth metadata directly from the active session
+        const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
+        const { data: { user } } = await supabase.auth.getUser();
+
+        const metaFullName = user?.user_metadata?.full_name || user?.user_metadata?.name;
+        const metaAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+        const metaEmail = user?.email;
+
+        // Prefill using user_metadata first, fallback to profile
+        if (metaFullName || profile?.full_name) setFullName(metaFullName || profile.full_name);
+        if (metaEmail || profile?.email) setEmail(metaEmail || profile.email);
+        if (metaAvatar || profile?.avatar_url) setAvatarUrl(metaAvatar || profile.avatar_url);
+        
       } catch (err: any) {
         setError("Failed to load your profile details. Please try again.");
       } finally {

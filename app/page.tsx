@@ -12,7 +12,7 @@ import { NavBar } from "@/components/common/NavBar/NavBar";
 type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
 
-function formatPrice(amount: number, currencyCode: string) {
+export function formatPrice(amount: number, currencyCode: string) {
   try {
     const currency = (currencyCode || "NPR").toUpperCase();
     return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
