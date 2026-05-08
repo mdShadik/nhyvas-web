@@ -24,6 +24,15 @@ import {
   type FilterState,
 } from "@/components/explore/exploreFilters";
 import { Slider } from "../ui/slider";
+import {
+  tAmenity,
+  tAmenityCategory,
+  tCurrency,
+  tPriceRangeLabel,
+  tPropertyCategory,
+  tPropertySubcategory,
+} from "@/i18n/masterData";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   value: FilterState;
@@ -106,6 +115,7 @@ export function ExploreFiltersPanel({
   onReset,
   className,
 }: Props) {
+  const { t } = useTranslation();
   const categoriesQuery = useQuery({
     queryKey: ["explore", "categories"],
     queryFn: () => exploreService.getHomeCategories(200),
@@ -167,7 +177,7 @@ export function ExploreFiltersPanel({
       groups.push({
         id: "uncategorized",
         code: "uncategorized",
-        name: "Other",
+        name: t("explore.other", "Other"),
         display_order: 9999,
         amenities: uncategorized,
       });
@@ -187,12 +197,17 @@ export function ExploreFiltersPanel({
 
     if (value.categoryCode) {
       const category = categories.find((c) => c.code === value.categoryCode);
-      chips.push({ key: "category", label: category?.name || category?.code || value.categoryCode });
+      const raw = category?.code || category?.name || value.categoryCode;
+      chips.push({ key: "category", label: tPropertyCategory(raw) });
     }
 
     if (value.subcategoryId) {
       const sub = subcategories.find((s) => s.id === value.subcategoryId);
-      chips.push({ key: "subcategory", label: sub?.name || sub?.code || "Subcategory" });
+      const raw = sub?.code || sub?.name;
+      chips.push({
+        key: "subcategory",
+        label: raw ? tPropertySubcategory(raw) : t("explore.subcategory", "Subcategory"),
+      });
     }
 
     if (priceConfig) {
@@ -214,7 +229,7 @@ export function ExploreFiltersPanel({
     if (value.amenityNames.length) {
       chips.push({
         key: "amenities",
-        label: `${value.amenityNames.length} amenit${value.amenityNames.length === 1 ? "y" : "ies"}`,
+        label: `${value.amenityNames.length} ${value.amenityNames.length === 1 ? t("explore.amenity", "amenity") : t("explore.amenities", "amenities").toLowerCase()}`,
       });
     }
 
@@ -229,7 +244,7 @@ export function ExploreFiltersPanel({
       className={`w-full shrink-0 ${className ?? ""}`}
     >
       <div className="lg:sticky lg:top-24">
-        <div className="flex h-full max-h-[calc(100dvh-6rem)] flex-col overflow-hidden rounded-3xl border border-border bg-bg-card shadow-[0_18px_55px_-30px_rgba(15,23,42,0.45)] dark:shadow-[0_18px_55px_-30px_rgba(2,6,23,0.7)]">
+        <div className="flex h-full max-h-[calc(100dvh-6rem)] flex-col overflow-hidden bg-[var(--color-page-bg-from)] shadow-[0_18px_55px_-30px_rgba(15,23,42,0.45)] dark:shadow-[0_18px_55px_-30px_rgba(2,6,23,0.7)]">
           {/* Header */}
           <div className="relative border-b border-border/70 px-5 py-5">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary-500/5 via-transparent to-tertiary-500/5" />
@@ -241,20 +256,20 @@ export function ExploreFiltersPanel({
 
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-text-tertiary">
-                  Explore filters
+                  {t("explore.explore_filters", "Explore filters")}
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-text-primary">
-                  Refine search
+                  {t("explore.refine_search", "Refine search")}
                 </h2>
                 <p className="mt-1 text-sm text-text-secondary">
-                  Narrow results by location, price, and amenities.
+                  {t("explore.narrow_results", "Narrow results by location, price, and amenities.")}
                 </p>
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Pill className="bg-primary-100 text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-                {activeCount} active
+                {activeCount} {t("common.active", "active")}
               </Pill>
 
               {activeChips.length ? (
@@ -268,7 +283,7 @@ export function ExploreFiltersPanel({
                 ))
               ) : (
                 <Pill className="bg-secondary-100 text-text-secondary dark:bg-secondary-800">
-                  All filters open
+                  {t("explore.all_filters_open", "All filters open")}
                 </Pill>
               )}
             </div>
@@ -285,7 +300,7 @@ export function ExploreFiltersPanel({
               <div className="grid gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-secondary">
-                    Category
+                    {t("explore.category", "Category")}
                   </label>
                   <div className="relative">
                     <select
@@ -299,10 +314,10 @@ export function ExploreFiltersPanel({
                         })
                       }
                     >
-                      <option value="">All categories</option>
+                      <option value="">{t("explore.all_categories", "All categories")}</option>
                       {categories.map((cat) => (
                         <option key={cat.id} value={cat.code}>
-                          {cat.name || cat.code}
+                          {tPropertyCategory(cat.code || cat.name || t("explore.category", "Category"))}
                         </option>
                       ))}
                     </select>
@@ -312,7 +327,7 @@ export function ExploreFiltersPanel({
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-secondary">
-                    Subcategory
+                    {t("explore.subcategory", "Subcategory")}
                   </label>
                   <div className="relative">
                     <select
@@ -324,11 +339,13 @@ export function ExploreFiltersPanel({
                       }
                     >
                       <option value="">
-                        {value.categoryCode ? "All subcategories" : "Select category first"}
+                        {value.categoryCode ? t("explore.all_subcategories", "All subcategories") : t("explore.select_category_first", "Select category first")}
                       </option>
                       {subcategories.map((sub) => (
                         <option key={sub.id} value={sub.id}>
-                          {sub.name || sub.code || "Subcategory"}
+                          {sub.code || sub.name
+                            ? tPropertySubcategory(sub.code || sub.name)
+                            : t("explore.subcategory", "Subcategory")}
                         </option>
                       ))}
                     </select>
@@ -361,7 +378,7 @@ export function ExploreFiltersPanel({
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-sm text-text-tertiary">
                 <Sparkles className="h-4 w-4 text-primary-500" />
-                <span>Tip: combine location + one amenity for better results.</span>
+                <span>{t("explore.tip_combine", "Tip: combine location + one amenity for better results.")}</span>
               </div>
 
               <div className="flex gap-3">
@@ -380,7 +397,7 @@ export function ExploreFiltersPanel({
                   }}
                   className="inline-flex flex-1 items-center justify-center rounded-full border border-border bg-bg-input px-4 py-3 text-sm font-semibold text-text-primary transition hover:border-primary-200 hover:bg-primary-50"
                 >
-                  Reset
+                  {t("explore.reset", "Reset")}
                 </motion.button>
 
                 <motion.button
@@ -390,7 +407,7 @@ export function ExploreFiltersPanel({
                   onClick={onApply}
                   className="inline-flex flex-1 items-center justify-center rounded-full bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500"
                 >
-                  Apply
+                  {t("explore.apply_filters", "Apply Filters")}
                 </motion.button>
               </div>
             </div>
@@ -408,6 +425,7 @@ function LocationSearchField({
   value: LocationSearchNode | null;
   onChange: (node: LocationSearchNode | null) => void;
 }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -455,7 +473,7 @@ function LocationSearchField({
   return (
     <div ref={containerRef}>
       <label className="mb-2 block text-sm font-semibold text-text-secondary">
-        Location
+        {t("explore.location", "Location")}
       </label>
 
       {value ? (
@@ -475,7 +493,7 @@ function LocationSearchField({
                   {value.label}
                 </div>
                 <div className="mt-0.5 text-xs text-text-tertiary">
-                  {getHasPoint(value) ? "Nearby search radius: 2km" : "Administrative area"}
+                  {getHasPoint(value) ? t("explore.nearby_search", "Nearby search radius: 2km") : t("explore.administrative_area", "Administrative area")}
                 </div>
               </div>
             </div>
@@ -488,7 +506,7 @@ function LocationSearchField({
                 requestAnimationFrame(() => inputRef.current?.focus());
               }}
               className="rounded-full border border-border bg-bg-card p-2 text-text-secondary transition hover:border-primary-200 hover:text-text-primary"
-              aria-label="Clear location"
+              aria-label={t("explore.clear_location", "Clear location")}
             >
               <X className="h-4 w-4" />
             </button>
@@ -532,7 +550,7 @@ function LocationSearchField({
                 setOpen(false);
               }
             }}
-            placeholder="Search district, municipality, ward…"
+            placeholder={t("explore.search_location", "Search location...")}
             className="w-full rounded-2xl border border-border bg-bg-input py-3 pl-10 pr-10 text-text-primary outline-none transition placeholder:text-placeholder focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15"
           />
 
@@ -545,7 +563,7 @@ function LocationSearchField({
                 requestAnimationFrame(() => inputRef.current?.focus());
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-text-tertiary transition hover:bg-secondary-100 hover:text-text-primary dark:hover:bg-secondary-800"
-              aria-label="Clear search"
+              aria-label={t("explore.clear_search", "Clear search")}
             >
               <X className="h-4 w-4" />
             </button>
@@ -562,11 +580,11 @@ function LocationSearchField({
               >
                 {debouncedQuery.trim().length < 1 ? (
                   <div className="px-4 py-3 text-sm text-text-secondary">
-                    Type to search locations.
+                    {t("explore.type_to_search", "Type to search locations.")}
                   </div>
                 ) : searchQuery.isFetching ? (
                   <div className="px-4 py-3 text-sm text-text-secondary">
-                    Searching…
+                    {t("common.searching", "Searching…")}
                   </div>
                 ) : results.length ? (
                   <ul className="max-h-72 overflow-auto py-1">
@@ -598,7 +616,7 @@ function LocationSearchField({
 
                           {getHasPoint(row) ? (
                             <span className="shrink-0 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-                              Nearby
+                              {t("explore.nearby", "Nearby")}
                             </span>
                           ) : null}
                         </motion.button>
@@ -607,7 +625,7 @@ function LocationSearchField({
                   </ul>
                 ) : (
                   <div className="px-4 py-3 text-sm text-text-secondary">
-                    No matches found.
+                    {t("explore.no_matches", "No matches found.")}
                   </div>
                 )}
               </motion.div>
@@ -628,10 +646,15 @@ function PriceRangeField({
   priceConfig: MasterPriceConfig | null;
   onChange: (next: Pick<FilterState, "minPrice" | "maxPrice">) => void;
 }) {
+  const { t } = useTranslation();
   const minLimit = priceConfig?.min_value ?? 0;
   const maxLimit = priceConfig?.max_value ?? 100000;
   const step = priceConfig?.step_value ?? 1000;
   const currency = priceConfig?.currency_code ?? "NPR";
+  const label = tPriceRangeLabel(
+    "mobile_search_default",
+    priceConfig?.label ?? t("explore.price_range", "Price range")
+  );
 
   const minValue = Number.isFinite(Number(value.minPrice))
     ? Number(value.minPrice)
@@ -660,22 +683,22 @@ function PriceRangeField({
       <div className="flex items-start justify-between gap-4">
         <div>
           <label className="block text-sm font-semibold text-text-secondary">
-            Price range
+            {label}
           </label>
           <p className="mt-1 text-xs text-text-tertiary">
-            Drag the handles to set your budget
+            {t("explore.drag_handles", "Drag the handles to set your budget")}
           </p>
         </div>
 
         <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-          {currency}
+          {tCurrency(currency)}
         </span>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-bg-input px-4 py-3">
           <div className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-            Min
+            {t("explore.min", "Min")}
           </div>
           <div className="mt-1 text-sm font-semibold text-text-primary">
             {formatMoney(normalizedMin, currency)}
@@ -684,7 +707,7 @@ function PriceRangeField({
 
         <div className="rounded-2xl border border-border bg-bg-input px-4 py-3">
           <div className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-            Max
+            {t("explore.max", "Max")}
           </div>
           <div className="mt-1 text-sm font-semibold text-text-primary">
             {formatMoney(normalizedMax, currency)}
@@ -727,27 +750,28 @@ function AmenitiesField({
   selected: string[];
   onToggle: (name: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <label className="block text-sm font-semibold text-text-secondary">
-            Amenities
+            {t("explore.amenities", "Amenities")}
           </label>
           <p className="mt-1 text-xs text-text-tertiary">
-            Tap to select or deselect
+            {t("explore.tap_to_select", "Tap to select or deselect")}
           </p>
         </div>
 
         <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-          {selected.length} selected
+          {selected.length} {t("explore.selected", "selected")}
         </span>
       </div>
 
       <div className="space-y-2">
         {groupedAmenities.length === 0 ? (
           <div className="rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-secondary">
-            Loading amenities…
+            {t("explore.loading_amenities", "Loading amenities…")}
           </div>
         ) : (
           groupedAmenities.map((group) => (
@@ -756,7 +780,7 @@ function AmenitiesField({
               className="group rounded-3xl border border-border bg-bg-card px-4 py-3"
             >
               <summary className="flex cursor-pointer select-none items-center gap-2 text-sm font-semibold text-text-primary">
-                <span>{group.name}</span>
+                <span>{tAmenityCategory(group.code || group.name)}</span>
 
                 {group.amenities.length ? (
                   <span className="rounded-full bg-secondary-100 px-2 py-0.5 text-[11px] font-medium text-text-tertiary dark:bg-secondary-800">
@@ -784,14 +808,14 @@ function AmenitiesField({
                             : "border-border bg-bg-input text-text-secondary hover:border-primary-200 hover:bg-primary-50 hover:text-text-primary dark:hover:bg-secondary-800/70"
                         }`}
                       >
-                        {amenity.name}
+                        {tAmenity(amenity.code || amenity.name)}
                       </button>
                     );
                   })}
                 </div>
               ) : (
                 <div className="mt-3 text-sm text-text-secondary">
-                  No amenities in this category.
+                  {t("explore.no_amenities_category", "No amenities in this category.")}
                 </div>
               )}
             </details>

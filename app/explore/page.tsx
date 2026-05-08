@@ -7,14 +7,16 @@ import { exploreService, ExploreListing } from "@/services/apiService/explore";
 import { MapPin, Heart, Search, SlidersHorizontal } from "lucide-react";
 import { formatPrice } from "../page";
 import { logoSingleN, noImagePlaceholder } from "../../assets";
-import { pageBgClass } from "@/constant";
 import { useQuery } from "@tanstack/react-query";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
 import { useSearchParams } from "next/navigation";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
+import { useTranslation } from "react-i18next";
+import { tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
 
-function ListingCard({ listing }: { listing: ExploreListing }) {
+export function ListingCard({ listing }: { listing: ExploreListing }) {
+  const { t } = useTranslation();
   const thumbnailUrl = listing.thumbnail_url || noImagePlaceholder;
 
   return (
@@ -22,10 +24,10 @@ function ListingCard({ listing }: { listing: ExploreListing }) {
       href={{ pathname: "/property", query: { id: listing.id } }}
       className="group block"
     >
-      <article className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:shadow-none">
-        <div className="flex flex-col md:flex-row">
+      <article className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-page-bg-from)] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:shadow-none">
+        <div className="flex flex-col lg:flex-row">
           {/* Image */}
-          <div className="relative h-56 w-full dark:bg-secondary-500 shrink-0 md:h-auto md:w-[320px] lg:w-[360px]">
+          <div className="relative h-56 w-full dark:bg-secondary-500 shrink-0 lg:h-auto lg:w-[320px] lg:w-[360px]">
             <Image
               alt={listing.property_title}
               src={thumbnailUrl}
@@ -45,7 +47,7 @@ function ListingCard({ listing }: { listing: ExploreListing }) {
 
             {listing.is_featured && (
               <div className="absolute left-3 bottom-3 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-sm">
-                FEATURED
+                {t("explore.featured")}
               </div>
             )}
 
@@ -74,14 +76,14 @@ function ListingCard({ listing }: { listing: ExploreListing }) {
                 </div>
 
                 <div className="shrink-0 rounded-full bg-[color:color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-3 py-1 text-xs font-medium text-[var(--color-accent)]">
-                  {listing.property_category}
+                  {tPropertyCategory(listing.property_category)}
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
                 {listing.subcategory && (
                   <span className="rounded-full bg-[var(--color-secondary-100)] px-2.5 py-1 dark:bg-[var(--color-secondary-700)]">
-                    {listing.subcategory}
+                    {tPropertySubcategory(listing.subcategory)}
                   </span>
                 )}
               </div>
@@ -90,7 +92,7 @@ function ListingCard({ listing }: { listing: ExploreListing }) {
             <div className="mt-5 flex items-end justify-between gap-4 border-t border-[var(--color-border)] pt-4">
               <div>
                 <p className="text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  Price
+                  {t("explore.price_label")}
                 </p>
                 <div className="text-xl font-extrabold text-[var(--color-accent)]">
                   {formatPrice(listing.price, listing.currency_code)}
@@ -98,7 +100,7 @@ function ListingCard({ listing }: { listing: ExploreListing }) {
               </div>
 
               <div className="rounded-xl bg-[var(--color-secondary-100)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition group-hover:bg-[var(--color-primary-100)] dark:bg-[var(--color-secondary-700)] dark:group-hover:bg-[var(--color-secondary-600)]">
-                View details
+                {t("explore.view_details")}
               </div>
             </div>
           </div>
@@ -109,6 +111,7 @@ function ListingCard({ listing }: { listing: ExploreListing }) {
 }
 
 export default function ExplorePage() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const didInitFromUrlRef = useRef(false);
   const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
@@ -237,9 +240,9 @@ export default function ExplorePage() {
         <div className="flex-1 flex flex-col">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Explore Properties</h1>
+              <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">{t("explore.title")}</h1>
               <p className="mt-1 text-[var(--color-text-secondary)]">
-                Find your perfect home from {listings.length} available properties.
+                {t("explore.subtitle", { count: listings.length })}
               </p>
             </div>
             <button
@@ -251,14 +254,14 @@ export default function ExplorePage() {
               className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--color-text-primary)] shadow-sm transition hover:bg-[var(--surface)]/80 md:hidden"
             >
               <SlidersHorizontal className="h-4 w-4 text-[var(--color-accent)]" />
-              Filters
+              {t("common.filters")}
             </button>
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-6">
               {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div key={n} className="h-[340px] rounded-2xl bg-[var(--border)]/50 animate-pulse" />
+                <div key={n} className="h-[340px] md:h-[300px] lg:h-[200px] rounded-2xl bg-[var(--border)]/50 animate-pulse" />
               ))}
             </div>
           ) : listings.length > 0 ? (
@@ -270,18 +273,18 @@ export default function ExplorePage() {
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--card-bg)] p-12 text-center">
               <Search className="mb-4 h-12 w-12 text-[var(--muted)]" />
-              <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">No properties found</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t("explore.no_properties")}</h3>
               <p className="mt-2 max-w-sm text-[var(--color-text-secondary)]">
-                We couldn't find any properties matching your criteria. Try adjusting your filters.
+                {t("explore.no_properties_desc")}
               </p>
             </div>
           )}
         </div>
 
         {/* Right Sidebar - Filters */}
-        <aside className="w-80 mt-21 shrink-0 hidden md:block">
-          <div className="sticky top-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-6">Filters</h2>
+        <aside className="max-w-100 mt-21 shrink-0 hidden md:block">
+          <div className="sticky top-6 rounded-3xl border border-[var(--border)] bg-[var(--color-page-bg-from)] p-6 shadow-sm">
+            {/* <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-3">{t("common.filters")}</h2> */}
             <ExploreFiltersPanel
               value={draftFilters}
               onChange={setDraftFilters}
@@ -298,8 +301,8 @@ export default function ExplorePage() {
       <div className="md:hidden">
         <MobileBottomSheet
           open={filtersOpen}
-          title="Refine search"
-          description="Apply filters to explore listings"
+          title={t("explore.refine_search")}
+          description={t("explore.apply_filters_desc")}
           onClose={() => setFiltersOpen(false)}
         >
           <ExploreFiltersPanel

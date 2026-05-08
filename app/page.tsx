@@ -13,6 +13,8 @@ import { pageBgClass } from "@/constant";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
+import { useTranslation } from "react-i18next";
+import { tPropertyCategory, tPropertyCategoryDescription } from "@/i18n/masterData";
 
 type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
@@ -31,7 +33,10 @@ export function formatPrice(amount: number, currencyCode: string) {
 }
 
 function CategoryCard({ category }: { category: Category }) {
-  const name = (category.name || category.code || "Category").trim();
+  const { t } = useTranslation();
+  const rawName = category.code ?? category.name ?? "";
+  const name = tPropertyCategory(rawName) || "Category";
+  const desc = tPropertyCategoryDescription(rawName, category.description || t("home.explore_listings"));
 
   return (
     <Link
@@ -45,12 +50,12 @@ function CategoryCard({ category }: { category: Category }) {
         <div className="min-w-0">
           <div className="text-base font-semibold text-text-primary">{name}</div>
           <div className="mt-1 max-h-10 overflow-hidden text-sm text-text-secondary">
-            {category.description || "Explore listings near you"}
+            {desc}
           </div>
         </div>
 
         <div className="shrink-0 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 transition group-hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-300 dark:group-hover:bg-primary-900/60">
-          View
+          {t("common.view")}
         </div>
       </div>
 
@@ -74,6 +79,7 @@ function HeroBannerSkeleton() {
 }
 
 function HeroBanner({ listings }: { listings: HeroListing[] }) {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -176,12 +182,12 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
 
           <div className="relative z-10 flex h-full flex-col justify-between p-3 sm:p-10 pointer-events-none">
             <div className="rounded-full w-fit bg-primary-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
-              Featured Property
+              {t("home.badge_featured")}
             </div>
 
             <div className="max-w-2xl mt-auto">
               <p className="mb-3 text-sm font-medium text-white/80">
-                Prime listing in Nepal
+                {t("home.prime_listing")}
               </p>
 
               <h1 className="text-3xl font-semibold leading-tight text-white sm:text-5xl">
@@ -201,14 +207,14 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
                   href={{ pathname: "/property", query: { id: listing.id } }}
                   className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-500 active:bg-primary-700 pointer-events-auto cursor-pointer"
                 >
-                  View property
+                  {t("home.view_property")}
                 </Link>
 
                 <Link
                   href="/explore"
                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15 pointer-events-auto cursor-pointer"
                 >
-                  Browse all listings
+                  {t("home.browse_all_listings")}
                 </Link>
               </div>
             </div>
@@ -254,6 +260,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
 }
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -300,23 +307,23 @@ export default function HomePage() {
         <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
-              Find your next place in Nepal
+              {t("home.find_next_place")}
             </h2>
 
             <p className="mt-3 max-w-prose text-base text-text-secondary">
-              Browse verified listings, explore by category, and discover homes near you.
+              {t("home.browse_verified")}
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex-1">
                 <label className="sr-only" htmlFor="search">
-                  Search
+                  {t("common.search")}
                 </label>
                 <input
                   id="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search categories (room, apartment, house…)"
+                  placeholder={t("home.search_categories")}
                   className="w-full rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-primary placeholder:text-placeholder outline-none ring-primary-500/20 transition focus:border-primary-400 focus:ring-4"
                 />
               </div>
@@ -328,7 +335,7 @@ export default function HomePage() {
                 }}
                 className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-500 active:bg-primary-700"
               >
-                Search
+                {t("common.search")}
               </Link>
 
               <button
@@ -336,17 +343,17 @@ export default function HomePage() {
                 onClick={() => setFiltersOpen(true)}
                 className="inline-flex items-center justify-center rounded-2xl border border-border bg-bg-card px-5 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 md:hidden"
               >
-                Filters
+                {t("common.filters")}
               </button>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2 text-xs text-text-tertiary">
-              {["2bhk at bhaktapur", "1bhk at putalisadak", "4bhk at baneshwor"].map((t) => (
+              {["2bhk at bhaktapur", "1bhk at putalisadak", "4bhk at baneshwor"].map((tag) => (
                 <span
-                  key={t}
+                  key={tag}
                   className="rounded-full bg-secondary-200/60 px-3 py-1 dark:bg-secondary-700/50"
                 >
-                  {t}
+                  {tag}
                 </span>
               ))}
             </div>
@@ -354,10 +361,10 @@ export default function HomePage() {
 
           <div className="rounded-3xl border border-border bg-bg-card p-6 shadow-sm">
             <div className="text-sm font-semibold text-text-primary">
-              Why Nhyvas
+              {t("home.why_nhyvas")}
             </div>
             <div className="mt-2 text-sm text-text-secondary">
-              Handpicked listings, location-based discovery, and categories that help users find the right home faster.
+              {t("home.why_nhyvas_desc")}
             </div>
           </div>
         </section>
@@ -366,10 +373,10 @@ export default function HomePage() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold tracking-tight text-text-primary">
-                Browse categories
+                {t("home.browse_categories")}
               </h2>
               <p className="mt-1 text-sm text-text-secondary">
-                Start with what you need
+                {t("home.start_with_what_you_need")}
               </p>
             </div>
 
@@ -377,7 +384,7 @@ export default function HomePage() {
               href="/explore"
               className="text-sm font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
             >
-              View all
+              {t("common.view_all")}
             </Link>
           </div>
 
@@ -402,10 +409,10 @@ export default function HomePage() {
 
             <div className="flex gap-4">
               <Link href="/help" className="transition hover:text-text-primary">
-                Help
+                {t("common.help")}
               </Link>
               <Link href="/terms" className="transition hover:text-text-primary">
-                Terms
+                {t("common.terms")}
               </Link>
             </div>
           </div>
@@ -415,8 +422,8 @@ export default function HomePage() {
       <div className="md:hidden">
         <MobileBottomSheet
           open={filtersOpen}
-          title="Refine search"
-          description="Apply filters and browse listings"
+          title={t("explore.refine_search")}
+          description={t("explore.apply_filters_desc")}
           onClose={() => setFiltersOpen(false)}
         >
           <ExploreFiltersPanel

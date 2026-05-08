@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import Image from "next/image";
 import { Camera } from "lucide-react";
 import { useR2Upload } from "@/hooks/useR2Upload";
+import { useTranslation } from "react-i18next";
 
 interface AvatarUploadProps {
   currentAvatarUrl: string | null;
@@ -18,6 +19,7 @@ export function AvatarUpload({
   folder = "avatars",
   className = "",
 }: AvatarUploadProps) {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { uploadFile, isUploading, error } = useR2Upload({
@@ -65,7 +67,7 @@ export function AvatarUpload({
         ) : (
           <div className="flex flex-col items-center justify-center text-[var(--color-text-secondary)] group-hover:text-[var(--accent)]">
             <Camera className="mb-1 h-6 w-6" />
-            <span className="text-xs font-semibold">Upload</span>
+            <span className="text-xs font-semibold">{t("profile.form.upload_avatar", "Upload")}</span>
           </div>
         )}
         

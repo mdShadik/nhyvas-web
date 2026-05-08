@@ -11,8 +11,10 @@ import { useTheme } from "@/context/ThemeContext";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { darkLogo, lightLogo } from "../../assets";
+import { useTranslation } from "react-i18next";
 
 export default function OnboardPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { theme } = useTheme();
   const logoUrl = theme === "dark" ? darkLogo : lightLogo;
@@ -53,7 +55,7 @@ export default function OnboardPage() {
         if (metaAvatar || profile?.avatar_url) setAvatarUrl(metaAvatar || profile.avatar_url);
 
       } catch (err: any) {
-        setError("Failed to load your profile details. Please try again.");
+        setError(t("auth.profile_load_failed"));
       } finally {
         setLoading(false);
       }
@@ -65,7 +67,7 @@ export default function OnboardPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) {
-      setError("Full Name is required.");
+      setError(t("auth.fullname_required"));
       return;
     }
 
@@ -81,7 +83,7 @@ export default function OnboardPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to complete onboarding");
+        throw new Error(data.error || t("auth.onboard_failed"));
       }
 
       // Save to local storage as requested
@@ -119,10 +121,10 @@ export default function OnboardPage() {
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl sm:p-8">
           <div className="mb-2">
             <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
-              Complete Your Profile
+              {t("auth.complete_profile")}
             </h1>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              Add your details to continue to Nhyvas.
+              {t("auth.add_details")}
             </p>
           </div>
 
@@ -141,7 +143,7 @@ export default function OnboardPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-[var(--color-text-primary)]">
-                Full Name <span className="text-red-500">*</span>
+                {t("auth.full_name")} <span className="text-red-500">*</span>
               </label>
               <input
                 id="fullName"
@@ -149,14 +151,14 @@ export default function OnboardPage() {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your full name"
+                placeholder={t("auth.full_name_placeholder")}
                 className="w-full rounded-2xl border border-[var(--border)] bg-[var(--color-bg-input)] px-4 py-3.5 text-base text-[var(--color-text-primary)] placeholder-[var(--color-placeholder)] outline-none transition ring-[var(--accent)]/20 focus:border-[var(--accent)] focus:ring-4"
               />
             </div>
 
             <div>
               <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[var(--color-text-primary)]">
-                Email
+                {t("common.email")}
               </label>
               <input
                 id="email"
@@ -172,7 +174,7 @@ export default function OnboardPage() {
               disabled={submitting || !fullName.trim()}
               className="mt-6 flex w-full items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-[var(--accent)]/90 disabled:opacity-50"
             >
-              {submitting ? "Saving..." : "Continue"}
+              {submitting ? t("common.saving") : t("common.continue")}
             </button>
           </form>
         </div>

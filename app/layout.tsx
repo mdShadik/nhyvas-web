@@ -34,7 +34,7 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable, )}
     >
-      <body className={`${pageBgClass} min-h-full flex flex-col`}>
+      <body className={`${pageBgClass} min-h-screen flex flex-col`}>
         <Providers>
           <MobileTopBar />
           <NavBar />

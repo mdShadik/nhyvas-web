@@ -9,8 +9,10 @@ import { useTheme } from "@/context/ThemeContext";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { darkLogo, lightLogo } from "../../assets";
+import { useTranslation } from "react-i18next";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { theme } = useTheme();
   const logoUrl = theme === "dark" ? darkLogo : lightLogo;
@@ -38,7 +40,7 @@ export default function LoginPage() {
                 window.location.href = data.onboard ? "/onboard" : "/";
               }
             } else {
-              setError("Failed to establish server session.");
+              setError(t("auth.server_session_failed"));
               setLoading(false);
             }
           })
@@ -55,10 +57,10 @@ export default function LoginPage() {
       const search = window.location.search;
       if (hash.includes("error_description=")) {
         const params = new URLSearchParams(hash.replace("#", "?"));
-        setError(params.get("error_description")?.replace(/\+/g, " ") || "Authentication failed");
+        setError(params.get("error_description")?.replace(/\+/g, " ") || t("auth.authentication_failed"));
       } else if (search.includes("error=")) {
         const params = new URLSearchParams(search);
-        setError(params.get("error") || "Authentication failed");
+        setError(params.get("error") || t("auth.authentication_failed"));
       }
     }
 
@@ -98,10 +100,10 @@ export default function LoginPage() {
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl sm:p-8">
           <div className="mb-8 text-center">
             <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
-              Welcome back
+              {t("auth.welcome_back")}
             </h1>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              Sign in to your account to continue
+              {t("auth.sign_in_desc")}
             </p>
           </div>
 
@@ -139,18 +141,18 @@ export default function LoginPage() {
                   />
                 </svg>
               )}
-              {loading ? "Redirecting..." : "Continue with Google"}
+              {loading ? t("auth.redirecting") : t("auth.continue_with_google")}
             </button>
           </div>
 
           <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
-            By continuing, you agree to our{" "}
+            {t("auth.agree_prefix")}{" "}
             <Link href="/terms" className="font-medium text-[var(--accent)] hover:underline">
-              Terms of Service
+              {t("common.terms")}
             </Link>{" "}
-            and{" "}
+            {t("common.and")}{" "}
             <Link href="/privacy" className="font-medium text-[var(--accent)] hover:underline">
-              Privacy Policy
+              {t("common.privacy")}
             </Link>
             .
           </div>

@@ -23,7 +23,7 @@
   /* ThemeToggle requirements */
   --surface: #ffffff;
   --border: oklch(0.922 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: oklch(0.269 0 0);
   --muted: oklch(0.97 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -63,11 +63,15 @@
   --color-bg-page-base: var(--color-secondary-900);
   --color-bg-card-base: var(--color-secondary-800);
   --color-bg-modal-base: var(--color-secondary-800);
-  --color-bg-input-base: var(--color-secondary-800);
+  --color-bg-input-base: var(--color-secondary-900);
 
   --color-text-primary-base: #f8fafc;
   --color-text-secondary-base: #cbd5e1;
   --color-text-tertiary-base: #94a3b8;
+
+  --color-page-bg-from: #161d28;
+  --color-page-bg-via: #11161d;
+  --color-page-bg-to: #021329;
 
   --color-border-base: var(--color-secondary-700);
   --color-placeholder-base: var(--color-secondary-500);
@@ -77,7 +81,7 @@
   /* ThemeToggle requirements */
   --surface: var(--color-secondary-800);
   --border: oklch(1 0 0 / 10%);
-  --accent: oklch(0.269 0 0);
+  --accent: oklch(0.97 0 0);
   --muted: oklch(0.269 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -204,10 +208,6 @@
 
   --color-destructive: var(--destructive);
 
-  --color-accent-foreground: var(--accent-foreground);
-
-  --color-accent: var(--accent);
-
   --color-muted-foreground: var(--muted-foreground);
 
   --color-muted: var(--muted);
@@ -261,23 +261,23 @@
 
 /* react-modal-sheet (mobile filters) */
 .nhyvas-mobile-sheet .react-modal-sheet-backdrop.nhyvas-mobile-sheet-backdrop {
-  background: rgba(2, 6, 23, 0.55);
+  background: rgba(2, 6, 23, 0.55) !important;
 }
 
 .nhyvas-mobile-sheet .react-modal-sheet-container.nhyvas-mobile-sheet-container {
-  background: var(--surface);
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  box-shadow: 0 -12px 40px rgba(2, 6, 23, 0.18);
-  border: 1px solid var(--border);
-  border-bottom: 0;
-  overflow: hidden;
+  background: var(--surface) !important;
+  border-top-left-radius: 28px !important;
+  border-top-right-radius: 28px !important;
+  box-shadow: 0 -12px 40px rgba(2, 6, 23, 0.18) !important;
+  border: 1px solid var(--border) !important;
+  border-bottom: 0 !important;
+  overflow: hidden !important;
 }
 
 .nhyvas-mobile-sheet .react-modal-sheet-header.nhyvas-mobile-sheet-header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 10px 16px 12px;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 10px 16px 12px !important;
 }
 
 .nhyvas-mobile-sheet-drag-indicator {
@@ -296,7 +296,7 @@
 }
 
 .nhyvas-mobile-sheet .react-modal-sheet-content.nhyvas-mobile-sheet-content {
-  background: var(--surface);
+  background: var(--surface) !important;
 }
 
 .nhyvas-mobile-sheet .react-modal-sheet-content-scroller {

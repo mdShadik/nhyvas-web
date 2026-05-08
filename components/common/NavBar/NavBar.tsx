@@ -23,8 +23,8 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { darkLogo, lightLogo, logoAnimation } from "@/assets";
 import { LanguageToggle } from "../LanguageToggle";
 import { useTranslation } from "react-i18next";
-
-const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
+import { useAuth } from "@/context/AuthContext";
+import { motion } from "framer-motion";
 
 const BRAND_ANIMATION_KEY = "nhyvas-navbar-logo-played";
 const BRAND_ANIMATION_DURATION = 2200;
@@ -121,7 +121,7 @@ function MainNavLink({
             className={[
                 "inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-medium transition-all duration-200",
                 active
-                    ? "bg-[var(--accent)]/12 text-[var(--accent)] shadow-sm"
+                    ? "bg-[var(--color-primary-400)]/12 text-[var(--color-primary-400)] shadow-sm"
                     : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-input)] hover:text-[var(--color-text-primary)]",
             ].join(" ")}
         >
@@ -151,7 +151,7 @@ function IconAction({
             className={[
                 "flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200",
                 active
-                    ? "border-[var(--accent)]/20 bg-[var(--accent)]/12 text-[var(--accent)]"
+                    ? "border-[var(--color-primary-400)]/20 bg-[var(--color-primary-400)]/12 text-[var(--color-primary-400)]"
                     : "border-transparent text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:bg-[var(--color-bg-input)] hover:text-[var(--color-text-primary)]",
                 className,
             ].join(" ")}
@@ -164,29 +164,12 @@ function IconAction({
 export function NavBar() {
     const { t } = useTranslation();
     const pathname = usePathname();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const { isAuthenticated, isLoading } = useAuth();
     const [playTrigger, setPlayTrigger] = useState(0);
 
     const handleHomeClick = () => {
         setPlayTrigger((prev) => prev + 1);
     };
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setIsAuthenticated(!!session);
-            setIsLoading(false);
-        });
-
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setIsAuthenticated(!!session);
-            setIsLoading(false);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
 
     const navLinks = useMemo(
         () => [
@@ -201,15 +184,15 @@ export function NavBar() {
             {/* Desktop Top Nav */}
             <header className="hidden md:block sticky top-0 z-50 px-3 pt-3 sm:px-4 sm:pt-4">
                 <div className="mx-auto max-w-7xl">
-                    <div className="relative overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-[var(--color-bg-card)]/90 shadow-[0_12px_36px_-18px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-colors dark:shadow-[0_16px_40px_-20px_rgba(0,0,0,0.6)]">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent" />
-                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--accent)]/5 via-transparent to-[var(--color-tertiary-500)]/5" />
+                    <div className="relative overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-[var(--color-page-bg-from)] shadow-[0_12px_36px_-18px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-colors dark:shadow-[0_16px_40px_-20px_rgba(0,0,0,0.6)]">
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-primary-400)]/30 to-transparent" />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--color-primary-400)]/5 via-transparent to-[var(--color-tertiary-500)]/5" />
 
                         <div className="relative flex h-16 items-center justify-between gap-3 px-3 sm:h-[72px] sm:px-4">
                             <div className="flex min-w-0 items-center gap-3">
                                 <Link
                                     href="/"
-                                    className="flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30"
+                                    className="flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)]/30"
                                     aria-label="Go to homepage"
                                     onClick={handleHomeClick}
                                 >
@@ -231,13 +214,13 @@ export function NavBar() {
                             </div>
 
                             <div className="flex items-center gap-1 sm:gap-2">
-                                <IconAction
+                                {/* <IconAction
                                     href="/explore"
                                     label={t("tabs.explore")}
                                     active={isRouteActive(pathname, "/explore")}
                                 >
                                     <Search className="h-4.5 w-4.5" />
-                                </IconAction>
+                                </IconAction> */}
 
                                 <div className="hidden flex! flex-row gap-1 sm:block">
                                     <ThemeToggle />
@@ -284,8 +267,8 @@ export function NavBar() {
                                             className={[
                                                 "flex h-10 items-center gap-2 rounded-full border px-1 pr-3 transition-all duration-200",
                                                 isRouteActive(pathname, "/profile")
-                                                    ? "border-[var(--accent)]/20 bg-[var(--accent)]/10 text-[var(--accent)]"
-                                                    : "border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-text-secondary)] hover:border-[var(--accent)]/20 hover:text-[var(--color-text-primary)]",
+                                                    ? "border-[var(--color-primary-400)]/20 bg-[var(--color-primary-400)]/10 text-[var(--color-primary-400)]"
+                                                    : "border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary-400)]/20 hover:text-[var(--color-text-primary)]",
                                             ].join(" ")}
                                         >
                                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-bg-card)]">
@@ -297,7 +280,7 @@ export function NavBar() {
                                 ) : (
                                     <Link
                                         href="/login"
-                                        className="ml-1 rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
+                                        className="ml-1 rounded-full bg-[var(--color-primary-400)] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
                                     >
                                         {t("common.login")}
                                     </Link>
@@ -309,52 +292,40 @@ export function NavBar() {
             </header>
 
             {/* Mobile Bottom Nav */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-card px-4 pb-safe pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                <div className="flex items-center justify-between">
-                    <Link
-                        href="/explore"
-                        className={`flex flex-col items-center justify-center p-2 ${isRouteActive(pathname, "/explore") ? "text-accent" : "text-text-secondary"}`}
-                    >
-                        <Building2 className="h-6 w-6" />
-                    </Link>
-                    <Link
-                        href="/"
-                        className={`flex flex-col items-center justify-center p-2 ${isRouteActive(pathname, "/") ? "text-accent" : "text-text-secondary"}`}
-                        onClick={handleHomeClick}
-                    >
-                        <Home className="h-6 w-6" />
-                    </Link>
-                    {isAuthenticated ? (
-                        <>
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-bg-card)]/90 px-4 pb-safe pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+                <div className="flex h-14 items-center justify-around">
+                    {[
+                        { href: "/explore", icon: <Building2 className="h-6 w-6" />, id: "explore" },
+                        { href: "/", icon: <Home className="h-6 w-6" />, onClick: handleHomeClick, id: "home" },
+                        ...(isAuthenticated ? [
+                            { href: "/shortlisted", icon: <Heart className="h-6 w-6" />, id: "shortlisted" },
+                            { href: "/chat", icon: <MessageCircle className="h-6 w-6" />, id: "chat" },
+                            { href: "/profile", icon: <User className="h-6 w-6" />, id: "profile" }
+                        ] : [
+                            { href: "/login", icon: <User className="h-6 w-6" />, id: "login" }
+                        ])
+                    ].map((item) => {
+                        const active = isRouteActive(pathname, item.href);
+                        return (
                             <Link
-                                href="/shortlisted"
-                                className={`flex flex-col items-center justify-center p-2 ${isRouteActive(pathname, "/shortlisted") ? "text-accent" : "text-text-secondary"}`}
+                                key={item.id}
+                                href={item.href}
+                                onClick={item.onClick}
+                                className="relative flex h-12 w-12 items-center justify-center"
                             >
-                                <Heart className="h-6 w-6" />
+                                {active && (
+                                    <motion.div
+                                        layoutId="mobile-nav-pill"
+                                        className="absolute inset-0 rounded-full bg-[var(--color-primary-400)]/15"
+                                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                                    />
+                                )}
+                                <div className={`relative z-10 transition-colors duration-200 ${active ? "text-[var(--color-primary-400)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}>
+                                    {item.icon}
+                                </div>
                             </Link>
-                            <Link
-                                href="/chat"
-                                className={`flex flex-col items-center justify-center p-2 ${isRouteActive(pathname, "/chat") ? "text-accent" : "text-text-secondary"}`}
-                            >
-                                <MessageCircle className="h-6 w-6" />
-                            </Link>
-                        </>
-                    ) : (
-                        <Link
-                            href="/login"
-                            className="flex flex-col items-center justify-center p-2 text-text-secondary"
-                        >
-                            <User className="h-6 w-6" />
-                        </Link>
-                    )}
-                    {isAuthenticated && (
-                        <Link
-                            href="/profile"
-                            className={`flex flex-col items-center justify-center p-2 ${isRouteActive(pathname, "/profile") ? "text-accent" : "text-text-secondary"}`}
-                        >
-                            <User className="h-6 w-6" />
-                        </Link>
-                    )}
+                        );
+                    })}
                 </div>
             </div>
         </>
