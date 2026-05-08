@@ -12,7 +12,8 @@
   "common": {
     "yes": "Yes",
     "no": "No",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "login": "Login"
   },
   "property": {
     "details": {

@@ -12,7 +12,8 @@
   "common": {
     "yes": "अवश्य",
     "no": "छैन",
-    "cancel": "रद्द गर्नुहोस्"
+    "cancel": "रद्द गर्नुहोस्",
+    "login": "लगइन"
   },
   "property": {
     "details": {

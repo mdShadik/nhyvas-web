@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
-import darkLogo from "@/public/assets/images/logo-horizontal-d.png";
-import lightLogo from "@/public/assets/images/logo-horizontal-l.png";
 import { useTheme } from "@/context/ThemeContext";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
+import { darkLogo, lightLogo } from "../../assets";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,7 +71,7 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -94,12 +93,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
-      <header className="flex items-center justify-between p-4 sm:p-6">
-        <Link href="/" className="flex items-center gap-2">
-          <Image src={logoUrl.src} alt="Nhyvas" width={120} height={60} />
-        </Link>
-        <ThemeToggle />
-      </header>
 
       <main className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl sm:p-8">
@@ -149,7 +142,7 @@ export default function LoginPage() {
               {loading ? "Redirecting..." : "Continue with Google"}
             </button>
           </div>
-          
+
           <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
             By continuing, you agree to our{" "}
             <Link href="/terms" className="font-medium text-[var(--accent)] hover:underline">

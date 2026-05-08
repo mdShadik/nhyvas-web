@@ -6,12 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { AvatarUpload } from "@/components/common/AvatarUpload";
-import darkLogo from "@/public/assets/images/logo-horizontal-d.png";
-import lightLogo from "@/public/assets/images/logo-horizontal-l.png";
 import { useTheme } from "@/context/ThemeContext";
 
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
+import { darkLogo, lightLogo } from "../../assets";
 
 export default function OnboardPage() {
   const router = useRouter();
@@ -52,7 +51,7 @@ export default function OnboardPage() {
         if (metaFullName || profile?.full_name) setFullName(metaFullName || profile.full_name);
         if (metaEmail || profile?.email) setEmail(metaEmail || profile.email);
         if (metaAvatar || profile?.avatar_url) setAvatarUrl(metaAvatar || profile.avatar_url);
-        
+
       } catch (err: any) {
         setError("Failed to load your profile details. Please try again.");
       } finally {

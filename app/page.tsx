@@ -2,33 +2,37 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { exploreService } from "@/services/apiService";
-import noImagePlaceholder from "@/public/assets/images/noImagePlaceholder.png";
+import { noImagePlaceholder } from "../assets";
+import { pageBgClass } from "@/constant";
+import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
+import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
+import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 
 type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
 
 export function formatPrice(amount: number, currencyCode: string) {
   try {
-    const currency = (currencyCode || "NPR").toUpperCase();
+    const currency = (currencyCode || "Rs").toUpperCase();
     return new Intl.NumberFormat(undefined, {
       style: "currency",
-      currency,
+      currency: currency === "NPR" ? "Rs" : currency,
       maximumFractionDigits: 0,
     }).format(amount);
   } catch {
-    return `${amount} ${currencyCode || "NPR"}`;
+    return `${amount} ${currencyCode || "Rs"}`;
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Category Card                                                      */
-/* ------------------------------------------------------------------ */
 function CategoryCard({ category }: { category: Category }) {
   const name = (category.name || category.code || "Category").trim();
+
   return (
     <Link
       href={{
@@ -44,80 +48,14 @@ function CategoryCard({ category }: { category: Category }) {
             {category.description || "Explore listings near you"}
           </div>
         </div>
+
         <div className="shrink-0 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 transition group-hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-300 dark:group-hover:bg-primary-900/60">
           View
         </div>
       </div>
-      {/* decorative blob */}
+
       <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-primary-400/10 blur-2xl dark:bg-primary-400/15" />
     </Link>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Hero Listing Card                                                  */
-/* ------------------------------------------------------------------ */
-function HeroListingCard({ listing }: { listing: HeroListing }) {
-  return (
-    <Link
-      href={{ pathname: "/property", query: { id: listing.id } }}
-      className="group flex min-w-[280px] max-w-[320px] flex-col overflow-hidden rounded-2xl border border-border bg-bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-    >
-      {/* thumbnail */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-secondary-100 dark:bg-secondary-500">
-        {listing.thumbnail_url ? (
-          <Image
-            alt={listing.property_title}
-            src={listing.thumbnail_url}
-            fill
-            className="object-cover transition duration-300 group-hover:scale-[1.03]"
-            sizes="(max-width: 768px) 90vw, 320px"
-          />
-        ) : (
-          <Image
-            alt={listing.property_title}
-            src={noImagePlaceholder}
-            fill
-            className="object-cover transition duration-300 group-hover:scale-[1.03]"
-            sizes="(max-width: 768px) 90vw, 320px"
-          />
-        )}
-        {listing.is_featured && (
-          <div className="absolute left-3 top-3 rounded-full bg-primary-600/90 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm dark:bg-primary-500/80">
-            Featured
-          </div>
-        )}
-      </div>
-
-      {/* meta */}
-      <div className="flex flex-1 flex-col gap-1 p-4">
-        <div className="truncate text-sm font-semibold text-text-primary">
-          {listing.property_title}
-        </div>
-        <div className="truncate text-sm text-text-secondary">
-          {listing.location_text}
-        </div>
-        <div className="mt-2 text-base font-semibold text-accent">
-          {formatPrice(listing.price, listing.currency_code)}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Skeleton helpers                                                   */
-/* ------------------------------------------------------------------ */
-function HeroSkeleton() {
-  return (
-    <div className="min-w-[280px] max-w-[320px] animate-pulse overflow-hidden rounded-2xl border border-border bg-secondary-100 dark:bg-secondary-800">
-      <div className="aspect-[16/10] w-full bg-secondary-200/70 dark:bg-secondary-700/50" />
-      <div className="space-y-2 p-4">
-        <div className="h-4 w-3/4 rounded bg-secondary-200/70 dark:bg-secondary-700/50" />
-        <div className="h-4 w-1/2 rounded bg-secondary-200/70 dark:bg-secondary-700/50" />
-        <div className="h-5 w-2/3 rounded bg-secondary-200/70 dark:bg-secondary-700/50" />
-      </div>
-    </div>
   );
 }
 
@@ -127,11 +65,199 @@ function CategorySkeleton() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
+function HeroBannerSkeleton() {
+  return (
+    <div className="animate-pulse overflow-hidden rounded-[28px] border border-border bg-secondary-100 dark:bg-secondary-800">
+      <div className="h-[380px] w-full bg-secondary-200/70 dark:bg-secondary-700/50 sm:h-[440px]" />
+    </div>
+  );
+}
+
+function HeroBanner({ listings }: { listings: HeroListing[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused || listings.length <= 1) return;
+
+    const timer = setInterval(() => {
+      if (currentIndex < listings.length - 1) {
+        setDirection(1);
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        setDirection(-1);
+        setCurrentIndex(0);
+      }
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [currentIndex, isPaused, listings.length]);
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? "100%" : "-100%",
+      opacity: 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? "100%" : "-100%",
+      opacity: 0,
+    }),
+  };
+
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset: number, velocity: number) => {
+    return Math.abs(offset) * velocity;
+  };
+
+  const paginate = (newDirection: number) => {
+    if (newDirection === 1 && currentIndex === listings.length - 1) return;
+    if (newDirection === -1 && currentIndex === 0) return;
+    setDirection(newDirection);
+    setCurrentIndex((prev) => prev + newDirection);
+  };
+
+  if (!listings.length) return null;
+
+  const listing = listings[currentIndex];
+
+  return (
+    <div
+      className="group relative min-h-[380px] overflow-hidden rounded-[28px] border border-border shadow-sm sm:min-h-[440px] bg-secondary-100 dark:bg-secondary-800"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      // Add touch handlers for mobile to pause slider
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
+      <AnimatePresence initial={false} custom={direction}>
+        <motion.div
+          key={currentIndex}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            x: { type: "spring", stiffness: 300, damping: 30 },
+            opacity: { duration: 0.2 },
+          }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={1}
+          onDragEnd={(e, { offset, velocity }) => {
+            const swipe = swipePower(offset.x, velocity.x);
+
+            if (swipe < -swipeConfidenceThreshold) {
+              paginate(1);
+            } else if (swipe > swipeConfidenceThreshold) {
+              paginate(-1);
+            }
+          }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={listing.thumbnail_url || noImagePlaceholder}
+            alt={listing.property_title}
+            fill
+            priority
+            className="object-cover pointer-events-none"
+            sizes="100vw"
+          />
+
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+
+          <div className="relative z-10 flex h-full flex-col justify-between p-3 sm:p-10 pointer-events-none">
+            <div className="rounded-full w-fit bg-primary-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
+              Featured Property
+            </div>
+
+            <div className="max-w-2xl mt-auto">
+              <p className="mb-3 text-sm font-medium text-white/80">
+                Prime listing in Nepal
+              </p>
+
+              <h1 className="text-3xl font-semibold leading-tight text-white sm:text-5xl">
+                {listing.property_title}
+              </h1>
+
+              <p className="mt-3 text-sm text-white/80 sm:text-base">
+                {listing.location_text}
+              </p>
+
+              <div className="mt-5 text-2xl font-bold text-white sm:text-3xl">
+                {formatPrice(listing.price, listing.currency_code)}
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href={{ pathname: "/property", query: { id: listing.id } }}
+                  className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-500 active:bg-primary-700 pointer-events-auto cursor-pointer"
+                >
+                  View property
+                </Link>
+
+                <Link
+                  href="/explore"
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15 pointer-events-auto cursor-pointer"
+                >
+                  Browse all listings
+                </Link>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {currentIndex > 0 && (
+        <button
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition hover:bg-black/50 opacity-0 group-hover:opacity-100"
+          onClick={() => paginate(-1)}
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
+
+      {currentIndex < listings.length - 1 && (
+        <button
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition hover:bg-black/50 opacity-0 group-hover:opacity-100"
+          onClick={() => paginate(1)}
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
+
+      {listings.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {listings.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                setDirection(idx > currentIndex ? 1 : -1);
+                setCurrentIndex(idx);
+              }}
+              className={`h-2 rounded-full transition-all ${idx === currentIndex ? "w-6 bg-primary-500" : "w-2 bg-white/50 hover:bg-white/80"
+                }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HomePage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
 
   const categoriesQuery = useQuery({
     queryKey: ["home", "categories"],
@@ -145,31 +271,42 @@ export default function HomePage() {
 
   const categories = categoriesQuery.data ?? [];
   const heroListings = heroQuery.data ?? [];
+  const featuredListing = heroListings[0];
 
   const filteredCategories = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return categories;
+
     return categories.filter((c) =>
       `${c.code ?? ""} ${c.name ?? ""}`.toLowerCase().includes(q)
     );
   }, [categories, search]);
 
   return (
-    <main className="flex-1 bg-gradient-to-br from-secondary-50 via-white to-primary-50 text-text-primary dark:from-secondary-900 dark:via-secondary-900 dark:to-secondary-800">
+    <main className={`flex-1`}>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        {/* ---- Hero ------------------------------------------------ */}
-        <section className="mt-10 grid gap-8 lg:grid-cols-2 lg:items-center">
-          {/* left column */}
+        <section className="mt-10">
+          {heroQuery.isLoading ? (
+            <HeroBannerSkeleton />
+          ) : heroListings.length > 0 ? (
+            <HeroBanner listings={heroListings} />
+          ) : (
+            <div className="rounded-[28px] border border-border bg-bg-card p-8 text-sm text-text-secondary shadow-sm">
+              No featured listings yet.
+            </div>
+          )}
+        </section>
+
+        <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
               Find your next place in Nepal
-            </h1>
+            </h2>
+
             <p className="mt-3 max-w-prose text-base text-text-secondary">
-              Browse verified listings, explore by category, and discover homes
-              near you.
+              Browse verified listings, explore by category, and discover homes near you.
             </p>
 
-            {/* search row */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex-1">
                 <label className="sr-only" htmlFor="search">
@@ -183,6 +320,7 @@ export default function HomePage() {
                   className="w-full rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-primary placeholder:text-placeholder outline-none ring-primary-500/20 transition focus:border-primary-400 focus:ring-4"
                 />
               </div>
+
               <Link
                 href={{
                   pathname: "/explore",
@@ -192,11 +330,18 @@ export default function HomePage() {
               >
                 Search
               </Link>
+
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                className="inline-flex items-center justify-center rounded-2xl border border-border bg-bg-card px-5 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 md:hidden"
+              >
+                Filters
+              </button>
             </div>
 
-            {/* tech badges */}
             <div className="mt-6 flex flex-wrap gap-2 text-xs text-text-tertiary">
-              {["Next.js", "API routes", "Supabase server-only"].map((t) => (
+              {["2bhk at bhaktapur", "1bhk at putalisadak", "4bhk at baneshwor"].map((t) => (
                 <span
                   key={t}
                   className="rounded-full bg-secondary-200/60 px-3 py-1 dark:bg-secondary-700/50"
@@ -207,38 +352,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* right column – featured carousel card */}
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-bg-card p-6 shadow-sm">
+          <div className="rounded-3xl border border-border bg-bg-card p-6 shadow-sm">
             <div className="text-sm font-semibold text-text-primary">
-              Featured
+              Why Nhyvas
             </div>
-            <div className="mt-1 text-sm text-text-secondary">
-              Fresh picks curated for you
+            <div className="mt-2 text-sm text-text-secondary">
+              Handpicked listings, location-based discovery, and categories that help users find the right home faster.
             </div>
-
-            <div className="mt-5 flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {heroQuery.isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <HeroSkeleton key={i} />
-                ))
-              ) : heroListings.length ? (
-                heroListings.map((l) => (
-                  <HeroListingCard key={l.id} listing={l} />
-                ))
-              ) : (
-                <div className="text-sm text-text-secondary">
-                  No featured listings yet.
-                </div>
-              )}
-            </div>
-
-            {/* decorative blobs */}
-            <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary-400/10 blur-3xl dark:bg-primary-400/15" />
-            <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-tertiary-400/10 blur-3xl dark:bg-tertiary-400/15" />
           </div>
         </section>
 
-        {/* ---- Categories ------------------------------------------ */}
         <section className="mt-12">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -249,6 +372,7 @@ export default function HomePage() {
                 Start with what you need
               </p>
             </div>
+
             <Link
               href="/explore"
               className="text-sm font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
@@ -259,9 +383,7 @@ export default function HomePage() {
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {categoriesQuery.isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <CategorySkeleton key={i} />
-              ))
+              Array.from({ length: 6 }).map((_, i) => <CategorySkeleton key={i} />)
             ) : filteredCategories.length ? (
               filteredCategories.map((c) => (
                 <CategoryCard key={c.id} category={c} />
@@ -274,26 +396,47 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Footer ---------------------------------------------- */}
         <footer className="mt-14 border-t border-border pt-8 text-sm text-text-tertiary">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>© {new Date().getFullYear()} Nhyvas</div>
+
             <div className="flex gap-4">
-              <Link
-                href="/help"
-                className="transition hover:text-text-primary"
-              >
+              <Link href="/help" className="transition hover:text-text-primary">
                 Help
               </Link>
-              <Link
-                href="/terms"
-                className="transition hover:text-text-primary"
-              >
+              <Link href="/terms" className="transition hover:text-text-primary">
                 Terms
               </Link>
             </div>
           </div>
         </footer>
+      </div>
+
+      <div className="md:hidden">
+        <MobileBottomSheet
+          open={filtersOpen}
+          title="Refine search"
+          description="Apply filters and browse listings"
+          onClose={() => setFiltersOpen(false)}
+        >
+          <ExploreFiltersPanel
+            value={draftFilters}
+            onChange={setDraftFilters}
+            onApply={() => {
+              const query: Record<string, string> = {};
+              if (draftFilters.categoryCode) query.category = draftFilters.categoryCode;
+              if (draftFilters.subcategoryId) query.subcategoryId = draftFilters.subcategoryId;
+              if (draftFilters.minPrice.trim()) query.minPrice = draftFilters.minPrice.trim();
+              if (draftFilters.maxPrice.trim()) query.maxPrice = draftFilters.maxPrice.trim();
+              if (draftFilters.amenityNames.length) query.amenities = draftFilters.amenityNames.join(",");
+              if (draftFilters.locationNode) query.location = JSON.stringify(draftFilters.locationNode);
+              const params = new URLSearchParams(query).toString();
+              router.push(params ? `/explore?${params}` : "/explore");
+              setFiltersOpen(false);
+            }}
+            onReset={(reset) => setDraftFilters(reset)}
+          />
+        </MobileBottomSheet>
       </div>
     </main>
   );
