@@ -24,10 +24,10 @@ export function ListingCard({ listing }: { listing: ExploreListing }) {
       href={{ pathname: "/property", query: { id: listing.id } }}
       className="group block"
     >
-      <article className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-page-bg-from)] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:shadow-none">
+      <article className="overflow-hidden rounded-2xl border border-border bg-page-bg-from shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:shadow-none">
         <div className="flex flex-col lg:flex-row">
           {/* Image */}
-          <div className="relative h-56 w-full dark:bg-secondary-500 shrink-0 lg:h-auto lg:w-[320px] lg:w-[360px]">
+          <div className="relative h-56 w-full dark:bg-secondary-500 shrink-0 lg:h-auto lg md:w-[320px] lg:w-90">
             <Image
               alt={listing.property_title}
               src={thumbnailUrl}
@@ -46,7 +46,7 @@ export function ListingCard({ listing }: { listing: ExploreListing }) {
             </div>
 
             {listing.is_featured && (
-              <div className="absolute left-3 bottom-3 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-sm">
+              <div className="absolute left-3 bottom-3 rounded-full bg-(--accent) px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-sm">
                 {t("explore.featured")}
               </div>
             )}
@@ -65,41 +65,41 @@ export function ListingCard({ listing }: { listing: ExploreListing }) {
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="line-clamp-1 text-base font-bold text-[var(--color-text-primary)] sm:text-lg">
+                  <h3 className="line-clamp-1 text-base font-bold text-text-primary sm:text-lg">
                     {listing.property_title}
                   </h3>
 
-                  <div className="mt-1 flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]">
-                    <MapPin className="h-4 w-4 shrink-0 text-[var(--color-accent)]" />
+                  <div className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
+                    <MapPin className="h-4 w-4 shrink-0 text-accent" />
                     <span className="line-clamp-1">{listing.location_text}</span>
                   </div>
                 </div>
 
-                <div className="shrink-0 rounded-full bg-[color:color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-3 py-1 text-xs font-medium text-[var(--color-accent)]">
+                <div className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-3 py-1 text-xs font-medium text-accent">
                   {tPropertyCategory(listing.property_category)}
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-text-tertiary">
                 {listing.subcategory && (
-                  <span className="rounded-full bg-[var(--color-secondary-100)] px-2.5 py-1 dark:bg-[var(--color-secondary-700)]">
+                  <span className="rounded-full bg-secondary-100 px-2.5 py-1 dark:bg-secondary-700">
                     {tPropertySubcategory(listing.subcategory)}
                   </span>
                 )}
               </div>
             </div>
 
-            <div className="mt-5 flex items-end justify-between gap-4 border-t border-[var(--color-border)] pt-4">
+            <div className="mt-5 flex items-end justify-between gap-4 border-t border-border pt-4">
               <div>
-                <p className="text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                <p className="text-xs uppercase tracking-wide text-text-tertiary">
                   {t("explore.price_label")}
                 </p>
-                <div className="text-xl font-extrabold text-[var(--color-accent)]">
+                <div className="text-xl font-extrabold text-accent">
                   {formatPrice(listing.price, listing.currency_code)}
                 </div>
               </div>
 
-              <div className="rounded-xl bg-[var(--color-secondary-100)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition group-hover:bg-[var(--color-primary-100)] dark:bg-[var(--color-secondary-700)] dark:group-hover:bg-[var(--color-secondary-600)]">
+              <div className="rounded-xl bg-secondary-100 px-4 py-2 text-sm font-medium text-text-primary transition group-hover:bg-primary-100 dark:bg-secondary-700 dark:group-hover:bg-secondary-600">
                 {t("explore.view_details")}
               </div>
             </div>
@@ -240,8 +240,8 @@ export default function ExplorePage() {
         <div className="flex-1 flex flex-col">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">{t("explore.title")}</h1>
-              <p className="mt-1 text-[var(--color-text-secondary)]">
+              <h1 className="text-3xl font-bold text-text-primary">{t("explore.title")}</h1>
+              <p className="mt-1 text-text-secondary">
                 {t("explore.subtitle", { count: listings.length })}
               </p>
             </div>
@@ -251,9 +251,9 @@ export default function ExplorePage() {
                 setDraftFilters(filters);
                 setFiltersOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--color-text-primary)] shadow-sm transition hover:bg-[var(--surface)]/80 md:hidden"
+              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-(--surface) px-4 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-(--surface)/80 md:hidden"
             >
-              <SlidersHorizontal className="h-4 w-4 text-[var(--color-accent)]" />
+              <SlidersHorizontal className="h-4 w-4 text-accent" />
               {t("common.filters")}
             </button>
           </div>
@@ -261,7 +261,7 @@ export default function ExplorePage() {
           {loading ? (
             <div className="flex flex-col gap-6">
               {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div key={n} className="h-[340px] md:h-[300px] lg:h-[200px] rounded-2xl bg-[var(--border)]/50 animate-pulse" />
+                <div key={n} className="h-85 md:h-75 lg:h-50 rounded-2xl bg-(--border)/50 animate-pulse" />
               ))}
             </div>
           ) : listings.length > 0 ? (
@@ -271,10 +271,10 @@ export default function ExplorePage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--card-bg)] p-12 text-center">
-              <Search className="mb-4 h-12 w-12 text-[var(--muted)]" />
-              <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t("explore.no_properties")}</h3>
-              <p className="mt-2 max-w-sm text-[var(--color-text-secondary)]">
+            <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-(--card-bg) p-12 text-center">
+              <Search className="mb-4 h-12 w-12 text-muted" />
+              <h3 className="text-lg font-semibold text-text-primary">{t("explore.no_properties")}</h3>
+              <p className="mt-2 max-w-sm text-text-secondary">
                 {t("explore.no_properties_desc")}
               </p>
             </div>
@@ -283,7 +283,7 @@ export default function ExplorePage() {
 
         {/* Right Sidebar - Filters */}
         <aside className="max-w-100 mt-21 shrink-0 hidden md:block">
-          <div className="sticky top-6 rounded-3xl border border-[var(--border)] bg-[var(--color-page-bg-from)] p-6 shadow-sm">
+          <div className="sticky top-6 rounded-3xl border border-border bg-page-bg-from p-6 shadow-sm">
             {/* <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-3">{t("common.filters")}</h2> */}
             <ExploreFiltersPanel
               value={draftFilters}

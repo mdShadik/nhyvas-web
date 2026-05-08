@@ -102,14 +102,14 @@ export default function OnboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--accent) border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+    <div className="flex min-h-screen flex-col bg-linear-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
       <header className="flex items-center justify-between p-4 sm:p-6">
         <Link href="/" className="flex items-center gap-2">
           <Image src={logoUrl.src} alt="Nhyvas" width={120} height={60} />
@@ -118,12 +118,12 @@ export default function OnboardPage() {
       </header>
 
       <main className="flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl sm:p-8">
+        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-(--surface) p-6 shadow-xl sm:p-8">
           <div className="mb-2">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
+            <h1 className="text-2xl font-bold tracking-tight text-text-primary">
               {t("auth.complete_profile")}
             </h1>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-2 text-sm text-text-secondary">
               {t("auth.add_details")}
             </p>
           </div>
@@ -142,7 +142,7 @@ export default function OnboardPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-[var(--color-text-primary)]">
+              <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-text-primary">
                 {t("auth.full_name")} <span className="text-red-500">*</span>
               </label>
               <input
@@ -152,12 +152,12 @@ export default function OnboardPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder={t("auth.full_name_placeholder")}
-                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--color-bg-input)] px-4 py-3.5 text-base text-[var(--color-text-primary)] placeholder-[var(--color-placeholder)] outline-none transition ring-[var(--accent)]/20 focus:border-[var(--accent)] focus:ring-4"
+                className="w-full rounded-2xl border border-border bg-bg-input px-4 py-3.5 text-base text-text-primary placeholder-placeholder outline-none transition ring-(--accent)/20 focus:border-(--accent) focus:ring-4"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[var(--color-text-primary)]">
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-text-primary">
                 {t("common.email")}
               </label>
               <input
@@ -165,14 +165,14 @@ export default function OnboardPage() {
                 type="email"
                 value={email}
                 disabled
-                className="w-full cursor-not-allowed rounded-2xl border border-[var(--border)] bg-[var(--border)]/30 px-4 py-3.5 text-base text-[var(--color-text-secondary)] outline-none"
+                className="w-full cursor-not-allowed rounded-2xl border border-border bg-border/30 px-4 py-3.5 text-base text-text-secondary outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting || !fullName.trim()}
-              className="mt-6 flex w-full items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-[var(--accent)]/90 disabled:opacity-50"
+              className="mt-6 flex w-full items-center justify-center rounded-2xl bg-(--accent) px-4 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-(--accent)/90 disabled:opacity-50"
             >
               {submitting ? t("common.saving") : t("common.continue")}
             </button>

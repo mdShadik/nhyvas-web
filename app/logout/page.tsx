@@ -25,10 +25,10 @@ export default function LogoutPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--surface)]">
+    <div className="flex min-h-screen items-center justify-center bg-(--surface)">
       <div className="flex flex-col items-center gap-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent" />
-        <p className="text-[var(--color-text-secondary)]">{t("auth.logging_out")}</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--accent) border-t-transparent" />
+        <p className="text-text-secondary">{t("auth.logging_out")}</p>
       </div>
     </div>
   );

@@ -49,7 +49,7 @@ export function AvatarUpload({
     <div className={`flex flex-col items-center justify-center ${className}`}>
       <label
         htmlFor="avatarUploadInput"
-        className="group relative flex h-28 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[var(--border)] bg-[var(--color-bg-input)] transition hover:border-[var(--accent)]"
+        className="group relative flex h-28 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-bg-input transition hover:border-(--accent)"
       >
         {currentAvatarUrl ? (
           <>
@@ -65,15 +65,15 @@ export function AvatarUpload({
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center text-[var(--color-text-secondary)] group-hover:text-[var(--accent)]">
+          <div className="flex flex-col items-center justify-center text-text-secondary group-hover:text-(--accent)">
             <Camera className="mb-1 h-6 w-6" />
             <span className="text-xs font-semibold">{t("profile.form.upload_avatar", "Upload")}</span>
           </div>
         )}
         
         {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface)]/80 backdrop-blur-sm">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
+          <div className="absolute inset-0 flex items-center justify-center bg-(--surface)/80 backdrop-blur-sm">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-(--accent) border-t-transparent" />
           </div>
         )}
       </label>

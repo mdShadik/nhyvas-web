@@ -94,15 +94,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+    <div className="flex min-h-screen flex-col bg-linear-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
 
       <main className="flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl sm:p-8">
+        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-(--surface) p-6 shadow-xl sm:p-8">
           <div className="mb-8 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
+            <h1 className="text-2xl font-bold tracking-tight text-text-primary">
               {t("auth.welcome_back")}
             </h1>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-2 text-sm text-text-secondary">
               {t("auth.sign_in_desc")}
             </p>
           </div>
@@ -117,7 +117,7 @@ export default function LoginPage() {
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 text-base font-medium text-[var(--color-text-primary)] shadow-sm transition hover:bg-zinc-50 disabled:opacity-50 dark:hover:bg-zinc-800/50"
+              className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-(--surface) px-4 py-3.5 text-base font-medium text-text-primary shadow-sm transition hover:bg-zinc-50 disabled:opacity-50 dark:hover:bg-zinc-800/50"
             >
               {loading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -145,13 +145,13 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
+          <div className="mt-8 text-center text-sm text-text-secondary">
             {t("auth.agree_prefix")}{" "}
-            <Link href="/terms" className="font-medium text-[var(--accent)] hover:underline">
+            <Link href="/terms" className="font-medium text-(--accent) hover:underline">
               {t("common.terms")}
             </Link>{" "}
             {t("common.and")}{" "}
-            <Link href="/privacy" className="font-medium text-[var(--accent)] hover:underline">
+            <Link href="/privacy" className="font-medium text-(--accent) hover:underline">
               {t("common.privacy")}
             </Link>
             .

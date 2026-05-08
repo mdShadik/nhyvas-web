@@ -66,14 +66,14 @@ function CategoryCard({ category }: { category: Category }) {
 
 function CategorySkeleton() {
   return (
-    <div className="h-[92px] animate-pulse rounded-2xl border border-border bg-secondary-100 dark:bg-secondary-800" />
+    <div className="h-23 animate-pulse rounded-2xl border border-border bg-secondary-100 dark:bg-secondary-800" />
   );
 }
 
 function HeroBannerSkeleton() {
   return (
     <div className="animate-pulse overflow-hidden rounded-[28px] border border-border bg-secondary-100 dark:bg-secondary-800">
-      <div className="h-[380px] w-full bg-secondary-200/70 dark:bg-secondary-700/50 sm:h-[440px]" />
+      <div className="h-95 w-full bg-secondary-200/70 dark:bg-secondary-700/50 sm:h-110" />
     </div>
   );
 }
@@ -135,7 +135,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
 
   return (
     <div
-      className="group relative min-h-[380px] overflow-hidden rounded-[28px] border border-border shadow-sm sm:min-h-[440px] bg-secondary-100 dark:bg-secondary-800"
+      className="group relative min-h-95 overflow-hidden rounded-[28px] border border-border shadow-sm sm:min-h-110 bg-secondary-100 dark:bg-secondary-800"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       // Add touch handlers for mobile to pause slider
@@ -177,8 +177,8 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
             sizes="100vw"
           />
 
-          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/20 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/75 via-black/50 to-black/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
           <div className="relative z-10 flex h-full flex-col justify-between p-3 sm:p-10 pointer-events-none">
             <div className="rounded-full w-fit bg-primary-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
