@@ -6,6 +6,7 @@ import { NavBar } from "@/components/common/NavBar/NavBar";
 import { MobileTopBar } from "@/components/common/NavBar/MobileTopBar";
 import { cn } from "@/lib/utils";
 import { pageBgClass } from "@/constant";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { authCookieNames } from "@/lib/authCookies";
 
-const publicRoutes = ["/", "/explore", "/terms", "/privacy"];
+const publicRoutes = ["/", "/explore", "/property", "/terms", "/privacy"];
 const authRoutes = ["/login"];
 
 export function middleware(request: NextRequest) {

@@ -7,6 +7,9 @@ declare namespace NodeJS {
     NEXT_PUBLIC_SUPABASE_KYC_BUCKET?: string;
     NEXT_PUBLIC_R2_PUBLIC_BASE_URL?: string;
     NEXT_PUBLIC_R2_SIGN_URL?: string;
+    NEXT_PUBLIC_TOMTOM_KEY?: string;
+    NEXT_PUBLIC_TOMTOM_STYLE_URL?: string;
+    NEXT_PUBLIC_TOMTOM_STYLE_ID?: string;
 
     // Back-compat with the mobile app env naming
     EXPO_PUBLIC_ENV?: "development" | "staging" | "production";
@@ -15,6 +18,9 @@ declare namespace NodeJS {
     EXPO_PUBLIC_SUPABASE_KYC_BUCKET?: string;
     EXPO_PUBLIC_R2_PUBLIC_BASE_URL?: string;
     EXPO_PUBLIC_R2_SIGN_URL?: string;
+    EXPO_PUBLIC_TOMTOM_KEY?: string;
+    EXPO_PUBLIC_TOMTOM_STYLE_URL?: string;
+    EXPO_PUBLIC_TOMTOM_STYLE_ID?: string;
 
     SUPABASE_SERVICE_ROLE_KEY?: string;
   }

@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { exploreService } from "@/services/apiService";
 import { noImagePlaceholder } from "../assets";
 import { pageBgClass } from "@/constant";
+import { formatPrice } from "@/lib/formatPrice";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
@@ -18,19 +19,6 @@ import { tPropertyCategory, tPropertyCategoryDescription } from "@/i18n/masterDa
 
 type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
-
-export function formatPrice(amount: number, currencyCode: string) {
-  try {
-    const currency = (currencyCode || "Rs").toUpperCase();
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currency === "NPR" ? "Rs" : currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  } catch {
-    return `${amount} ${currencyCode || "Rs"}`;
-  }
-}
 
 function CategoryCard({ category }: { category: Category }) {
   const { t } = useTranslation();
