@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { exploreService } from "@/services/apiService";
-import { noImagePlaceholder } from "../assets";
+import { noImagePlaceholder } from "../../assets";
 import { pageBgClass } from "@/constant";
 import { formatPrice } from "@/lib/formatPrice";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";

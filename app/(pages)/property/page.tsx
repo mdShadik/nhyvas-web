@@ -26,7 +26,7 @@ import {
 } from "@/services/apiService";
 import type { ExploreListing } from "@/services/apiService/explore";
 import { formatPrice } from "@/lib/formatPrice";
-import { tAmenity, tCurrency } from "@/i18n/masterData";
+import { tAmenity, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
 import { pageBgClass } from "@/constant";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
@@ -331,24 +331,24 @@ export default function PropertyPage() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 rounded-2xl bg-primary-100 px-4 py-3 text-primary-800 dark:bg-primary-900/35 dark:text-primary-200">
-                      <div className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                    <div className="flex gap-1 shrink-0 rounded-2xl bg-primary-100 px-4 py-3 text-primary-800 dark:bg-primary-900/35 dark:text-primary-200">
+                      {/* <div className="text-xs font-semibold uppercase tracking-wide opacity-80">
                         {t("property.price", "Price")}
-                      </div>
+                      </div> */}
+                      <div className="mt-0.5 text-xl font-bold opacity-80">{tCurrency(listing.currency_code)}</div>
                       <div className="mt-1 text-xl font-extrabold">
-                        {formatPrice(listing.price, listing.currency_code)}
+                        {formatPrice(listing.price, "")}
                       </div>
-                      <div className="mt-0.5 text-xs opacity-80">{tCurrency(listing.currency_code)}</div>
                     </div>
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
                     <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-semibold text-text-secondary dark:bg-secondary-800">
-                      {listing.property_category}
+                      {tPropertyCategory(listing.property_category)}
                     </span>
                     {listing.subcategory ? (
                       <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-semibold text-text-secondary dark:bg-secondary-800">
-                        {listing.subcategory}
+                        {tPropertySubcategory(listing.subcategory)}
                       </span>
                     ) : null}
                   </div>
@@ -356,7 +356,7 @@ export default function PropertyPage() {
                   {description ? (
                     <div className="mt-6">
                       <div className="text-sm font-semibold text-text-primary">
-                        {t("property.description", "Description")}
+                        {t("property.description_title", "Description")}
                       </div>
                       <p className="mt-2 whitespace-pre-line text-sm leading-7 text-text-secondary">
                         {displayDescription}
@@ -376,7 +376,7 @@ export default function PropertyPage() {
 
                   <div className="mt-6">
                     <div className="text-sm font-semibold text-text-primary">
-                      {t("property.amenities", "Amenities")}
+                      {t("explore.amenities", "Amenities")}
                     </div>
                     {amenityLabels.length ? (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -610,9 +610,8 @@ function PropertyHero({
                   key={idx}
                   type="button"
                   onClick={() => onChangeIndex(idx)}
-                  className={`h-2 rounded-full transition-all ${
-                    idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/45 hover:bg-white/70"
-                  }`}
+                  className={`h-2 rounded-full transition-all ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/45 hover:bg-white/70"
+                    }`}
                   aria-label={`Go to image ${idx + 1}`}
                 />
               ))}
@@ -628,9 +627,8 @@ function PropertyHero({
               key={`${src}-${idx}`}
               type="button"
               onClick={() => onChangeIndex(idx)}
-              className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-2xl border transition ${
-                idx === activeIndex ? "border-primary-400" : "border-border hover:border-primary-200"
-              }`}
+              className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-2xl border transition ${idx === activeIndex ? "border-primary-400" : "border-border hover:border-primary-200"
+                }`}
               aria-label={`Image ${idx + 1}`}
             >
               <Image src={src} alt="" fill className="object-cover" sizes="96px" />
@@ -684,7 +682,7 @@ function PropertyMapModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[85]">
+    <div className="fixed inset-0 z-85">
       {/* Backdrop */}
       <button
         type="button"
@@ -696,7 +694,7 @@ function PropertyMapModal({
       {/* Modal */}
       <div className="relative mx-auto flex min-h-full w-full max-w-4xl items-center justify-center px-4 py-10">
         <div className="w-full overflow-hidden rounded-[28px] border border-border bg-bg-card shadow-xl">
-          
+
           {/* Header */}
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div className="min-w-0">
@@ -719,7 +717,7 @@ function PropertyMapModal({
           </div>
 
           {/* Content */}
-          <div className="aspect-[16/10] w-full bg-secondary-100 dark:bg-secondary-800">
+          <div className="aspect-16/10 w-full bg-secondary-100 dark:bg-secondary-800">
             {hasPoint ? (
               <div className="h-full w-full p-4">
                 <CoverageMap

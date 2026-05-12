@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
-import { NavBar } from "@/components/common/NavBar/NavBar";
-import { MobileTopBar } from "@/components/common/NavBar/MobileTopBar";
 import { cn } from "@/lib/utils";
 import { pageBgClass } from "@/constant";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -44,8 +42,6 @@ export default function RootLayout({
     >
       <body className={cn(pageBgClass, "min-h-dvh flex flex-col")}>
         <Providers>
-          <MobileTopBar />
-          <NavBar />
           {children}
         </Providers>
       </body>

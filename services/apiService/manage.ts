@@ -25,6 +25,32 @@ export type ListingViewer = {
   last_viewed_at: string | null;
 };
 
+export type UpsertListingInput = {
+  listingId?: string | null;
+  property_category: string;
+  subcategory: string | null;
+  property_title: string;
+  description: string;
+  price: number;
+  is_negotiable: boolean;
+  total_area_sqft: number | null;
+  carpet_area_sqft: number | null;
+  total_floor: number | null;
+  property_floor_no: number | null;
+  state_id: string | null;
+  district_id: string | null;
+  municipality_id: string | null;
+  ward_id: string | null;
+  location_text: string;
+  latitude: number | null;
+  longitude: number | null;
+  show_exact_location: boolean;
+  is_story: boolean;
+  thumbnail_url: string | null;
+  photo_urls: string[];
+  amenity_tags: string[];
+};
+
 export const manageService = {
   async getMyAds(): Promise<ExploreListing[]> {
     const { rows } = await requestJson<{ rows: ExploreListing[] }>("/api/manage/my-ads", { method: "POST" });
@@ -56,5 +82,13 @@ export const manageService = {
       body: JSON.stringify({ listingId }),
     });
     return rows ?? [];
+  },
+
+  async upsertListing(input: UpsertListingInput): Promise<{ id: string | null }> {
+    const { id } = await requestJson<{ id: string | null }>("/api/manage/upsert-listing", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { id };
   },
 };

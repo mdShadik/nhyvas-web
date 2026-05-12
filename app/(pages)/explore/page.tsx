@@ -6,7 +6,7 @@ import Image from "next/image";
 import { exploreService, ExploreListing } from "@/services/apiService/explore";
 import { MapPin, Heart, Search, SlidersHorizontal } from "lucide-react";
 import { formatPrice } from "@/lib/formatPrice";
-import { logoSingleN, noImagePlaceholder } from "../../assets";
+import { logoSingleN, noImagePlaceholder } from "../../../assets";
 import { useQuery } from "@tanstack/react-query";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";

@@ -1,23 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
+// import { useRouter } from "next/navigation";
 import { AvatarUpload } from "@/components/common/AvatarUpload";
-import { useTheme } from "@/context/ThemeContext";
-
+// import { useTheme } from "@/context/ThemeContext";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
-import { darkLogo, lightLogo } from "../../assets";
+// import { darkLogo, lightLogo } from "../../../assets";
 import { useTranslation } from "react-i18next";
 
 export default function OnboardPage() {
   const { t } = useTranslation();
-  const router = useRouter();
-  const { theme } = useTheme();
-  const logoUrl = theme === "dark" ? darkLogo : lightLogo;
+  // const router = useRouter();
+  // const { theme } = useTheme();
+  // const logoUrl = theme === "dark" ? darkLogo : lightLogo;
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -102,20 +98,14 @@ export default function OnboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+      <div className="flex min-h-screen items-center justify-center ">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--accent) border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-linear-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
-      <header className="flex items-center justify-between p-4 sm:p-6">
-        <Link href="/" className="flex items-center gap-2">
-          <Image src={logoUrl.src} alt="Nhyvas" width={120} height={60} />
-        </Link>
-        <ThemeToggle />
-      </header>
+    <div className="flex min-h-screen flex-col ">
 
       <main className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-(--surface) p-6 shadow-xl sm:p-8">
@@ -172,7 +162,7 @@ export default function OnboardPage() {
             <button
               type="submit"
               disabled={submitting || !fullName.trim()}
-              className="mt-6 flex w-full items-center justify-center rounded-2xl bg-(--accent) px-4 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-(--accent)/90 disabled:opacity-50"
+              className="mt-6 flex w-full items-center justify-center rounded-2xl bg-linear-to-r from-primary-600 to-tertiary-600/50 px-4 py-3.5 text-base font-semibold dark:text-secondary-50 text-tertiary-900 hover:text-white  shadow-sm transition hover:bg-(--accent)/90 disabled:opacity-50"
             >
               {submitting ? t("common.saving") : t("common.continue")}
             </button>

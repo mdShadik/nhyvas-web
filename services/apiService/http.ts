@@ -12,9 +12,12 @@ export async function requestJson<TResponse>(
   url: string,
   init?: RequestInit,
 ): Promise<TResponse> {
+  const isFormDataBody =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
+
   const response = await fetch(url, {
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormDataBody ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers ?? {}),
     },
     ...init,

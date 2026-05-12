@@ -429,6 +429,13 @@
     "subtitle": "Highlight what makes your property special.",
     "loading": "Loading amenities..."
   },
+  "listing_media": {
+    "title": "Add Photos",
+    "subtitle": "Upload visually appealing photos. You can add up to 10 photos.",
+    "select": "Select photos",
+    "tip_cover": "Tip: the first image becomes the cover photo.",
+    "selected": "Selected"
+  },
   "master_data": {
     "amenity_categories": {
       "UTILITIES_ESSENTIAL": "Utilities (Essential)",

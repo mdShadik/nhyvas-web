@@ -25,8 +25,6 @@ export function LoginCard({
 }: Props) {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const logoUrl = theme === "dark" ? darkLogo : lightLogo;
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,12 +63,13 @@ export function LoginCard({
   return (
     <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-(--surface) p-6 shadow-xl sm:p-8">
       <div className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Image src={logoUrl} alt="Nhyvas" width={112} height={34} className="h-8 w-auto object-contain" />
+        <div className="flex items-center gap-3 mx-auto">
+          <Image src={darkLogo} alt="Nhyvas" width={112} height={34} className={`h-8 w-auto mx-auto object-contain ${theme === 'light' ? "hidden" : "block"}`} />
+          <Image src={lightLogo} alt="Nhyvas" width={112} height={34} className={`h-8 w-auto mx-auto object-contain ${theme === 'light' ? "block" : "hidden"}`} />
           <div className="h-6 w-px bg-border" />
-          <div className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
+          {/* <div className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
             {t("auth.login", "Login")}
-          </div>
+          </div> */}
         </div>
         {onClose ? (
           <button

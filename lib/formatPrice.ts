@@ -7,7 +7,7 @@ export function formatPrice(amount: number, currencyCode: string) {
       maximumFractionDigits: 0,
     }).format(amount);
   } catch {
-    return `${amount} ${currencyCode || "Rs"}`;
+    return `${amount}`;
   }
 }
 
