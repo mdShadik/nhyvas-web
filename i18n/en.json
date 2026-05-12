@@ -353,6 +353,8 @@
     "empty_hint": "When users reach out about your property, they will appear here.",
     "property_fallback": "Property",
     "interested_user": "Interested User",
+    "chat": "Chat",
+    "open_chat_hint": "Message this lead",
     "date": "Date: {{date}}",
     "status": "Status: {{status}}"
   },
@@ -388,11 +390,54 @@
   },
   "chat": {
     "messages": "Messages",
+    "tabs_all": "All",
+    "untitled_property": "Untitled property",
     "unknown_user": "Unknown User",
     "no_messages_yet": "No messages yet",
     "re_property": "Re: {{title}}",
     "empty_title": "No messages yet",
-    "empty_hint": "When you contact a landlord or a tenant reaches out, your conversations will appear here."
+    "empty_hint": "When you contact a landlord or a tenant reaches out, your conversations will appear here.",
+    "empty_title_for_listing": "No messages for this listing yet",
+    "empty_hint_for_listing": "Switch tabs or wait for an inquiry.",
+    "room": {
+      "invalid_room": "This conversation link is invalid.",
+      "loading_contact": "Loading…",
+      "discussing_property": "Discussing property",
+      "type_placeholder": "Type a message…",
+      "send": "Send",
+      "unavailable": "No longer available to chat",
+      "chat_actions": "Chat actions",
+      "system_prefix": "[System]: {{text}}",
+      "image_attachment_alt": "Attached image"
+    },
+    "menu": {
+      "block_title": "Block {{name}}",
+      "block_hint": "Prevent this user from messaging you",
+      "report_title": "Report user",
+      "report_hint": "Report spam, scam, or abusive language",
+      "block": "Block",
+      "confirm_block_title": "Block user",
+      "confirm_block_body": "Are you sure you want to block {{name}}? You will no longer receive messages from them.",
+      "confirm_block_action": "Block",
+      "confirm_report_title": "Report user",
+      "confirm_report_body": "Are you sure you want to report {{name}} for inappropriate behavior or scam?",
+      "confirm_report_action": "Report",
+      "report_default_reason": "Reported from chat"
+    }
+  },
+  "support_ticket": {
+    "loading": "Loading ticket…",
+    "invalid": "Invalid ticket.",
+    "status_label": "Status",
+    "close_ticket": "Close ticket",
+    "closing": "Closing…",
+    "closed_toast": "Ticket closed.",
+    "close_failed_title": "Failed to close ticket",
+    "send_failed_title": "Failed to send message",
+    "try_again": "Please try again.",
+    "back_to_list": "All tickets",
+    "validation_subject": "Subject must be at least 3 characters.",
+    "validation_description": "Description must be at least 10 characters unless you attach an image."
   },
   "home": {
     "verified_featured": "Verified & Featured",

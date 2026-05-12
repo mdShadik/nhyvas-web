@@ -286,6 +286,8 @@
     "empty_hint": "प्रयोगकर्ताले सम्पत्तिबारे सम्पर्क गर्दा यहाँ देखिन्छ।",
     "property_fallback": "सम्पत्ति",
     "interested_user": "रुचि भएका प्रयोगकर्ता",
+    "chat": "च्याट",
+    "open_chat_hint": "यो लिडसँग सन्देश",
     "date": "मिति: {{date}}",
     "status": "स्थिति: {{status}}"
   },
@@ -321,11 +323,54 @@
   },
   "chat": {
     "messages": "सन्देशहरू",
+    "tabs_all": "सबै",
+    "untitled_property": "शीर्षक विहीन सम्पत्ति",
     "unknown_user": "अज्ञात प्रयोगकर्ता",
     "no_messages_yet": "अहिले सन्देश छैन",
     "re_property": "सम्पत्ति: {{title}}",
     "empty_title": "अहिले सन्देश छैन",
-    "empty_hint": "तपाईंले सम्पर्क गरेपछि कुराकानी यहाँ देखिन्छ।"
+    "empty_hint": "तपाईंले सम्पर्क गरेपछि कुराकानी यहाँ देखिन्छ।",
+    "empty_title_for_listing": "यस सूचीका लागि अहिले सन्देश छैन",
+    "empty_hint_for_listing": "ट्याब बदल्नुहोस् वा जिज्ञासाको प्रतीक्षा गर्नुहोस्।",
+    "room": {
+      "invalid_room": "यो कुराकानी लिंक मान्य छैन।",
+      "loading_contact": "लोड हुँदै…",
+      "discussing_property": "छलफल गर्दै: सम्पत्ति",
+      "type_placeholder": "सन्देश टाइप गर्नुहोस्…",
+      "send": "पठाउनुहोस्",
+      "unavailable": "यो कुराकानी अब उपलब्ध छैन",
+      "chat_actions": "च्याट कार्यहरू",
+      "system_prefix": "[प्रणाली]: {{text}}",
+      "image_attachment_alt": "संलग्न छवि"
+    },
+    "menu": {
+      "block_title": "{{name}} लाई ब्लक गर्नुहोस्",
+      "block_hint": "यो प्रयोगकर्तालाई सन्देशबाट रोक्नुहोस्",
+      "report_title": "प्रयोगकर्ता रिपोर्ट गर्नुहोस्",
+      "report_hint": "स्पाम, ठगी वा आक्रामक भाषा रिपोर्ट गर्नुहोस्",
+      "block": "ब्लक",
+      "confirm_block_title": "प्रयोगकर्ता ब्लक गर्नुहोस्",
+      "confirm_block_body": "के तपाईं {{name}} लाई ब्लक गर्न चाहनुहुन्छ? तपाईंले उहाँहरूबाट सन्देश पाउनुहुनेछैन।",
+      "confirm_block_action": "ब्लक",
+      "confirm_report_title": "प्रयोगकर्ता रिपोर्ट गर्नुहोस्",
+      "confirm_report_body": "के तपाईं {{name}} लाई अस्थिर व्यवहार वा ठगीका लागि रिपोर्ट गर्न चाहनुहुन्छ?",
+      "confirm_report_action": "रिपोर्ट",
+      "report_default_reason": "च्याटबाट रिपोर्ट"
+    }
+  },
+  "support_ticket": {
+    "loading": "टिकट लोड हुँदैछ…",
+    "invalid": "अमान्य टिकट।",
+    "status_label": "स्थिति",
+    "close_ticket": "टिकट बन्द गर्नुहोस्",
+    "closing": "बन्द गर्दै…",
+    "closed_toast": "टिकट बन्द गरियो।",
+    "close_failed_title": "टिकट बन्द गर्न सकिएन",
+    "send_failed_title": "सन्देश पठाउन सकिएन",
+    "try_again": "कृपया पुन: प्रयास गर्नुहोस्।",
+    "back_to_list": "सबै टिकटहरू",
+    "validation_subject": "विषय कम्तिमा ३ अक्षर हुनुपर्छ।",
+    "validation_description": "यदि छवि संलग्न छैन भने विवरण कम्तिमा १० अक्षर हुनुपर्छ।"
   },
   "home": {
     "verified_featured": "प्रमाणित र विशेष",

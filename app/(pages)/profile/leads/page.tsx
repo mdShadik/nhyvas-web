@@ -1,10 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+
+import { authApi } from "@/services/apiService";
+import { chatService } from "@/services/apiService/chat";
 import { leadsService, type PropertyLead } from "@/services/apiService/leads";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/context/ToastContext";
 
 function safeDate(value: string) {
   const d = new Date(value);
@@ -66,8 +72,9 @@ export default function ProfileLeadsPage() {
               <tr>
                 <th className="px-4 py-3 font-semibold">{t("leads.property_fallback")}</th>
                 <th className="px-4 py-3 font-semibold">{t("leads.interested_user")}</th>
+                <th className="px-4 py-3 font-semibold">{t("leads.chat")}</th>
                 <th className="px-4 py-3 font-semibold">{t("common.active")}</th>
-                <th className="px-4 py-3 font-semibold">{t("leads.date", { date: "" }).replace(/^Date:\\s*/i, "")}</th>
+                <th className="px-4 py-3 font-semibold">{t("leads.date", { date: "" }).replace(/^Date:\s*/i, "")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -83,9 +90,40 @@ export default function ProfileLeadsPage() {
 }
 
 function LeadRow({ lead }: { lead: PropertyLead }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { showToast } = useToast();
+
+  const { data: currentUserId } = useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: authApi.getCurrentUserId,
+  });
+
+  const chatMutation = useMutation({
+    mutationFn: () => chatService.createRoom(lead.property_id, lead.inquirer_id),
+    onSuccess: (roomId) => router.push(`/chat/${roomId}`),
+    onError: (error: unknown) => {
+      const detail =
+        typeof (error as { message?: unknown })?.message === "string" ? (error as Error).message : "";
+      showToast({
+        variant: "error",
+        title: t("property.actions.chat_failed"),
+        message: detail || t("property.actions.chat_failed_message"),
+      });
+    },
+  });
+
   const created = safeDate(lead.created_at);
   const dateLabel = created ? created.toLocaleString() : lead.created_at;
   const who = lead.inquirer_name || lead.inquirer_phone || lead.inquirer_email || "Unknown";
+
+  const chatDisabled =
+    !currentUserId ||
+    !lead.property_id ||
+    !lead.inquirer_id ||
+    lead.inquirer_id === currentUserId ||
+    chatMutation.isPending;
+
   return (
     <tr className="align-top">
       <td className="px-4 py-3">
@@ -93,6 +131,18 @@ function LeadRow({ lead }: { lead: PropertyLead }) {
         {lead.message ? <div className="mt-1 line-clamp-2 text-text-secondary">{lead.message}</div> : null}
       </td>
       <td className="px-4 py-3 text-text-secondary">{who}</td>
+      <td className="px-4 py-3">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={chatDisabled}
+          title={t("leads.open_chat_hint")}
+          onClick={() => chatMutation.mutate()}
+        >
+          {t("leads.chat")}
+        </Button>
+      </td>
       <td className="px-4 py-3">
         <span className="inline-flex rounded-full bg-bg-input px-2.5 py-1 text-xs font-semibold text-text-secondary">
           {lead.status || "new"}

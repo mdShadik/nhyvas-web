@@ -1,11 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { createClient, Session, User } from "@supabase/supabase-js";
-import { env } from "@/lib/env";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { useRouter } from "next/navigation";
 
-const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
+const supabase = supabaseBrowser;
 
 interface AuthContextType {
   isAuthenticated: boolean;

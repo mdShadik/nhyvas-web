@@ -1,32 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { pageBgClass } from "@/constant";
+import { useTranslation } from "react-i18next";
 
-export default function ChatRoomPlaceholderPage() {
+import { RequireAuth } from "@/components/profile/RequireAuth";
+import { ListingChatRoom } from "@/components/chat/ListingChatRoom";
+
+export default function ChatRoomPage() {
+  const { t } = useTranslation();
   const params = useParams<{ roomId: string }>();
-  const roomId = params?.roomId ?? "";
+  const roomId = (params?.roomId ?? "").trim();
+
+  if (!roomId) {
+    return (
+      <RequireAuth>
+        <div className="p-10 text-center text-text-secondary">
+          {t("chat.room.invalid_room", "This conversation link is invalid.")}
+        </div>
+      </RequireAuth>
+    );
+  }
 
   return (
-    <main className={`min-h-screen ${pageBgClass}`}>
-      <div className="mx-auto w-full max-w-3xl px-4 py-10">
-        <div className="rounded-3xl border border-border bg-bg-card p-6 text-text-secondary">
-          <div className="text-lg font-semibold text-text-primary">Chat coming soon</div>
-          <div className="mt-2">
-            Room id: <span className="font-mono text-text-primary">{roomId}</span>
-          </div>
-          <div className="mt-4">
-            <Link
-              href="/"
-              className="text-sm font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              Go back home
-            </Link>
-          </div>
-        </div>
-      </div>
-    </main>
+    <RequireAuth>
+      <ListingChatRoom roomId={roomId} />
+    </RequireAuth>
   );
 }
-

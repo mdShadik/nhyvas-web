@@ -10,6 +10,7 @@ import {
   Clock,
   MapPin,
   HelpCircle,
+  MessageCircle,
   FileText,
   LogOut,
   Trash2,
@@ -40,6 +41,7 @@ export function ProfileNav() {
     { href: "/profile/recently-viewed", label: t("profile.menu.recently_viewed"), icon: <Clock className="h-4 w-4" /> },
     { href: "/addresses", label: t("navigation.addresses"), icon: <MapPin className="h-4 w-4" /> },
     { href: "/profile/help-center", label: t("help_center.title"), icon: <HelpCircle className="h-4 w-4" /> },
+    { href: "/profile/support-chats", label: t("navigation.support_chats"), icon: <MessageCircle className="h-4 w-4" /> },
     { href: "/profile/terms-and-conditions", label: t("profile.menu.terms"), icon: <FileText className="h-4 w-4" /> },
   ];
 
