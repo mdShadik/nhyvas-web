@@ -4,12 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import {
   exploreService,
   type HomeCategory,
-  type LocationSearchNode,
   type MasterAmenity,
   type MasterAmenityCategory,
   type MasterSubcategory,
@@ -20,7 +19,9 @@ import { tAmenity, tAmenityCategory, tCurrency, tPropertyCategory, tPropertySubc
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/context/ToastContext";
+import { useAddressBook } from "@/hooks/useAddressBook";
 import { cn } from "@/lib/utils";
+import { lookupNepalAdminAtPoint } from "@/services/nepalLocations";
 
 function parseOptionalNumber(value: string): number | null {
   const normalized = value.trim();
@@ -36,17 +37,6 @@ function parseOptionalInteger(value: string): number | null {
   return parsed;
 }
 
-function useDebouncedValue<T>(value: T, delayMs: number) {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(timer);
-  }, [value, delayMs]);
-
-  return debounced;
-}
-
 type FormValues = {
   categoryCode: string;
   subcategoryId: string;
@@ -58,7 +48,6 @@ type FormValues = {
   propertyFloorNo: string;
   totalAreaSqft: string;
   carpetAreaSqft: string;
-  locationNode: LocationSearchNode | null;
   showExactLocation: boolean;
   enablePropertyStory: boolean;
   amenityIds: string[];
@@ -73,6 +62,7 @@ export default function AddPropertyPage() {
   const listingId = (searchParams.get("listingId") ?? "").trim() || null;
   const initialCategoryCode = (searchParams.get("categoryCode") ?? "").trim() || "";
   const lockCategory = Boolean(initialCategoryCode);
+  const { entries: addressEntries, defaultId: defaultAddressId } = useAddressBook();
 
   const totalSteps = 3;
   const [currentStep, setCurrentStep] = useState(1);
@@ -81,9 +71,15 @@ export default function AddPropertyPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([]);
   const [prefillDetails, setPrefillDetails] = useState<any | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [prefilledLocation, setPrefilledLocation] = useState<{
+    label: string;
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [locationTouched, setLocationTouched] = useState(false);
 
   const {
-    control,
     register,
     handleSubmit,
     reset,
@@ -105,7 +101,6 @@ export default function AddPropertyPage() {
       propertyFloorNo: "",
       totalAreaSqft: "",
       carpetAreaSqft: "",
-      locationNode: null,
       showExactLocation: false,
       enablePropertyStory: false,
       amenityIds: [],
@@ -133,6 +128,31 @@ export default function AddPropertyPage() {
   const subcategories: MasterSubcategory[] = subcategoriesQuery.data ?? [];
   const selectedSubcategoryId = watch("subcategoryId");
   const selectedSubcategory = subcategories.find((s) => s.id === selectedSubcategoryId) ?? null;
+  const selectedAddressEntry = useMemo(() => {
+    if (!selectedAddressId) return null;
+    return addressEntries.find((entry) => entry.id === selectedAddressId) ?? null;
+  }, [addressEntries, selectedAddressId]);
+  const selectedLocation = useMemo(() => {
+    if (selectedAddressEntry) {
+      if (selectedAddressEntry.latitude == null || selectedAddressEntry.longitude == null) {
+        return null;
+      }
+      return {
+        label: selectedAddressEntry.label,
+        latitude: selectedAddressEntry.latitude,
+        longitude: selectedAddressEntry.longitude,
+      };
+    }
+    return prefilledLocation;
+  }, [prefilledLocation, selectedAddressEntry]);
+  const locationError = locationTouched && !selectedLocation ? t("landlord.create.validation.location_required") : undefined;
+
+  useEffect(() => {
+    if (selectedAddressId) return;
+    if (listingId && prefilledLocation) return;
+    if (!addressEntries.length) return;
+    setSelectedAddressId(defaultAddressId ?? addressEntries[0]!.id);
+  }, [addressEntries, defaultAddressId, listingId, prefilledLocation, selectedAddressId]);
 
   const amenityCategoriesQuery = useQuery({
     queryKey: ["explore", "amenity-categories"],
@@ -198,23 +218,21 @@ export default function AddPropertyPage() {
           propertyFloorNo: details.property_floor_no != null ? String(details.property_floor_no) : "",
           totalAreaSqft: details.total_area_sqft != null ? String(details.total_area_sqft) : "",
           carpetAreaSqft: details.carpet_area_sqft != null ? String(details.carpet_area_sqft) : "",
-          locationNode: details.location_text
-            ? ({
-                level: "ward",
-                id: "prefill",
-                label: details.location_text,
-                state_id: details.state_id ?? null,
-                district_id: details.district_id ?? null,
-                municipality_id: details.municipality_id ?? null,
-                ward_id: details.ward_id ?? null,
-                latitude: (details as any).latitude ?? null,
-                longitude: (details as any).longitude ?? null,
-              } satisfies LocationSearchNode)
-            : null,
           showExactLocation: details.show_exact_location ?? false,
           enablePropertyStory: details.is_story ?? false,
           amenityIds: details.amenity_tags ?? [],
         });
+        const rawLat = (details as any)?.latitude;
+        const rawLng = (details as any)?.longitude;
+        const latitude = typeof rawLat === "number" ? rawLat : Number(rawLat);
+        const longitude = typeof rawLng === "number" ? rawLng : Number(rawLng);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+          setPrefilledLocation({
+            label: details.location_text ?? "Selected location",
+            latitude,
+            longitude,
+          });
+        }
       } catch (error: any) {
         showToast({
           variant: "error",
@@ -259,8 +277,6 @@ export default function AddPropertyPage() {
   }, [listingId, prefillDetails, setValue, subcategories, watch]);
 
   const categoryLabel = tPropertyCategory(selectedCategory?.code ?? categoryCode ?? "Room");
-  const countryName = t("landlord.create.country_nepal");
-
   const toggleAmenity = (amenityId: string) => {
     const next = new Set(watch("amenityIds"));
     if (next.has(amenityId)) next.delete(amenityId);
@@ -277,6 +293,32 @@ export default function AddPropertyPage() {
       const parsedCarpetArea = parseOptionalNumber(values.carpetAreaSqft);
       const parsedTotalFloor = parseOptionalInteger(values.totalFloor);
       const parsedPropertyFloor = parseOptionalInteger(values.propertyFloorNo);
+      const locationText = selectedLocation?.label?.trim() || "";
+      let resolvedLocationIds: {
+        state_id: string | null;
+        district_id: string | null;
+        municipality_id: string | null;
+        ward_id: string | null;
+      } = {
+        state_id: null,
+        district_id: null,
+        municipality_id: null,
+        ward_id: null,
+      };
+
+      if (selectedLocation?.latitude != null && selectedLocation?.longitude != null) {
+        try {
+          const adminAtPoint = await lookupNepalAdminAtPoint(selectedLocation.latitude, selectedLocation.longitude);
+          resolvedLocationIds = {
+            state_id: adminAtPoint.state?.id ?? null,
+            district_id: adminAtPoint.district?.id ?? null,
+            municipality_id: adminAtPoint.municipality?.id ?? null,
+            ward_id: adminAtPoint.ward?.id ?? null,
+          };
+        } catch {
+          // Keep null IDs if lookup fails; location text/coords still submitted.
+        }
+      }
 
       const uploadUrls: string[] = [];
       for (const file of selectedFiles) {
@@ -302,13 +344,13 @@ export default function AddPropertyPage() {
         carpet_area_sqft: parsedCarpetArea,
         total_floor: parsedTotalFloor,
         property_floor_no: parsedPropertyFloor,
-        state_id: values.locationNode?.state_id ?? null,
-        district_id: values.locationNode?.district_id ?? null,
-        municipality_id: values.locationNode?.municipality_id ?? null,
-        ward_id: values.locationNode?.ward_id ?? null,
-        location_text: values.locationNode?.label?.trim() ?? "",
-        latitude: values.locationNode?.latitude ?? null,
-        longitude: values.locationNode?.longitude ?? null,
+        state_id: resolvedLocationIds.state_id,
+        district_id: resolvedLocationIds.district_id,
+        municipality_id: resolvedLocationIds.municipality_id,
+        ward_id: resolvedLocationIds.ward_id,
+        location_text: locationText,
+        latitude: selectedLocation?.latitude ?? null,
+        longitude: selectedLocation?.longitude ?? null,
         show_exact_location: values.showExactLocation,
         is_story: values.enablePropertyStory,
         thumbnail_url: photo_urls[0] ?? null,
@@ -336,7 +378,7 @@ export default function AddPropertyPage() {
 
   const handleNext = async () => {
     if (currentStep === 1) {
-      const ok = await trigger([
+      const formOk = await trigger([
         "categoryCode",
         "subcategoryId",
         "propertyTitle",
@@ -346,8 +388,10 @@ export default function AddPropertyPage() {
         "propertyFloorNo",
         "totalAreaSqft",
         "carpetAreaSqft",
-        "locationNode",
       ]);
+      setLocationTouched(true);
+      const hasLocation = Boolean(selectedLocation);
+      const ok = formOk && hasLocation;
       if (!ok) {
         showToast({
           variant: "error",
@@ -617,22 +661,99 @@ export default function AddPropertyPage() {
                 </div>
               </div>
 
-              <Controller
-                control={control}
-                name="locationNode"
-                rules={{ required: t("landlord.create.validation.location_required") as any }}
-                render={({ field }) => (
-                  <LocationPicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    label={t("landlord.create.location")}
-                    placeholder={t("explore.search_location", "Search location...")}
-                    helpText={countryName}
-                    error={touchedFields.locationNode && errors.locationNode ? (errors.locationNode.message as any) : undefined}
-                  />
-                )}
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-text-secondary">
+                  {t("landlord.create.selected_address")}
+                </label>
+                <div
+                  className={cn(
+                    "rounded-2xl border bg-bg-input px-4 py-3",
+                    locationError ? "border-destructive" : "border-border"
+                  )}
+                >
+                  {selectedLocation ? (
+                    <>
+                      <div className="text-sm font-semibold text-text-primary">{selectedLocation.label}</div>
+                      <div className="mt-0.5 text-xs text-text-tertiary">
+                        {selectedLocation.latitude.toFixed(5)}, {selectedLocation.longitude.toFixed(5)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-text-tertiary">
+                      {addressEntries.length > 0
+                        ? t("landlord.create.select_address_to_continue")
+                        : t("landlord.create.add_address_to_continue")}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      if (!addressEntries.length) {
+                        router.push("/addresses/pick");
+                        return;
+                      }
+                      const fallbackId = selectedAddressId ?? defaultAddressId ?? addressEntries[0]?.id ?? null;
+                      if (fallbackId) {
+                        setSelectedAddressId(fallbackId);
+                        setPrefilledLocation(null);
+                        setLocationTouched(false);
+                      }
+                    }}
+                  >
+                    {addressEntries.length === 0
+                      ? t("landlord.create.add_address_btn")
+                      : t("landlord.create.change_address_btn")}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => router.push("/addresses")}>
+                    {t("landlord.create.manage_btn")}
+                  </Button>
+                </div>
+
+                {addressEntries.length > 0 ? (
+                  <div className="space-y-2 rounded-2xl border border-border bg-bg-input p-3">
+                    {addressEntries.map((entry) => {
+                      const active = entry.id === selectedAddressId;
+                      const isDefault = entry.id === defaultAddressId;
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          className={cn(
+                            "block w-full rounded-xl border px-3 py-2 text-left",
+                            active ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20" : "border-border bg-bg-card"
+                          )}
+                          onClick={() => {
+                            setPrefilledLocation(null);
+                            setSelectedAddressId(entry.id);
+                            setLocationTouched(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="truncate text-sm font-semibold text-text-primary">{entry.label}</div>
+                            {isDefault ? (
+                              <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                                {t("landlord.create.default_badge")}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-0.5 text-xs text-text-tertiary">
+                            {entry.latitude != null && entry.longitude != null
+                              ? `${entry.latitude.toFixed(4)}, ${entry.longitude.toFixed(4)}`
+                              : "--"}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                {locationError ? <div className="text-xs text-destructive">{locationError}</div> : null}
+              </div>
 
               <div className="space-y-3">
                 <label className="flex items-start gap-3 text-sm text-text-primary">
@@ -786,134 +907,3 @@ export default function AddPropertyPage() {
     </div>
   );
 }
-
-function LocationPicker({
-  value,
-  onChange,
-  onBlur,
-  label,
-  placeholder,
-  helpText,
-  error,
-}: {
-  value: LocationSearchNode | null;
-  onChange: (node: LocationSearchNode | null) => void;
-  onBlur: () => void;
-  label: string;
-  placeholder: string;
-  helpText: string;
-  error?: string;
-}) {
-  const { t } = useTranslation();
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (value) {
-      setQuery(value.label);
-      return;
-    }
-    setQuery("");
-  }, [value]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (containerRef.current && !containerRef.current.contains(target)) {
-        setOpen(false);
-      }
-    };
-    window.addEventListener("mousedown", handler);
-    return () => window.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const debouncedQuery = useDebouncedValue(query, 250);
-  const searchQuery = useQuery({
-    queryKey: ["explore", "location-search", debouncedQuery],
-    queryFn: () => exploreService.searchLocationNodes(debouncedQuery, 30),
-    enabled: debouncedQuery.trim().length >= 1 && !value,
-  });
-
-  const results = searchQuery.data ?? [];
-
-  return (
-    <div ref={containerRef}>
-      <label className="mb-2 block text-sm font-semibold text-text-secondary">
-        {label}
-      </label>
-
-      {value ? (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-primary">
-          <div className="min-w-0">
-            <div className="truncate font-semibold">{value.label}</div>
-            <div className="mt-0.5 text-xs text-text-tertiary">{helpText}</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              onChange(null);
-              setOpen(false);
-            }}
-            className="rounded-full border border-border bg-bg-card px-3 py-1 text-xs text-text-secondary transition hover:border-primary-200 hover:text-text-primary"
-          >
-            {t("explore.clear_location", "Clear location")}
-          </button>
-        </div>
-      ) : (
-        <div className="relative">
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onBlur={onBlur}
-            onFocus={() => setOpen(true)}
-            placeholder={placeholder}
-            className={cn(
-              "w-full rounded-2xl border bg-bg-input px-4 py-3 text-sm text-text-primary outline-none placeholder:text-placeholder focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15",
-              error ? "border-destructive" : "border-border"
-            )}
-          />
-
-          {open && query.trim().length >= 1 ? (
-            <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-bg-card shadow-lg">
-              {searchQuery.isLoading ? (
-                <div className="px-4 py-3 text-sm text-text-tertiary">
-                  {t("explore.loading", "Loading...")}
-                </div>
-              ) : results.length ? (
-                <div className="max-h-72 overflow-auto">
-                  {results.map((node) => (
-                    <button
-                      key={node.id}
-                      type="button"
-                      className="block w-full px-4 py-3 text-left text-sm text-text-primary hover:bg-muted"
-                      onClick={() => {
-                        onChange(node);
-                        setQuery("");
-                        setOpen(false);
-                      }}
-                    >
-                      {node.label}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-3 text-sm text-text-tertiary">
-                  {t("explore.no_matches", "No matches found.")}
-                </div>
-              )}
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {error ? <div className="mt-2 text-xs text-destructive">{error}</div> : null}
-    </div>
-  );
-}
-

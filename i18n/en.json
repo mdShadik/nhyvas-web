@@ -140,7 +140,17 @@
     "empty_hint": "Add your first address to speed up property posting.",
     "default": "Default",
     "set_default": "Set default",
-    "deleted": "Address deleted"
+    "deleted": "Address deleted",
+    "saved": "Address saved",
+    "updated": "Address updated",
+    "locating": "Locating...",
+    "use_current_location": "Use current location",
+    "label": "Label",
+    "label_placeholder": "Home, Office, …",
+    "label_required": "Label is required."
+    ,
+    "map_hint": "Drag the map to pick a location in Nepal.",
+    "nepal_only": "Please pick a location inside Nepal."
   },
   "explore": {
     "title": "Explore Properties",
