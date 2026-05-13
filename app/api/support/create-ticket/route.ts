@@ -1,6 +1,5 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
-import { getUserIdOrThrow } from "@/app/api/_lib/auth";
+import { getAuthenticatedClientAndUserIdOrRespond } from "@/app/api/_lib/supabase";
 
 function resolveMessageType(body: string, imageUrl: string | null): "text" | "image" {
   if (imageUrl && !body.trim()) return "image";
@@ -21,10 +20,11 @@ export async function POST(req: Request) {
   if (!subject) return jsonError("Subject is required.", 400);
   if (!description && !imageUrl) return jsonError("Please add a message or image for the ticket.", 400);
 
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
-  if (!supabase) return jsonError("You need to be logged in.", 401);
-  const userId = await getUserIdOrThrow(supabase).catch(() => null);
-  if (!userId) return jsonError("You need to be logged in.", 401);
+  const authResult = await getAuthenticatedClientAndUserIdOrRespond();
+  if ("status" in authResult) {
+    return authResult;
+  }
+  const { client: supabase, userId } = authResult;
 
   const { data: ticket, error: ticketError } = await supabase
     .from("support_tickets")

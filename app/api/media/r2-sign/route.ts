@@ -1,6 +1,6 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
 import { env } from "@/lib/env";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 
 type SignedUploadResponse = {
   uploadUrl: string;
@@ -23,14 +23,13 @@ export async function POST(req: Request) {
   const fileExt = typeof body?.fileExt === "string" ? body.fileExt.trim() : "bin";
   const contentType = typeof body?.contentType === "string" ? body.contentType.trim() : "application/octet-stream";
 
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
+  const supabase = await getAuthenticatedClientOrNull();
   if (!supabase) return jsonError("You need to be logged in.", 401);
 
   const {
     data: { session },
-    error: sessionError,
   } = await supabase.auth.getSession();
-  if (sessionError || !session) return jsonError("No active session for upload", 401);
+  if (!session) return jsonError("No active session for upload", 401);
 
   const signedResponse = await fetch(env.r2SignUrl, {
     method: "POST",

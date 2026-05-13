@@ -1,6 +1,6 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
 import { getUserIdOrThrow } from "@/app/api/_lib/auth";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientAndUserIdOrRespond } from "@/app/api/_lib/supabase";
 
 type UpsertListingBody = {
   listingId?: string | null;
@@ -45,11 +45,12 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as UpsertListingBody | null;
   if (!body) return jsonError("Invalid JSON body.", 400);
 
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
-  if (!supabase) return jsonError("You need to be logged in.", 401);
-
-  const userId = await getUserIdOrThrow(supabase).catch(() => null);
-  if (!userId) return jsonError("You need to be logged in.", 401);
+  const authResult = await getAuthenticatedClientAndUserIdOrRespond();
+  if ("status" in authResult) {
+    // It's an error Response
+    return authResult;
+  }
+  const { client: supabase, userId } = authResult;
 
   const listingId = asString(body.listingId);
   const isEdit = Boolean(listingId);

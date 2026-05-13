@@ -1,5 +1,5 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 import { getUserIdOrThrow } from "@/app/api/_lib/auth";
 
 export async function POST(req: Request) {
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!roomId) return jsonError("roomId is required", 400);
   if (!content.trim()) return jsonError("content is required", 400);
 
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
+  const supabase = await getAuthenticatedClientOrNull();
   if (!supabase) return jsonError("You need to be logged in.", 401);
 
   const senderId = await getUserIdOrThrow(supabase).catch(() => null);

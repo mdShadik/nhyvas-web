@@ -1,18 +1,20 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
 import { env } from "@/lib/env";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientOrRespond } from "@/app/api/_lib/supabase";
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
-    if (!supabase) return jsonError("You need to be logged in.", 401);
+    const supabase = await getAuthenticatedClientOrRespond();
+    if (supabase instanceof Response) {
+      return supabase;
+    }
 
+    // Get current session from the authenticated client
     const {
       data: { session },
-      error: sessionError,
     } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) return jsonError("No active session for upload", 401);
+
+    if (!session) return jsonError("No active session for upload", 401);
 
     const formData = await req.formData();
     

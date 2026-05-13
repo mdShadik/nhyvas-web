@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, MapPin, Pencil } from "lucide-react";
 import { manageService } from "@/services/apiService/manage";
@@ -10,6 +11,7 @@ import { formatPrice } from "@/lib/formatPrice";
 import { noImagePlaceholder } from "@/assets";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
+import { cacheListings } from "@/stores/myAdsStore";
 
 function AdCard({ item }: { item: ExploreListing }) {
   const thumbnailUrl = item.thumbnail_url || noImagePlaceholder;
@@ -54,6 +56,9 @@ export default function ProfileMyAdsPage() {
   });
 
   const rows = adsQuery.data ?? [];
+  useEffect(() => {
+    if (rows.length > 0) cacheListings(rows);
+  }, [rows]);
 
   if (adsQuery.isLoading) return <div className="h-60 animate-pulse rounded-2xl bg-bg-input" />;
 

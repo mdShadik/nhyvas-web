@@ -13,6 +13,7 @@ import {
   MapPin,
   MessageCircle,
   Share2,
+  Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -122,6 +123,13 @@ export default function PropertyPage() {
     enabled: Boolean(id && currentUserId) && !isOwner,
   });
   const hasInterested = (myLeadQuery.data ?? []).length > 0;
+
+  const ownerLeadsQuery = useQuery({
+    queryKey: ["owner-leads", id],
+    queryFn: () => leadsService.getLeadsForListing(id ?? ""),
+    enabled: Boolean(id && isOwner),
+  });
+  const ownerLeadCount = (ownerLeadsQuery.data ?? []).length;
 
   const toggleFavouriteMutation = useMutation({
     mutationFn: async () => {
@@ -256,19 +264,21 @@ export default function PropertyPage() {
               <Share2 className="h-5 w-5" />
             </button>
 
-            <button
-              type="button"
-              disabled={isOwner || toggleFavouriteMutation.isPending}
-              onClick={() => requireAuth(() => toggleFavouriteMutation.mutate())}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-card text-text-primary transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
-              aria-label={t("property.actions.shortlist", "Shortlist")}
-            >
-              {toggleFavouriteMutation.isPending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Heart className={`h-5 w-5 ${isFavourite ? "fill-primary-600 text-primary-600" : ""}`} />
-              )}
-            </button>
+            {!isOwner ? (
+              <button
+                type="button"
+                disabled={toggleFavouriteMutation.isPending}
+                onClick={() => requireAuth(() => toggleFavouriteMutation.mutate())}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-card text-text-primary transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
+                aria-label={t("property.actions.shortlist", "Shortlist")}
+              >
+                {toggleFavouriteMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Heart className={`h-5 w-5 ${isFavourite ? "fill-primary-600 text-primary-600" : ""}`} />
+                )}
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -293,6 +303,7 @@ export default function PropertyPage() {
               onChangeIndex={setActiveImageIndex}
               isFavourite={isFavourite}
               favouriteBusy={toggleFavouriteMutation.isPending}
+              onToggleFavourite={!isOwner ? () => requireAuth(() => toggleFavouriteMutation.mutate()) : undefined}
               onShare={() =>
                 requireAuth(async () => {
                   const url = typeof window !== "undefined" ? window.location.href : "";
@@ -309,7 +320,6 @@ export default function PropertyPage() {
                   });
                 })
               }
-              onToggleFavourite={() => requireAuth(() => toggleFavouriteMutation.mutate())}
             />
 
             {/* Main info */}
@@ -417,35 +427,48 @@ export default function PropertyPage() {
                 {t("property.actions.title", "Actions")}
               </div>
               <div className="mt-4 space-y-3">
-                <button
-                  type="button"
-                  disabled={isOwner || hasInterested || createLeadMutation.isPending}
-                  onClick={() => requireAuth(() => createLeadMutation.mutate())}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:opacity-60"
-                >
-                  {createLeadMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <LinkIcon className="h-4 w-4" />
-                  )}
-                  {hasInterested
-                    ? t("property.actions.interested_done", "Interest sent")
-                    : t("property.actions.interested", "I’m interested")}
-                </button>
+                {isOwner ? (
+                  <a
+                    href={`/profile/leads?listingId=${id}`}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500"
+                  >
+                    <Users className="h-4 w-4" />
+                    {t("property.actions.my_interested", "My Interested")}
+                    {ownerLeadCount > 0 ? ` (${ownerLeadCount})` : ""}
+                  </a>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={hasInterested || createLeadMutation.isPending}
+                      onClick={() => requireAuth(() => createLeadMutation.mutate())}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:opacity-60"
+                    >
+                      {createLeadMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <LinkIcon className="h-4 w-4" />
+                      )}
+                      {hasInterested
+                        ? t("property.actions.interested_done", "Interest sent")
+                        : t("property.actions.interested", "I'm interested")}
+                    </button>
 
-                <button
-                  type="button"
-                  disabled={isOwner || createChatRoomMutation.isPending}
-                  onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-bg-input px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
-                >
-                  {createChatRoomMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <MessageCircle className="h-4 w-4" />
-                  )}
-                  {t("property.actions.chat", "Chat with owner")}
-                </button>
+                    <button
+                      type="button"
+                      disabled={createChatRoomMutation.isPending}
+                      onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-bg-input px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
+                    >
+                      {createChatRoomMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4" />
+                      )}
+                      {t("property.actions.chat", "Chat with owner")}
+                    </button>
+                  </>
+                )}
 
                 <button
                   type="button"
@@ -636,7 +659,7 @@ function PropertyHero({
   isFavourite: boolean;
   favouriteBusy: boolean;
   onShare: () => void;
-  onToggleFavourite: () => void;
+  onToggleFavourite?: () => void;
 }) {
   const swipeConfidenceThreshold = 10000;
   const swipePower = (offset: number, velocity: number) => Math.abs(offset) * velocity;
@@ -693,19 +716,21 @@ function PropertyHero({
             >
               <Share2 className="h-5 w-5" />
             </button>
-            <button
-              type="button"
-              onClick={onToggleFavourite}
-              disabled={favouriteBusy}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-md transition hover:bg-black/55 disabled:opacity-60"
-              aria-label="Save"
-            >
-              {favouriteBusy ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Heart className={`h-5 w-5 ${isFavourite ? "fill-white" : ""}`} />
-              )}
-            </button>
+            {onToggleFavourite ? (
+              <button
+                type="button"
+                onClick={onToggleFavourite}
+                disabled={favouriteBusy}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-md transition hover:bg-black/55 disabled:opacity-60"
+                aria-label="Save"
+              >
+                {favouriteBusy ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Heart className={`h-5 w-5 ${isFavourite ? "fill-white" : ""}`} />
+                )}
+              </button>
+            ) : null}
           </div>
         </div>
 

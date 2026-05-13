@@ -15,6 +15,7 @@ import {
 } from "@/services/apiService/explore";
 import { manageService } from "@/services/apiService/manage";
 import { profileService } from "@/services/apiService/profile";
+import { getCachedListing } from "@/stores/myAdsStore";
 import { uploadToR2 } from "@/services/apiService/media";
 import { tAmenity, tAmenityCategory, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
 import { Button } from "@/components/ui/button";
@@ -221,12 +222,45 @@ export default function AddPropertyPage() {
     if (!listingId) return;
 
     const run = async () => {
+      const cached = getCachedListing(listingId);
+      if (cached) {
+        setPrefillDetails(cached);
+        setExistingPhotoUrls((cached.photo_urls as string[]) ?? []);
+        await reset({
+          categoryCode: "",
+          subcategoryId: "",
+          propertyTitle: (cached.property_title as string) ?? "",
+          description: (cached.description as string) ?? "",
+          price: String(cached.price ?? ""),
+          isNegotiable: (cached.is_negotiable as boolean) ?? true,
+          totalFloor: cached.total_floor != null ? String(cached.total_floor) : "",
+          propertyFloorNo: cached.property_floor_no != null ? String(cached.property_floor_no) : "",
+          totalAreaSqft: cached.total_area_sqft != null ? String(cached.total_area_sqft) : "",
+          carpetAreaSqft: cached.carpet_area_sqft != null ? String(cached.carpet_area_sqft) : "",
+          landlordPhone: (cached.landlord_phone as string) ?? "",
+          amenityIds: (cached.amenity_tags as string[]) ?? [],
+        });
+        const rawLat = cached.latitude;
+        const rawLng = cached.longitude;
+        const latitude = typeof rawLat === "number" ? rawLat : Number(rawLat);
+        const longitude = typeof rawLng === "number" ? rawLng : Number(rawLng);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+          setPrefilledLocation({
+            label: (cached.location_text as string) ?? "Selected location",
+            latitude,
+            longitude,
+          });
+        }
+        setIsPrefilling(false);
+        return;
+      }
+
       try {
         setIsPrefilling(true);
         const details = await manageService.getMyAdDetails(listingId);
         setPrefillDetails(details);
         setExistingPhotoUrls(details.photo_urls ?? []);
-        reset({
+        await reset({
           categoryCode: "",
           subcategoryId: "",
           propertyTitle: details.property_title ?? "",

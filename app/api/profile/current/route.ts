@@ -1,9 +1,9 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 import { getUserIdOrThrow } from "@/app/api/_lib/auth";
 
 export async function POST() {
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
+  const supabase = await getAuthenticatedClientOrNull();
   if (!supabase) return jsonOk({ profile: null });
 
   const userId = await getUserIdOrThrow(supabase).catch(() => null);

@@ -1,10 +1,29 @@
 import "server-only";
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 import { env } from "@/lib/env";
 import { authCookieNames } from "@/lib/authCookies";
+
+
+// Token expiration codes that indicate session is completely invalid
+const INVALID_SESSION_ERRORS = [
+  "refresh_token",
+  "session",
+  "invalid_token",
+  "token",
+  "expired",
+];
+
+/**
+ * Checks if an error indicates an invalid/expired session that requires logout
+ */
+function isSessionExpiredError(error: Error | null): boolean {
+  if (!error) return false;
+  const message = error.message.toLowerCase();
+  return INVALID_SESSION_ERRORS.some((code) => message.includes(code));
+}
 
 // function assertServiceRoleKey(): string {
 //   if (!env.supabaseServiceRoleKey) {
@@ -34,10 +53,31 @@ export async function getRequestAuthTokens(): Promise<
   return { accessToken, refreshToken };
 }
 
-export async function createSupabaseUserClientOrThrow(): Promise<SupabaseClient> {
+/**
+ * Clears authentication cookies (call this when session is invalid)
+ */
+export async function clearAuthCookies(): Promise<void> {
+  const jar = await cookies();
+  jar.delete(authCookieNames.accessToken);
+  jar.delete(authCookieNames.refreshToken);
+}
+
+/**
+ * Result type for createSupabaseUserClientOrThrow that indicates session status
+ */
+export type AuthResult =
+  | { success: true; client: SupabaseClient; refreshed: boolean }
+  | { success: false; error: "expired" | "unauthenticated" };
+
+/**
+ * Creates an authenticated Supabase client for the current request.
+ * Automatically refreshes tokens if needed.
+ * Returns an AuthResult to properly handle session expiration.
+ */
+export async function createSupabaseUserClientOrThrow(): Promise<AuthResult> {
   const { accessToken, refreshToken } = await getRequestAuthTokens();
   if (!accessToken || !refreshToken) {
-    throw new Error("UNAUTHENTICATED");
+    return { success: false, error: "unauthenticated" };
   }
 
   const client = createClient(env.supabaseUrl, env.supabasePublishableKey, {
@@ -53,35 +93,69 @@ export async function createSupabaseUserClientOrThrow(): Promise<SupabaseClient>
     },
   });
 
-  // Refresh if needed (best-effort).
+  // Refresh if needed.
+  let refreshed = false;
   try {
     const { data, error } = await client.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
+
     if (error) {
+      // Check if this is a session expiration error
+      if (isSessionExpiredError(error)) {
+        await clearAuthCookies();
+        return { success: false, error: "expired" };
+      }
       throw error;
     }
 
+    // Token was refreshed - update cookies if new tokens provided
     if (data.session?.access_token && data.session?.refresh_token) {
-      const jar = await cookies();
-      jar.set(authCookieNames.accessToken, data.session.access_token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: env.mode === "production",
-        path: "/",
-      });
-      jar.set(authCookieNames.refreshToken, data.session.refresh_token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: env.mode === "production",
-        path: "/",
-      });
+      // Only update cookies if tokens actually changed
+      if (
+        data.session.access_token !== accessToken ||
+        data.session.refresh_token !== refreshToken
+      ) {
+        refreshed = true;
+        const jar = await cookies();
+        jar.set(authCookieNames.accessToken, data.session.access_token, {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: env.mode === "production",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30, // 30 days - for refresh token
+        });
+        jar.set(authCookieNames.refreshToken, data.session.refresh_token, {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: env.mode === "production",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30, // 30 days - for refresh token
+        });
+      }
     }
-  } catch {
-    // If refresh fails, keep the existing token and let downstream fail with 401 from Supabase.
+  } catch (err) {
+    // Check if this is a session expiration error
+    if (err instanceof Error && isSessionExpiredError(err)) {
+      await clearAuthCookies();
+      return { success: false, error: "expired" };
+    }
+    // For other errors, let downstream fail with 401 from Supabase
   }
 
-  return client;
+  return { success: true, client, refreshed };
+}
+
+/**
+ * @deprecated Use createSupabaseUserClientOrThrow() instead for proper error handling
+ * This function is kept for backward compatibility
+ */
+export async function createSupabaseUserClientOrThrowLegacy(): Promise<SupabaseClient> {
+  const result = await createSupabaseUserClientOrThrow();
+  if (!result.success) {
+    throw new Error(result.error === "expired" ? "Session expired" : "UNAUTHENTICATED");
+  }
+  return result.client;
 }
 

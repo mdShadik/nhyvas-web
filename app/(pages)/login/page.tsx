@@ -21,6 +21,20 @@ export default function LoginPage() {
     return next.startsWith("/") ? next : "";
   }, []);
 
+  // Check for session expired message
+  const sessionExpired = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("expired") === "true";
+  }, []);
+
+  useEffect(() => {
+    // Show session expired message
+    if (sessionExpired) {
+      setError(t("auth.session_expired") || "Your session has expired. Please login again.");
+    }
+  }, [sessionExpired, t]);
+
   useEffect(() => {
     const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
     const {

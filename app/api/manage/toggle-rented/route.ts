@@ -1,5 +1,5 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as null | { propertyId?: string; isRented?: boolean };
@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const isRented = Boolean(body?.isRented);
   if (!propertyId) return jsonError("propertyId is required", 400);
 
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
+  const supabase = await getAuthenticatedClientOrNull();
   if (!supabase) return jsonError("You need to be logged in.", 401);
 
   const { error } = await supabase.from("listing_moderation_queue").update({ is_rented: isRented }).eq("id", propertyId);

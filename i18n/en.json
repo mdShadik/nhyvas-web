@@ -30,6 +30,7 @@
   },
   "auth": {
     "server_session_failed": "Failed to establish server session.",
+    "session_expired": "Your session has expired. Please login again.",
     "authentication_failed": "Authentication failed",
     "welcome_back": "Welcome back",
     "sign_in_desc": "Sign in to your account to continue",

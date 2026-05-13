@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
 import { authApi } from "@/services/apiService";
@@ -19,9 +19,11 @@ function safeDate(value: string) {
 
 export default function ProfileLeadsPage() {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const listingId = searchParams.get("listingId")?.trim() || null;
   const leadsQuery = useQuery({
-    queryKey: ["profile", "leads"],
-    queryFn: () => leadsService.getLeadsForUser(null),
+    queryKey: ["profile", "leads", listingId],
+    queryFn: () => leadsService.getLeadsForUser(listingId),
   });
 
   const [q, setQ] = useState("");

@@ -1,5 +1,5 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as null | { roomId?: string; page?: number; pageSize?: number };
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const page = typeof body?.page === "number" ? Math.max(0, Math.floor(body.page)) : 0;
   const pageSize = typeof body?.pageSize === "number" ? Math.max(1, Math.min(Math.floor(body.pageSize), 50)) : 10;
 
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
+  const supabase = await getAuthenticatedClientOrNull();
   if (!supabase) return jsonError("You need to be logged in.", 401);
 
   const { data, error } = await supabase.rpc("get_chat_messages_page", {

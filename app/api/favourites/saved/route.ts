@@ -1,12 +1,12 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
-import { createSupabaseUserClientOrThrow } from "@/server/supabase";
+import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as null | { limit?: number; offset?: number };
   const limit = typeof body?.limit === "number" ? body.limit : 50;
   const offset = typeof body?.offset === "number" ? body.offset : 0;
 
-  const supabase = await createSupabaseUserClientOrThrow().catch(() => null);
+  const supabase = await getAuthenticatedClientOrNull();
   if (!supabase) return jsonOk({ rows: [] });
 
   const { data, error } = await supabase.rpc("get_app_saved_listings", {
