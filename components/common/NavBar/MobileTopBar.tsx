@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { darkLogo, lightLogo } from "@/assets";
 import { useAuth } from "@/context/AuthContext";
 import { ThemeToggle } from "../ThemeToggle";
 import { LanguageToggle } from "../LanguageToggle";
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNotificationsStore } from "@/stores/notificationsStore";
+import { getUnreadCount } from "@/services/notifications";
+import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
+import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 
 export function MobileTopBar() {
   const { theme } = useTheme();
@@ -17,10 +21,20 @@ export function MobileTopBar() {
   const { t } = useTranslation();
 
   const [mounted, setMounted] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const unreadCount = useNotificationsStore((s) => s.unreadCount);
+  const setUnreadCount = useNotificationsStore((s) => s.setUnreadCount);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const initialLoadRef = useRef(false);
+  useEffect(() => {
+    if (!isAuthenticated || initialLoadRef.current) return;
+    initialLoadRef.current = true;
+    void getUnreadCount().then(setUnreadCount).catch(() => {});
+  }, [isAuthenticated, setUnreadCount]);
 
   const logoUrl =
     !mounted
@@ -51,12 +65,29 @@ export function MobileTopBar() {
         {isLoading ? (
           <div className="h-9 w-9 animate-pulse rounded-full bg-bg-input)" />
         ) : isAuthenticated ? (
-          <Link
-            href="/notifications"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border) bg-bg-input) text-text-secondary) transition-colors hover:border-(--accent)/30 hover:text-text-primary)"
-          >
-            <Bell className="h-4.5 w-4.5" />
-          </Link>
+          <>
+            <button
+              type="button"
+              onClick={() => setNotifOpen(true)}
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-input text-text-secondary transition-colors hover:border-(--accent)/30 hover:text-text-primary"
+            >
+              <Bell className="h-4.5 w-4.5" />
+              {unreadCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              ) : null}
+            </button>
+
+            <MobileBottomSheet
+              open={notifOpen}
+              title=""
+              onClose={() => setNotifOpen(false)}
+              showCloseButton={false}
+            >
+              <NotificationsPanel onClose={() => setNotifOpen(false)} />
+            </MobileBottomSheet>
+          </>
         ) : (
           <Link
             href="/login"

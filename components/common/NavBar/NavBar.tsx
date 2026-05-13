@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -24,6 +24,9 @@ import { darkLogo, lightLogo, logoAnimation } from "@/assets";
 import { LanguageToggle } from "../LanguageToggle";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
+import { useNotificationsStore } from "@/stores/notificationsStore";
+import { getUnreadCount } from "@/services/notifications";
+import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { motion } from "framer-motion";
 
 const BRAND_ANIMATION_KEY = "nhyvas-navbar-logo-played";
@@ -166,6 +169,28 @@ export function NavBar() {
     const pathname = usePathname();
     const { isAuthenticated, isLoading } = useAuth();
     const [playTrigger, setPlayTrigger] = useState(0);
+    const unreadCount = useNotificationsStore((s) => s.unreadCount);
+    const setUnreadCount = useNotificationsStore((s) => s.setUnreadCount);
+    const [notifOpen, setNotifOpen] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
+
+    const initialLoadRef = useRef(false);
+    useEffect(() => {
+        if (!isAuthenticated || initialLoadRef.current) return;
+        initialLoadRef.current = true;
+        void getUnreadCount().then(setUnreadCount).catch(() => {});
+    }, [isAuthenticated, setUnreadCount]);
+
+    useEffect(() => {
+        if (!notifOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+                setNotifOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [notifOpen]);
 
     const handleHomeClick = () => {
         setPlayTrigger((prev) => prev + 1);
@@ -184,7 +209,7 @@ export function NavBar() {
             {/* Desktop Top Nav */}
             <header className="hidden md:block sticky top-0 z-50 px-3 pt-3 sm:px-4 sm:pt-4">
                 <div className="mx-auto max-w-7xl">
-                    <div className="relative overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-[var(--color-page-bg-from)] shadow-[0_12px_36px_-18px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-colors dark:shadow-[0_16px_40px_-20px_rgba(0,0,0,0.6)]">
+                    <div className="relative rounded-[24px] border border-[var(--color-border)] bg-[var(--color-page-bg-from)] shadow-[0_12px_36px_-18px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-colors dark:shadow-[0_16px_40px_-20px_rgba(0,0,0,0.6)]">
                         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-primary-400)]/30 to-transparent" />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--color-primary-400)]/5 via-transparent to-[var(--color-tertiary-500)]/5" />
 
@@ -251,13 +276,34 @@ export function NavBar() {
                                             <Heart className="h-4.5 w-4.5" />
                                         </IconAction>
 
-                                        <IconAction
-                                            href="/notifications"
-                                            label={t("headers.notifications")}
-                                            active={isRouteActive(pathname, "/notifications")}
-                                        >
-                                            <Bell className="h-4.5 w-4.5" />
-                                        </IconAction>
+                                        <div ref={notifRef} className="relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setNotifOpen((v) => !v)}
+                                                aria-label={t("headers.notifications")}
+                                                className={[
+                                                    "relative flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200",
+                                                    notifOpen
+                                                        ? "border-[var(--color-primary-400)]/20 bg-[var(--color-primary-400)]/12 text-[var(--color-primary-400)]"
+                                                        : "border-transparent text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:bg-[var(--color-bg-input)] hover:text-[var(--color-text-primary)]",
+                                                ].join(" ")}
+                                            >
+                                                <Bell className="h-4.5 w-4.5" />
+                                                {unreadCount > 0 ? (
+                                                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                                                        {unreadCount > 99 ? "99+" : unreadCount}
+                                                    </span>
+                                                ) : null}
+                                            </button>
+
+                                            {notifOpen ? (
+                                                <div className="absolute right-0 top-full z-60 mt-2 w-[400px] overflow-hidden rounded-2xl border border-border bg-bg-card shadow-xl">
+                                                    <div className="max-h-[480px]">
+                                                        <NotificationsPanel onClose={() => setNotifOpen(false)} />
+                                                    </div>
+                                                </div>
+                                            ) : null}
+                                        </div>
 
                                         <div className="hidden sm:block h-6 w-px bg-[var(--color-border)]" />
 

@@ -11,9 +11,10 @@ type Props = {
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  showCloseButton?: boolean;
 };
 
-export function MobileBottomSheet({ open, title, description, onClose, children, className }: Props) {
+export function MobileBottomSheet({ open, title, description, onClose, showCloseButton=true, children, className }: Props) {
   return (
     <Sheet
       isOpen={open}
@@ -34,14 +35,16 @@ export function MobileBottomSheet({ open, title, description, onClose, children,
                 <div className="mt-0.5 line-clamp-2 text-sm text-text-secondary">{description}</div>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-bg-input text-text-primary"
-            >
-              <X className="h-5 w-5" />
-            </button>
+              {showCloseButton && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-bg-input text-text-primary"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
           </div>
         </Sheet.Header>
 
