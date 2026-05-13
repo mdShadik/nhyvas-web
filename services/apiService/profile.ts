@@ -6,6 +6,7 @@ export type AppProfile = {
   email: string | null;
   avatar_url: string | null;
   role: string | null;
+  phone?: string | null;
 };
 
 export type UserPreferences = {
@@ -38,6 +39,7 @@ export const profileService = {
       email: row.email ?? null,
       avatar_url: row.avatar_url ?? null,
       role: row.role ?? null,
+      phone: row.phone ?? null,
     };
 
     const preferences: UserPreferences = {

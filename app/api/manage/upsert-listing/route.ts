@@ -21,8 +21,8 @@ type UpsertListingBody = {
   location_text?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  show_exact_location?: boolean | null;
-  is_story?: boolean | null;
+  /** Contact phone for this listing (stored as landlord_phone). Required if profile has no phone. */
+  landlord_phone?: string | null;
   thumbnail_url?: string | null;
   photo_urls?: string[] | null;
   amenity_tags?: string[] | null;
@@ -73,15 +73,18 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (profileError) return jsonError(profileError.message, 400);
 
-  // NOTE: We don't block listing creation on missing phone for now (web flow).
-  const landlord_phone = asString(profile?.phone) || null;
+  const landlord_phone =
+    asString(body.landlord_phone) || asString(profile?.phone) || "";
+  if (!landlord_phone) {
+    return jsonError("Phone number is required. Add it here or in your profile.", 400);
+  }
   const landlord_name = asString(profile?.full_name) || "Landlord";
 
   const amenity_tags =
     Array.isArray(body.amenity_tags) ? body.amenity_tags.map((v) => asString(v)).filter(Boolean) : [];
   const photo_urls = Array.isArray(body.photo_urls) ? body.photo_urls.map((v) => asString(v)).filter(Boolean) : [];
 
-  const payload = {
+  const basePayload = {
     property_category,
     subcategory: body.subcategory != null ? asString(body.subcategory) || null : null,
     property_title,
@@ -99,14 +102,19 @@ export async function POST(req: Request) {
     location_text,
     latitude: body.latitude ?? null,
     longitude: body.longitude ?? null,
-    show_exact_location: body.show_exact_location ?? false,
-    is_story: body.is_story ?? false,
     thumbnail_url: body.thumbnail_url != null ? asString(body.thumbnail_url) || null : null,
     photo_urls,
     amenity_tags,
     landlord_name,
     landlord_phone,
     listed_by: userId,
+  };
+
+  /** Landlords cannot toggle premium map/story flags; admin sets these on the listing. */
+  const insertPayload = {
+    ...basePayload,
+    show_exact_location: false,
+    is_story: false,
   };
 
   if (isEdit) {
@@ -125,7 +133,7 @@ export async function POST(req: Request) {
 
     const { error } = await supabase
       .from("listing_moderation_queue")
-      .update(payload)
+      .update(basePayload)
       .eq("id", listingId)
       .eq("listed_by", userId);
     if (error) return jsonError(error.message, 400);
@@ -135,7 +143,7 @@ export async function POST(req: Request) {
   const { data, error } = await supabase
     .from("listing_moderation_queue")
     .insert({
-      ...payload,
+      ...insertPayload,
       status: "pending",
     })
     .select("id")

@@ -65,6 +65,18 @@
     "unique_viewers": "Unique Viewers",
     "no_viewers": "No viewers yet.",
     "user": "User",
+    "story": {
+      "title": "Walkthrough",
+      "subtitle": "Short video preview for this listing (24 hours when published).",
+      "upload_hint": "Upload a video file (owner only).",
+      "cta_upload": "Upload walkthrough video",
+      "cta_replace": "Replace walkthrough video",
+      "published": "Walkthrough updated.",
+      "publish_failed": "Could not publish walkthrough.",
+      "expires": "Expires",
+      "none_visitor": "No walkthrough video yet.",
+      "uploading": "Uploading…"
+    },
     "actions": {
       "chat": "Chat",
       "interested": "Interested",
@@ -207,6 +219,8 @@
     },
     "create": {
       "negotiable": "Negotiable",
+      "landlord_phone": "Contact phone *",
+      "landlord_phone_help": "Nepal mobile (e.g. 98xxxxxxxx or +97798xxxxxxxx). Used for tenant inquiries.",
       "show_exact_location": "Show my exact location",
       "show_exact_location_help": "If off, we show an approximate 200m area for privacy.",
       "enable_property_story": "Allow 24-hour walkthrough story",
@@ -254,9 +268,12 @@
         "total_floor": "e.g. 10",
         "property_floor": "e.g. 3",
         "total_area": "e.g. 1200",
-        "carpet_area": "e.g. 1000"
+        "carpet_area": "e.g. 1000",
+        "landlord_phone": "e.g. 98xxxxxxxx"
       },
       "validation": {
+        "phone_required": "Phone number is required.",
+        "phone_invalid": "Enter a valid Nepal mobile number (10 digits starting with 9, optional +977).",
         "category_required": "Category is required.",
         "subcategory_required": "Subcategory is required.",
         "ad_title_required": "Ad title is required.",

@@ -8,6 +8,7 @@ export type ManagePropertyDetails = ExploreListing & {
   subcategory: string | null;
   is_negotiable?: boolean;
   show_exact_location?: boolean;
+  landlord_phone?: string | null;
   state_id: string | null;
   district_id: string | null;
   municipality_id: string | null;
@@ -44,8 +45,7 @@ export type UpsertListingInput = {
   location_text: string;
   latitude: number | null;
   longitude: number | null;
-  show_exact_location: boolean;
-  is_story: boolean;
+  landlord_phone: string;
   thumbnail_url: string | null;
   photo_urls: string[];
   amenity_tags: string[];

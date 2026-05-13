@@ -11,7 +11,7 @@ export async function POST() {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, email, avatar_url, role")
+    .select("id, full_name, email, avatar_url, role, phone")
     .eq("id", userId)
     .maybeSingle();
   if (error) return jsonError(error.message, 400);

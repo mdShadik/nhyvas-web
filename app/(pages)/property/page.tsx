@@ -23,7 +23,9 @@ import {
   exploreService,
   favouritesService,
   leadsService,
+  storiesService,
 } from "@/services/apiService";
+import { uploadToR2 } from "@/services/apiService/media";
 import type { ExploreListing } from "@/services/apiService/explore";
 import { formatPrice } from "@/lib/formatPrice";
 import { tAmenity, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
@@ -374,6 +376,10 @@ export default function PropertyPage() {
                     </div>
                   ) : null}
 
+                  {listing.is_story ? (
+                    <PropertyWalkthroughSection listingId={listing.id} isOwner={isOwner} />
+                  ) : null}
+
                   <div className="mt-6">
                     <div className="text-sm font-semibold text-text-primary">
                       {t("explore.amenities", "Amenities")}
@@ -509,6 +515,107 @@ export default function PropertyPage() {
         listing={listing}
       />
     </main>
+  );
+}
+
+function PropertyWalkthroughSection({
+  listingId,
+  isOwner,
+}: {
+  listingId: string;
+  isOwner: boolean;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+
+  const storyQuery = useQuery({
+    queryKey: ["property-story", listingId],
+    queryFn: () => storiesService.getActiveStoryForProperty(listingId),
+    enabled: Boolean(listingId),
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const mediaUrl = await uploadToR2({ file, folder: "property-stories" });
+      await storiesService.upsertStory({
+        propertyId: listingId,
+        mediaUrl,
+        thumbnailUrl: null,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["property-story", listingId] });
+      showToast({
+        variant: "success",
+        message: t("property.story.published"),
+      });
+    },
+    onError: (err: any) => {
+      showToast({
+        variant: "error",
+        message: err?.message ?? t("property.story.publish_failed"),
+      });
+    },
+  });
+
+  const active = storyQuery.data ?? null;
+
+  return (
+    <div className="mt-6 rounded-[28px] border border-border bg-bg-card p-5 shadow-sm sm:p-6">
+      <div className="text-sm font-semibold text-text-primary">{t("property.story.title")}</div>
+      <p className="mt-1 text-xs text-text-tertiary">{t("property.story.subtitle")}</p>
+
+      {storyQuery.isLoading ? (
+        <div className="mt-4 flex items-center gap-2 text-sm text-text-secondary">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("property.loading_listing")}
+        </div>
+      ) : (
+        <div className="mt-4 space-y-4">
+          {active ? (
+            <>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video
+                src={active.media_url}
+                controls
+                playsInline
+                className="aspect-video w-full overflow-hidden rounded-2xl bg-black"
+              />
+              <div className="text-xs text-text-tertiary">
+                {t("property.story.expires")}: {new Date(active.expires_at).toLocaleString()}
+              </div>
+            </>
+          ) : !isOwner ? (
+            <p className="text-sm text-text-secondary">{t("property.story.none_visitor")}</p>
+          ) : null}
+
+          {isOwner ? (
+            <label className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-dashed border-border bg-bg-input px-4 py-4 text-center text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800">
+              <input
+                type="file"
+                accept="video/*"
+                className="sr-only"
+                disabled={publishMutation.isPending}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) publishMutation.mutate(file);
+                }}
+              />
+              {publishMutation.isPending ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("property.story.uploading")}
+                </span>
+              ) : (
+                <span>{active ? t("property.story.cta_replace") : t("property.story.cta_upload")}</span>
+              )}
+            </label>
+          ) : null}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import {
   exploreService,
@@ -14,10 +14,12 @@ import {
   type MasterSubcategory,
 } from "@/services/apiService/explore";
 import { manageService } from "@/services/apiService/manage";
+import { profileService } from "@/services/apiService/profile";
 import { uploadToR2 } from "@/services/apiService/media";
 import { tAmenity, tAmenityCategory, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useToast } from "@/context/ToastContext";
 import { useAddressBook } from "@/hooks/useAddressBook";
 import { cn } from "@/lib/utils";
@@ -37,6 +39,16 @@ function parseOptionalInteger(value: string): number | null {
   return parsed;
 }
 
+/** Nepal mobile: optional +977 / 977 prefix, then 9XXXXXXXXX (10 digits). */
+function normalizeNepalMobile(raw: string): string | null {
+  const compact = raw.replace(/\s+/g, "").trim();
+  if (!compact) return null;
+  let d = compact.startsWith("+") ? compact.slice(1) : compact;
+  if (d.startsWith("977")) d = d.slice(3);
+  if (/^9\d{9}$/.test(d)) return `+977${d}`;
+  return null;
+}
+
 type FormValues = {
   categoryCode: string;
   subcategoryId: string;
@@ -48,8 +60,7 @@ type FormValues = {
   propertyFloorNo: string;
   totalAreaSqft: string;
   carpetAreaSqft: string;
-  showExactLocation: boolean;
-  enablePropertyStory: boolean;
+  landlordPhone: string;
   amenityIds: string[];
 };
 
@@ -81,6 +92,7 @@ export default function AddPropertyPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setValue,
@@ -101,8 +113,7 @@ export default function AddPropertyPage() {
       propertyFloorNo: "",
       totalAreaSqft: "",
       carpetAreaSqft: "",
-      showExactLocation: false,
-      enablePropertyStory: false,
+      landlordPhone: "",
       amenityIds: [],
     },
   });
@@ -181,6 +192,14 @@ export default function AddPropertyPage() {
     if (!sameValues) setValue("amenityIds", dedup, { shouldDirty: true });
   }, [amenities, amenityIds, setValue]);
 
+  useEffect(() => {
+    if (listingId) return;
+    void profileService.getCurrentProfile().then((p) => {
+      const phone = (p?.phone ?? "").trim();
+      if (phone) setValue("landlordPhone", phone, { shouldDirty: false });
+    });
+  }, [listingId, setValue]);
+
   const groupedAmenities = useMemo(() => {
     const categories = amenityCategories
       .slice()
@@ -218,8 +237,7 @@ export default function AddPropertyPage() {
           propertyFloorNo: details.property_floor_no != null ? String(details.property_floor_no) : "",
           totalAreaSqft: details.total_area_sqft != null ? String(details.total_area_sqft) : "",
           carpetAreaSqft: details.carpet_area_sqft != null ? String(details.carpet_area_sqft) : "",
-          showExactLocation: details.show_exact_location ?? false,
-          enablePropertyStory: details.is_story ?? false,
+          landlordPhone: details.landlord_phone ?? "",
           amenityIds: details.amenity_tags ?? [],
         });
         const rawLat = (details as any)?.latitude;
@@ -332,6 +350,16 @@ export default function AddPropertyPage() {
 
       const photo_urls = [...existingPhotoUrls, ...uploadUrls].slice(0, 10);
 
+      const landlord_phone = normalizeNepalMobile(values.landlordPhone);
+      if (!landlord_phone) {
+        showToast({
+          variant: "error",
+          title: t("common.error", "Error"),
+          message: t("landlord.create.validation.phone_invalid"),
+        });
+        return;
+      }
+
       await manageService.upsertListing({
         listingId,
         property_category: categoryLabel,
@@ -351,8 +379,7 @@ export default function AddPropertyPage() {
         location_text: locationText,
         latitude: selectedLocation?.latitude ?? null,
         longitude: selectedLocation?.longitude ?? null,
-        show_exact_location: values.showExactLocation,
-        is_story: values.enablePropertyStory,
+        landlord_phone,
         thumbnail_url: photo_urls[0] ?? null,
         photo_urls,
         amenity_tags: values.amenityIds,
@@ -384,6 +411,7 @@ export default function AddPropertyPage() {
         "propertyTitle",
         "description",
         "price",
+        "landlordPhone",
         "totalFloor",
         "propertyFloorNo",
         "totalAreaSqft",
@@ -428,48 +456,51 @@ export default function AddPropertyPage() {
                 <label className="mb-2 block text-sm font-semibold text-text-secondary">
                   {t("landlord.create.category")}
                 </label>
-                <select
-                  {...register("categoryCode", {
-                    required: t("landlord.create.validation.category_required"),
-                    onBlur: () => trigger("categoryCode"),
-                  })}
-                  value={watch("categoryCode")}
-                  onChange={(e) => {
-                    setValue("categoryCode", e.target.value, { shouldTouch: true, shouldValidate: true });
-                    setValue("subcategoryId", "", { shouldTouch: true, shouldValidate: true });
-                  }}
-                  disabled={lockCategory || categoriesQuery.isLoading || !(categoriesQuery.data ?? []).length}
-                  className={cn(
-                    "w-full rounded-2xl border bg-bg-input px-4 py-3 text-sm text-text-primary outline-none disabled:opacity-60",
-                    touchedFields.categoryCode && errors.categoryCode ? "border-destructive" : "border-border"
+                <Controller
+                  name="categoryCode"
+                  control={control}
+                  rules={{ required: t("landlord.create.validation.category_required") }}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <Select
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                          setValue("subcategoryId", "", { shouldTouch: true, shouldValidate: true });
+                        }}
+                        disabled={lockCategory || categoriesQuery.isLoading || !(categoriesQuery.data ?? []).length}
+                        className={cn(
+                          fieldState.error ? "border-destructive" : "border-border"
+                        )}
+                      >
+                        <option value="" disabled>
+                          {t("explore.select_category", "Select category")}
+                        </option>
+                        {(categoriesQuery.data ?? []).map((cat) => (
+                          <option key={cat.id} value={cat.code}>
+                            {tPropertyCategory(cat.code ?? cat.name)}
+                          </option>
+                        ))}
+                      </Select>
+                      {fieldState.error?.message ? (
+                        <div className="mt-2 text-xs text-destructive">{String(fieldState.error.message)}</div>
+                      ) : null}
+                    </>
                   )}
-                >
-                  <option value="" disabled>
-                    {t("explore.select_category", "Select category")}
-                  </option>
-                  {(categoriesQuery.data ?? []).map((cat) => (
-                    <option key={cat.id} value={cat.code}>
-                      {tPropertyCategory(cat.code ?? cat.name)}
-                    </option>
-                  ))}
-                </select>
-                {touchedFields.categoryCode && errors.categoryCode?.message ? (
-                  <div className="mt-2 text-xs text-destructive">{String(errors.categoryCode.message)}</div>
-                ) : null}
+                />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-text-secondary">
                   {t("landlord.create.subcategory")}
                 </label>
-                <select
+                <Select
                   {...register("subcategoryId", {
                     required: t("landlord.create.validation.subcategory_required"),
                     onBlur: () => trigger("subcategoryId"),
                   })}
                   disabled={!subcategories.length}
                   className={cn(
-                    "w-full rounded-2xl border bg-bg-input px-4 py-3 text-sm text-text-primary outline-none disabled:opacity-60",
                     touchedFields.subcategoryId && errors.subcategoryId ? "border-destructive" : "border-border"
                   )}
                 >
@@ -481,7 +512,7 @@ export default function AddPropertyPage() {
                       {tPropertySubcategory(sub.code ?? sub.name)}
                     </option>
                   ))}
-                </select>
+                </Select>
                 {touchedFields.subcategoryId && errors.subcategoryId?.message ? (
                   <div className="mt-2 text-xs text-destructive">{String(errors.subcategoryId.message)}</div>
                 ) : null}
@@ -546,6 +577,30 @@ export default function AddPropertyPage() {
                 />
                 {touchedFields.price && errors.price?.message ? (
                   <div className="mt-2 text-xs text-destructive">{String(errors.price.message)}</div>
+                ) : null}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-text-secondary">
+                  {t("landlord.create.landlord_phone")}
+                </label>
+                <Input
+                  {...register("landlordPhone", {
+                    required: t("landlord.create.validation.phone_required"),
+                    validate: (value) =>
+                      normalizeNepalMobile(String(value ?? ""))
+                        ? true
+                        : t("landlord.create.validation.phone_invalid"),
+                    onBlur: () => trigger("landlordPhone"),
+                  })}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder={t("landlord.create.placeholder.landlord_phone")}
+                  className={touchedFields.landlordPhone && errors.landlordPhone ? "border-destructive" : undefined}
+                />
+                <p className="mt-1.5 text-xs text-text-tertiary">{t("landlord.create.landlord_phone_help")}</p>
+                {touchedFields.landlordPhone && errors.landlordPhone?.message ? (
+                  <div className="mt-2 text-xs text-destructive">{String(errors.landlordPhone.message)}</div>
                 ) : null}
               </div>
 
@@ -759,22 +814,6 @@ export default function AddPropertyPage() {
                 <label className="flex items-start gap-3 text-sm text-text-primary">
                   <input type="checkbox" {...register("isNegotiable")} className="mt-1 h-4 w-4 accent-primary" />
                   <span className="font-semibold">{t("landlord.create.negotiable")}</span>
-                </label>
-
-                <label className="flex items-start gap-3 text-sm text-text-primary">
-                  <input type="checkbox" {...register("showExactLocation")} className="mt-1 h-4 w-4 accent-primary" />
-                  <span>
-                    <div className="font-semibold">{t("landlord.create.show_exact_location")}</div>
-                    <div className="mt-1 text-xs text-text-tertiary">{t("landlord.create.show_exact_location_help")}</div>
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 text-sm text-text-primary">
-                  <input type="checkbox" {...register("enablePropertyStory")} className="mt-1 h-4 w-4 accent-primary" />
-                  <span>
-                    <div className="font-semibold">{t("landlord.create.enable_property_story")}</div>
-                    <div className="mt-1 text-xs text-text-tertiary">{t("landlord.create.enable_property_story_help")}</div>
-                  </span>
                 </label>
               </div>
             </div>
