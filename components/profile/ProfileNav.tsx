@@ -25,6 +25,7 @@ type NavItem = {
 };
 
 function isActive(pathname: string, href: string) {
+  if (href === "/profile/overview") return pathname === "/profile" || pathname === "/profile/overview";
   if (href === "/profile") return pathname === "/profile";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -34,7 +35,7 @@ export function ProfileNav() {
   const pathname = usePathname();
 
   const items: NavItem[] = [
-    { href: "/profile", label: t("profile.menu.edit_profile"), icon: <User className="h-4 w-4" /> },
+    { href: "/profile/overview", label: t("profile.menu.edit_profile"), icon: <User className="h-4 w-4" /> },
     { href: "/profile/saved", label: t("profile.menu.shortlisted"), icon: <Heart className="h-4 w-4" /> },
     { href: "/profile/my-ads", label: t("profile.menu.my_ads"), icon: <Building2 className="h-4 w-4" /> },
     { href: "/profile/leads", label: t("profile.menu.my_leads"), icon: <Users className="h-4 w-4" /> },

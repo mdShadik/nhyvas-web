@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { Bell, X } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { darkLogo, lightLogo } from "@/assets";
@@ -14,6 +15,59 @@ import { useNotificationsStore } from "@/stores/notificationsStore";
 import { getUnreadCount } from "@/services/notifications";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
+
+export default function LoginButton({ loginText }: { loginText: string }) {
+  return (
+    <div className="relative inline-flex h-9 overflow-hidden rounded-full p-[1.5px]">
+      {/* animated border */}
+      <motion.div
+        className="absolute inset-[-250%] rounded-full"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        style={{
+          background: `
+            conic-gradient(
+              from 0deg,
+              var(--color-secondary-100) 0deg,
+              var(--color-tertiary-400) 220deg,
+              var(--color-secondary-100) 250deg,
+              var(--color-tertiary-400) 285deg,
+              var(--color-primary-100) 315deg,
+              var(--color-tertiary-500) 340deg,
+              var(--color-tertiary-500) 360deg
+            )
+          `,
+        }}
+      />
+
+      <Link
+        href="/login"
+        className="relative z-10 flex h-full items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-primary-500 to-tertiary-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
+      >
+        {/* soft top gloss overlay */}
+        <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.20)_0%,rgba(255,255,255,0.08)_35%,rgba(255,255,255,0)_100%)]" />
+
+        {/* shimmer sweep */}
+        <motion.span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-[-40%] w-[40%] skew-x-[-20deg] bg-linear-to-r from-transparent via-white/10 to-transparent"
+          animate={{ x: ["-120%", "280%"] }}
+          transition={{
+            duration: 1.8,
+            repeat: Infinity,
+            repeatDelay: 0.7,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* subtle inner highlight */}
+        <span className="pointer-events-none absolute inset-px rounded-full ring-1 ring-inset ring-white/10" />
+
+        <span className="relative z-10">{loginText}</span>
+      </Link>
+    </div>
+  );
+}
 
 export function MobileTopBar() {
   const { theme } = useTheme();
@@ -33,18 +87,19 @@ export function MobileTopBar() {
   useEffect(() => {
     if (!isAuthenticated || initialLoadRef.current) return;
     initialLoadRef.current = true;
-    void getUnreadCount().then(setUnreadCount).catch(() => {});
+    void getUnreadCount()
+      .then(setUnreadCount)
+      .catch(() => {});
   }, [isAuthenticated, setUnreadCount]);
 
-  const logoUrl =
-    !mounted
-      ? lightLogo
-      : theme === "dark"
-        ? darkLogo
-        : lightLogo;
+  const logoUrl = !mounted
+    ? lightLogo
+    : theme === "dark"
+      ? darkLogo
+      : lightLogo;
 
   return (
-    <div className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-border bg-bg-card/80 px-4 shadow-sm backdrop-blur-xl md:hidden transition-colors dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+    <div className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-border bg-linear-to-br dark:bg-linear-to-tl from-white/10 via-white-50 to-tertiary-50 dark:from-bg-page dark:via-primary-900/20 dark:to-tertiary-900/30 p-4 shadow-sm backdrop-blur-xl md:hidden transition-colors dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-(--accent)/20 to-transparent" />
 
       <Link href="/" className="flex items-center">
@@ -89,12 +144,7 @@ export function MobileTopBar() {
             </MobileBottomSheet>
           </>
         ) : (
-          <Link
-            href="/login"
-            className="flex h-9 items-center justify-center rounded-full bg-(--accent) px-4 text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
-          >
-            {t("common.login")}
-          </Link>
+          <LoginButton loginText={t("common.login")} />
         )}
       </div>
     </div>

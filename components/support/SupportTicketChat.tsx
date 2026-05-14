@@ -2,30 +2,46 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, Send } from "lucide-react";
+import { ImagePlus, Send, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import TextareaAutosize from "react-textarea-autosize";
 
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { Button } from "@/components/ui/button";
-import { supportService, type SupportTicket, type SupportTicketMessage } from "@/services/apiService/support";
+import {
+  supportService,
+  type SupportTicket,
+  type SupportTicketMessage,
+} from "@/services/apiService/support";
 import { useToast } from "@/context/ToastContext";
 
 type SupportTicketChatProps = {
   ticketId: string;
 };
 
-export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
+export function SupportTicketChat({
+  ticketId,
+}: SupportTicketChatProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
+
   const queryClient = useQueryClient();
+
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const [messageText, setMessageText] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const ticketQueryKey = useMemo(() => ["support-ticket", ticketId] as const, [ticketId]);
-  const messagesQueryKey = useMemo(() => ["support-ticket-messages", ticketId] as const, [ticketId]);
+  const ticketQueryKey = useMemo(
+    () => ["support-ticket", ticketId] as const,
+    [ticketId]
+  );
+
+  const messagesQueryKey = useMemo(
+    () => ["support-ticket-messages", ticketId] as const,
+    [ticketId]
+  );
 
   const { data: ticket, isLoading: ticketLoading } = useQuery({
     queryKey: ticketQueryKey,
@@ -33,14 +49,17 @@ export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
     enabled: Boolean(ticketId),
   });
 
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: messagesQueryKey,
-    queryFn: () => supportService.getTicketMessages(ticketId),
-    enabled: Boolean(ticketId),
-  });
+  const { data: messages = [], isLoading: messagesLoading } =
+    useQuery({
+      queryKey: messagesQueryKey,
+      queryFn: () =>
+        supportService.getTicketMessages(ticketId),
+      enabled: Boolean(ticketId),
+    });
 
   useEffect(() => {
     if (!ticketId) return;
+
     const channel = supabaseBrowser
       .channel(`support_ticket_${ticketId}_${Date.now()}`)
       .on(
@@ -52,8 +71,13 @@ export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
           filter: `ticket_id=eq.${ticketId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: messagesQueryKey });
-          queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
+          queryClient.invalidateQueries({
+            queryKey: messagesQueryKey,
+          });
+
+          queryClient.invalidateQueries({
+            queryKey: ["support-tickets"],
+          });
         }
       )
       .subscribe();
@@ -64,10 +88,19 @@ export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
     };
   }, [messagesQueryKey, queryClient, ticketId]);
 
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  const scrollToBottom = (smooth = true) => {
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: smooth ? "smooth" : "instant",
     });
+  };
+
+  useEffect(() => {
+    scrollToBottom(false);
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom(true);
   }, [messages.length]);
 
   const sendMutation = useMutation({
@@ -77,140 +110,240 @@ export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
         body: messageText,
         imageFile,
       }),
+
     onSuccess: () => {
       setMessageText("");
       setImageFile(null);
-      queryClient.invalidateQueries({ queryKey: messagesQueryKey });
-      queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
+
+      queryClient.invalidateQueries({
+        queryKey: messagesQueryKey,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["support-tickets"],
+      });
     },
+
     onError: (error: unknown) => {
-      const message = typeof (error as { message?: unknown })?.message === "string" ? (error as Error).message : "";
+      const message =
+        typeof (error as { message?: unknown })?.message ===
+        "string"
+          ? (error as Error).message
+          : "";
+
       showToast({
         variant: "error",
-        title: t("support_ticket.send_failed_title", "Failed to send"),
-        message: message || t("support_ticket.try_again", "Please try again."),
+        title: t(
+          "support_ticket.send_failed_title",
+          "Failed to send"
+        ),
+        message:
+          message ||
+          t("support_ticket.try_again", "Please try again."),
       });
     },
   });
 
   const closeMutation = useMutation({
     mutationFn: () => supportService.closeTicket(ticketId),
+
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ticketQueryKey });
-      const previous = queryClient.getQueryData<SupportTicket | null>(ticketQueryKey);
-      queryClient.setQueryData(ticketQueryKey, (old: SupportTicket | null | undefined) => {
-        if (!old) return old;
-        return { ...old, status: "closed", closed_at: new Date().toISOString() };
+      await queryClient.cancelQueries({
+        queryKey: ticketQueryKey,
       });
+
+      const previous =
+        queryClient.getQueryData<SupportTicket | null>(
+          ticketQueryKey
+        );
+
+      queryClient.setQueryData(
+        ticketQueryKey,
+        (old: SupportTicket | null | undefined) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            status: "closed",
+            closed_at: new Date().toISOString(),
+          };
+        }
+      );
+
       return { previous };
     },
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
-      queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
+      queryClient.invalidateQueries({
+        queryKey: ticketQueryKey,
+      });
+
       showToast({
         variant: "success",
-        message: t("support_ticket.closed_toast", "Ticket closed."),
+        message: t(
+          "support_ticket.closed_toast",
+          "Ticket closed."
+        ),
       });
     },
+
     onError: (error: unknown, _vars, context) => {
-      const prev = (context as { previous?: SupportTicket | null } | undefined)?.previous;
+      const prev = (
+        context as { previous?: SupportTicket | null }
+      )?.previous;
+
       if (prev !== undefined) {
         queryClient.setQueryData(ticketQueryKey, prev);
       }
-      const message = typeof (error as { message?: unknown })?.message === "string" ? (error as Error).message : "";
+
+      const message =
+        typeof (error as { message?: unknown })?.message ===
+        "string"
+          ? (error as Error).message
+          : "";
+
       showToast({
         variant: "error",
-        title: t("support_ticket.close_failed_title", "Failed to close ticket"),
-        message: message || t("support_ticket.try_again", "Please try again."),
+        title: t(
+          "support_ticket.close_failed_title",
+          "Failed to close ticket"
+        ),
+        message:
+          message ||
+          t("support_ticket.try_again", "Please try again."),
       });
     },
   });
 
   const canChat = ticket?.status === "open";
 
-  const renderMessage = (message: SupportTicketMessage) => {
+  const renderMessage = (
+    message: SupportTicketMessage
+  ) => {
     const isMe = message.sender_role === "user";
-    const bubbleBg = isMe ? "bg-primary-600 text-white border-transparent" : "bg-bg-input text-text-primary border-border";
 
     return (
-      <div key={message.id} className={`mb-3 flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-        <div className={`max-w-[82%] rounded-xl border px-3 py-2.5 ${bubbleBg}`}>
-          {message.body ? <p className="text-[15px] leading-snug whitespace-pre-wrap">{message.body}</p> : null}
-          {message.image_url ? (
-            <a href={message.image_url} target="_blank" rel="noopener noreferrer">
-              {/* eslint-disable-next-line @next/next/no-img-element -- attachment URL */}
-              <img
-                src={message.image_url}
-                alt={t("support.attachment")}
-                className={`mt-2 max-h-[150px] w-[190px] rounded-lg object-cover ${message.body ? "mt-2" : ""}`}
-              />
-            </a>
-          ) : null}
+      <div
+        key={message.id}
+        className={`mb-3 flex ${
+          isMe ? "justify-end" : "justify-start"
+        }`}
+      >
+        <div className="max-w-[78%]">
+          <div
+            className={[
+              "rounded-2xl px-3 py-2.5",
+              isMe
+                ? "bg-primary-600 text-white md:border md:border-transparent"
+                : "bg-bg-input text-text-primary md:border md:border-border",
+            ].join(" ")}
+          >
+            {message.body ? (
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
+                {message.body}
+              </p>
+            ) : null}
+
+            {message.image_url ? (
+              <a
+                href={message.image_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src={message.image_url}
+                  alt={t("support.attachment")}
+                  className="mt-2 max-h-55 rounded-xl object-cover"
+                />
+              </a>
+            ) : null}
+          </div>
+
+          <div
+            className={`mt-1 px-1 text-[11px] text-text-tertiary ${
+              isMe ? "text-right" : "text-left"
+            }`}
+          >
+            {new Date(
+              message.created_at
+            ).toLocaleTimeString()}
+          </div>
         </div>
-        <span className="mt-1 text-[11px] text-text-tertiary">{new Date(message.created_at).toLocaleString()}</span>
       </div>
     );
   };
 
   if (ticketLoading || messagesLoading || !ticket) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-text-secondary">
+      <div className="flex h-full items-center justify-center text-text-secondary md:min-h-[50vh]">
         {t("support_ticket.loading", "Loading ticket…")}
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[min(70vh,640px)] flex-col">
-      <div className="border-b border-border pb-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-extrabold text-text-primary">
-              #{ticket.ticket_no} · {ticket.subject}
-            </h2>
-            <p className="mt-1 text-xs text-text-tertiary">
-              {t("support_ticket.status_label", "Status")}:{" "}
-              {ticket.status === "open" ? t("support.status_open") : t("support.status_closed")}
-            </p>
+    <div className="flex h-dvh flex-col bg-bg-page md:h-[70vh] md:rounded-3xl md:border md:border-border">
+      {/* HEADER */}
+      <div className="shrink-0 border-b border-border bg-bg-page px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/profile/support-chats"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-secondary-100 md:hidden dark:hover:bg-secondary-800"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-extrabold text-text-primary md:text-lg">
+                #{ticket.ticket_no} · {ticket.subject}
+              </h2>
+
+              <p className="mt-0.5 text-xs text-text-tertiary">
+                {ticket.status === "open"
+                  ? t("support.status_open")
+                  : t("support.status_closed")}
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {ticket.status === "open" ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="text-destructive hover:bg-destructive/10"
-                disabled={closeMutation.isPending}
-                onClick={() => closeMutation.mutate()}
-              >
-                {closeMutation.isPending
-                  ? t("support_ticket.closing", "Closing…")
-                  : t("support_ticket.close_ticket", "Close ticket")}
-              </Button>
-            ) : null}
-            <Button type="button" variant="ghost" asChild>
-              <Link href="/profile/support-chats">{t("support_ticket.back_to_list", "All tickets")}</Link>
+
+          {ticket.status === "open" ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="hidden md:flex"
+              disabled={closeMutation.isPending}
+              onClick={() => closeMutation.mutate()}
+            >
+              {t(
+                "support_ticket.close_ticket",
+                "Close ticket"
+              )}
             </Button>
-          </div>
+          ) : null}
         </div>
       </div>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto py-4">
+      {/* MESSAGES */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-3 py-4"
+      >
         {messages.map(renderMessage)}
       </div>
 
-      <div className="border-t border-border pt-3">
-        {!canChat ? (
-          <div className="mb-3 rounded-xl border border-border bg-bg-input px-3 py-2 text-sm font-semibold text-text-tertiary">
-            {t("chat.room.unavailable")}
-          </div>
-        ) : null}
-
+      {/* COMPOSER */}
+      <div className="sticky bottom-0 shrink-0 border-t border-border bg-bg-page/95 px-3 pt-2 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
         {imageFile ? (
-          <div className="mb-2 text-xs text-text-secondary">
-            {t("support.image_attached")}: {imageFile.name}
+          <div className="mb-2 flex items-center gap-2 px-2 text-xs text-text-secondary">
+            <span className="truncate">
+              {imageFile.name}
+            </span>
+
             <button
               type="button"
-              className="ml-2 font-semibold text-primary-600"
+              className="font-semibold text-primary-500"
               onClick={() => setImageFile(null)}
             >
               {t("common.remove", "Remove")}
@@ -218,9 +351,10 @@ export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
           </div>
         ) : null}
 
-        <div className="flex items-end gap-2">
-          <label className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-bg-card hover:bg-secondary-50 dark:hover:bg-secondary-900 disabled:opacity-50">
-            <ImagePlus className="h-[18px] w-5 text-text-tertiary" />
+        <div className="flex items-end gap-2 rounded-3xl bg-bg-input px-2 py-2">
+          <label className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-secondary-100 dark:hover:bg-secondary-800">
+            <ImagePlus className="h-5 w-5" />
+
             <input
               type="file"
               accept="image/*"
@@ -234,18 +368,20 @@ export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
             />
           </label>
 
-          <textarea
+          <TextareaAutosize
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onFocus={() =>
-              window.setTimeout(() => {
-                scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-              }, 100)
-            }
-            placeholder={canChat ? t("chat.room.type_placeholder") : t("chat.room.unavailable")}
+            minRows={1}
+            maxRows={6}
             disabled={!canChat}
-            rows={1}
-            className="max-h-32 min-h-11 flex-1 resize-y rounded-2xl border border-border bg-bg-input px-3 py-3 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15 disabled:opacity-60"
+            onChange={(e) =>
+              setMessageText(e.target.value)
+            }
+            placeholder={
+              canChat
+                ? t("chat.room.type_placeholder")
+                : t("chat.room.unavailable")
+            }
+            className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2 text-[15px] text-text-primary outline-none placeholder:text-text-tertiary"
           />
 
           <button
@@ -254,10 +390,10 @@ export function SupportTicketChat({ ticketId }: SupportTicketChatProps) {
             disabled={
               sendMutation.isPending ||
               !canChat ||
-              (!messageText.trim() && !(imageFile && imageFile.size > 0))
+              (!messageText.trim() &&
+                !(imageFile && imageFile.size > 0))
             }
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white disabled:opacity-50"
-            aria-label={t("chat.room.send")}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white transition-all active:scale-95 disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
           </button>

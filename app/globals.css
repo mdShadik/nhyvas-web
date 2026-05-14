@@ -4,6 +4,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html,
+body {
+  height: 100%;
+}
+
+body {
+  overscroll-behavior-y: none;
+}
+
 :root {
 
   --color-bg-page-base: var(--color-secondary-50);
@@ -260,45 +269,6 @@
 }
 
 /* react-modal-sheet (mobile filters) */
-.nhyvas-mobile-sheet .react-modal-sheet-backdrop.nhyvas-mobile-sheet-backdrop {
-  background: rgba(2, 6, 23, 0.55) !important;
-}
-
-.nhyvas-mobile-sheet .react-modal-sheet-container.nhyvas-mobile-sheet-container {
-  background: var(--surface) !important;
-  border-top-left-radius: 28px !important;
-  border-top-right-radius: 28px !important;
-  box-shadow: 0 -12px 40px rgba(2, 6, 23, 0.18) !important;
-  border: 1px solid var(--border) !important;
-  border-bottom: 0 !important;
-  overflow: hidden !important;
-}
-
-.nhyvas-mobile-sheet .react-modal-sheet-header.nhyvas-mobile-sheet-header {
-  background: var(--surface) !important;
-  border-bottom: 1px solid var(--border) !important;
-  padding: 10px 16px 12px !important;
-}
-
-.nhyvas-mobile-sheet-drag-indicator {
-  width: 44px;
-  height: 5px;
-  border-radius: 999px;
-  margin: 4px auto 10px;
-  background: color-mix(in srgb, var(--border) 70%, transparent);
-}
-
-.nhyvas-mobile-sheet-title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.nhyvas-mobile-sheet .react-modal-sheet-content.nhyvas-mobile-sheet-content {
-  background: var(--surface) !important;
-}
-
 .nhyvas-mobile-sheet .react-modal-sheet-content-scroller {
   -webkit-overflow-scrolling: touch;
 }

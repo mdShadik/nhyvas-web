@@ -67,6 +67,20 @@ export type ListingDetails = ExploreListing & {
   view_count?: number | null;
 };
 
+export type ListingAmenity = {
+  id: string;
+  name: string;
+  code: string;
+  category_id: string;
+  category_name: string;
+  category_code: string;
+};
+
+export type ListingDetailsResponse = {
+  listing: ListingDetails | null;
+  enrichedAmenities: ListingAmenity[];
+};
+
 export type ExploreFilters = {
   category?: string | null;
   subcategory?: string | null;
@@ -240,14 +254,13 @@ export const exploreService = {
     })) as LocationSearchNode[];
   },
 
-  async getListingDetails(listingId: string): Promise<ListingDetails | null> {
-    const { row } = await requestJson<{ row: any | null }>("/api/explore/details", {
+  async getListingDetails(listingId: string): Promise<ListingDetailsResponse> {
+    const { row, enrichedAmenities } = await requestJson<{ row: any | null; enrichedAmenities: ListingAmenity[] }>("/api/explore/details", {
       method: "POST",
       body: JSON.stringify({ listingId }),
     });
-    if (!row) return null;
 
-    return {
+    const listing: ListingDetails | null = row ? {
       ...row,
       price: Number(row.price),
       photo_urls: row.photo_urls ?? [],
@@ -262,7 +275,9 @@ export const exploreService = {
       property_floor_no: row.property_floor_no != null ? Number(row.property_floor_no) : null,
       view_count: row.view_count != null ? Number(row.view_count) : 0,
       is_story: row.is_story ?? false,
-    } as ListingDetails;
+    } as ListingDetails : null;
+
+    return { listing, enrichedAmenities: enrichedAmenities ?? [] };
   },
 
   async getSubcategoriesByCategoryCode(categoryCode: string): Promise<MasterSubcategory[]> {

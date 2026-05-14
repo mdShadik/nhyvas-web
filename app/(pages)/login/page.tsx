@@ -87,7 +87,7 @@ export default function LoginPage() {
   }, [router, nextUrl, t]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-linear-to-br from-indigo-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+    <div className="flex min-h-[calc(100vh-64px)] sm:min-h-screen flex-col">
 
       <main className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-md">

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
+import { ArrowLeft } from "lucide-react";
 
 import {
   exploreService,
@@ -476,7 +477,15 @@ export default function AddPropertyPage() {
         </div>
       ) : (
         <>
-          <div className="mb-4 text-sm text-text-tertiary">
+          <div className="mb-4 flex items-center gap-3 text-sm text-text-tertiary">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-text-secondary hover:bg-bg-input hover:text-text-primary transition"
+              aria-label={t("common.back", "Back")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
             {t("landlord.create.step_of", { current: currentStep, total: totalSteps })}
           </div>
 

@@ -103,7 +103,7 @@ export default function PropertyPage() {
     enabled: Boolean(id),
   });
 
-  const listing = listingQuery.data ?? null;
+  const listing = listingQuery.data?.listing ?? null;
   const isOwner = Boolean(currentUserId && listing?.listed_by && listing.listed_by === currentUserId);
 
   const favouriteIdsQuery = useQuery({
@@ -211,6 +211,20 @@ export default function PropertyPage() {
       .map((name) => tAmenity(name));
   }, [listing?.amenity_tags]);
 
+  const enrichedAmenities = listingQuery.data?.enrichedAmenities ?? [];
+  const groupedAmenities = useMemo(() => {
+    const groups: Record<string, { category_name: string; amenities: typeof enrichedAmenities }> = {};
+    for (const amenity of enrichedAmenities) {
+      const key = amenity.category_id || "uncategorized";
+      if (groups[key]) {
+        groups[key].amenities.push(amenity);
+      } else {
+        groups[key] = { category_name: amenity.category_name || "Other", amenities: [amenity] };
+      }
+    }
+    return Object.values(groups);
+  }, [enrichedAmenities]);
+
   const description = (listing?.description ?? "").trim();
   const displayDescription = showFullDescription ? description : description.slice(0, 420);
 
@@ -230,17 +244,17 @@ export default function PropertyPage() {
     <main className={`min-h-screen ${pageBgClass}`}>
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="flex items-center justify-between gap-3">
-          <button
+          {/* <button
             type="button"
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800"
           >
             <ArrowLeft className="h-4 w-4" />
             {t("common.back", "Back")}
-          </button>
+          </button> */}
 
           <div className="flex items-center gap-2">
-            <button
+            {/* <button
               type="button"
               onClick={() =>
                 requireAuth(async () => {
@@ -262,7 +276,7 @@ export default function PropertyPage() {
               aria-label={t("common.share", "Share")}
             >
               <Share2 className="h-5 w-5" />
-            </button>
+            </button> */}
 
             {!isOwner ? (
               <button
@@ -394,7 +408,27 @@ export default function PropertyPage() {
                     <div className="text-sm font-semibold text-text-primary">
                       {t("explore.amenities", "Amenities")}
                     </div>
-                    {amenityLabels.length ? (
+                    {groupedAmenities.length ? (
+                      <div className="mt-3 space-y-4">
+                        {groupedAmenities.map((group) => (
+                          <div key={group.category_name}>
+                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+                              {group.category_name}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {group.amenities.map((amenity) => (
+                                <span
+                                  key={amenity.id}
+                                  className="rounded-full border border-border bg-bg-input px-3 py-2 text-sm font-medium text-text-secondary"
+                                >
+                                  {tAmenity(amenity.code || amenity.name)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : amenityLabels.length ? (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {amenityLabels.map((label) => (
                           <span

@@ -32,7 +32,7 @@ function CategoryCard({ category }: { category: Category }) {
         pathname: "/explore",
         query: category.code ? { category: category.code } : undefined,
       }}
-      className="group relative overflow-hidden rounded-2xl border border-border bg-bg-card px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group relative overflow-hidden rounded-2xl border border-border bg-linear-to-tl from-bg-page via-primary-900/10 to-tertiary-900/40 px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -279,20 +279,18 @@ export default function HomePage() {
 
   return (
     <main className={`flex-1`}>
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto w-full max-w-6xl px-4 py-2 sm:px-6 sm:py-12">
         <section className="mt-10">
           {heroQuery.isLoading ? (
             <HeroBannerSkeleton />
           ) : heroListings.length > 0 ? (
             <HeroBanner listings={heroListings} />
           ) : (
-            <div className="rounded-[28px] border border-border bg-bg-card p-8 text-sm text-text-secondary shadow-sm">
-              No featured listings yet.
-            </div>
+            null
           )}
         </section>
 
-        <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+        {/* <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
               {t("home.find_next_place")}
@@ -355,9 +353,9 @@ export default function HomePage() {
               {t("home.why_nhyvas_desc")}
             </div>
           </div>
-        </section>
+        </section> */}
 
-        <section className="mt-12">
+        <section className={`${heroListings.length > 0 ? "mt-12" : ""}`}>
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold tracking-tight text-text-primary">
@@ -391,7 +389,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="mt-14 border-t border-border pt-8 text-sm text-text-tertiary">
+        <footer className="mt-14 mb-18 sm:mb-0 border-t border-border pt-8 text-sm text-text-tertiary">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>© {new Date().getFullYear()} Nhyvas</div>
 

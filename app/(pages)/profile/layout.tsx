@@ -1,25 +1,123 @@
 "use client";
 
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowLeft } from "lucide-react";
 import { RequireAuth } from "@/components/profile/RequireAuth";
 import { ProfileNav } from "@/components/profile/ProfileNav";
+import { pageBgClass } from "@/constant";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
-export default function ProfileLayout({ children }: { children: React.ReactNode }) {
+type ProfileLayoutProps = {
+  children: React.ReactNode;
+};
+
+export default function ProfileLayout({ children }: ProfileLayoutProps) {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  const isRoot = pathname === "/profile";
+
+  const isSupportTicket = pathname.startsWith("/profile/support-ticket/");
+
+  React.useEffect(() => {
+    if (isRoot || isSupportTicket) {
+      document.body.style.overflow = "";
+      return;
+    }
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    if (!isMobile) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isRoot, isSupportTicket]);
+
   return (
     <RequireAuth>
-      <div className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:pt-10">
-        <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] sm:text-3xl">{t("tabs.profile")}</h1>
-        </div>
+      <div className={cn("min-h-dvh", pageBgClass)}>
+        <div className="mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6 sm:pt-8">
+          <header className="mb-4 sm:mb-6">
+            <h1 className="text-xl font-extrabold text-text-primary sm:text-3xl">
+              {t("tabs.profile")}
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              {t("profile.preferences.subtitle")}
+            </p>
+          </header>
 
-        <div className="grid gap-6 md:grid-cols-[280px_1fr]">
-          <aside className="h-fit rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3 shadow-sm">
-            <ProfileNav />
-          </aside>
-          <main className="min-w-0 rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm sm:p-6">
-            {children}
-          </main>
+          {/* Desktop layout */}
+          <div className="hidden gap-6 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
+            <aside className="h-fit rounded-3xl border border-border bg-bg-background p-3 shadow-sm">
+              <ProfileNav />
+            </aside>
+
+            <main className="min-w-0 rounded-3xl border border-border bg-bg-background p-4 shadow-sm sm:p-6">
+              {children}
+            </main>
+          </div>
+
+          {/* Mobile layout — menu list on root, slide-over on sub-routes */}
+          <div className="md:hidden">
+            {isRoot ? (
+              <div className="rounded-[28px] border border-border bg-bg-background p-2 shadow-sm">
+                <ProfileNav />
+              </div>
+            ) : null}
+
+            <AnimatePresence>
+              {!isRoot ? (
+                <motion.section
+                  key="mobile-profile-panel"
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", stiffness: 320, damping: 34, mass: 0.9 }}
+                  className="fixed inset-0 z-50"
+                  style={{ willChange: "transform" }}
+                >
+                  <div className={cn("flex min-h-dvh flex-col", pageBgClass)}>
+                    {!isSupportTicket && (
+                      <div className="sticky top-0 z-10 border-b border-border bg-bg-background/95 backdrop-blur">
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <Link
+                            href="/profile"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-card text-text-primary transition active:scale-[0.98]"
+                            aria-label={t("common.back", "Back")}
+                          >
+                            <ArrowLeft className="h-5 w-5" />
+                          </Link>
+
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-text-primary">
+                              {t("tabs.profile")}
+                            </div>
+                            <div className="text-xs text-text-tertiary">
+                              {t("profile.preferences.subtitle")}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex-1 overflow-y-auto">
+                      {isSupportTicket ? (
+                        <div className="h-full">{children}</div>
+                      ) : (
+                        <div className="h-full px-4 pb-24 pt-4">
+                          <div className="rounded-[28px] border border-border bg-bg-page p-4 shadow-sm">
+                            {children}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.section>
+              ) : null}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </RequireAuth>

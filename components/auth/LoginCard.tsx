@@ -61,7 +61,7 @@ export function LoginCard({
   };
 
   return (
-    <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-(--surface) p-6 shadow-xl sm:p-8">
+    <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-linear-to-br from-white via-white dark:from-primary-900/30 dark:via-secondary-900/40 dark:to-tertiary-900/50 to-tertiary-50 p-6 shadow-xl sm:p-8">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 mx-auto">
           <Image src={darkLogo} alt="Nhyvas" width={112} height={34} className={`h-8 w-auto mx-auto object-contain ${theme === 'light' ? "hidden" : "block"}`} />
@@ -100,7 +100,7 @@ export function LoginCard({
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-(--surface) px-4 py-3.5 text-base font-medium text-text-primary shadow-sm transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
+        className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-border px-4 py-3.5 text-base font-medium text-text-primary shadow-sm transition hover:bg-tertiary-50 disabled:opacity-60 dark:hover:bg-tertiary-900/20"
       >
         {loading ? (
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
