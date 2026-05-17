@@ -12,7 +12,13 @@ export async function POST(req: Request) {
   const blockerId = await getUserIdOrThrow(supabase).catch(() => null);
   if (!blockerId) return jsonError("You need to be logged in.", 401);
 
-  const { error } = await supabase.from("user_blocks").insert({ blocker_id: blockerId, blocked_id: blockedId });
-  if (error && (error as any).code !== "23505") return jsonError(error.message, 400);
+  const { error, count } = await supabase
+    .from("user_blocks")
+    .delete({ count: "exact" })
+    .eq("blocker_id", blockerId)
+    .eq("blocked_id", blockedId);
+    
+  if (error) return jsonError(error.message, 400);
+  if (!count) return jsonError("Block record not found.", 404);
   return jsonOk({ ok: true });
 }

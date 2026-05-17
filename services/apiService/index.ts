@@ -7,6 +7,7 @@ export { profileService } from "@/services/apiService/profile";
 export { favouritesService } from "@/services/apiService/favourites";
 export { leadsService } from "@/services/apiService/leads";
 export { chatService } from "@/services/apiService/chat";
+export { activityService } from "@/services/apiService/activity";
 export { legalService } from "@/services/apiService/legal";
 export { supportService } from "@/services/apiService/support";
 export type {

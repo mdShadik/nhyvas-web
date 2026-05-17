@@ -12,11 +12,12 @@ export default function WithNavLayout({
   const pathname = usePathname();
   const isChat = pathname.startsWith("/chat");
   const isAddProperty = pathname.startsWith("/add-property");
+  const isProperty = pathname.startsWith("/property");
 
   return (
     <>
       {!isChat && <MobileTopBar />}
-      <NavBar hideMobile={isAddProperty} />
+      <NavBar hideMobile={isAddProperty || isProperty || isChat} />
       {children}
     </>
   );

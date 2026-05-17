@@ -6,17 +6,13 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "../ThemeToggle";
 import { useTheme } from "@/context/ThemeContext";
-import { createClient } from "@supabase/supabase-js";
-import { env } from "@/lib/env";
 import {
   MessageCircle,
   Heart,
   User,
   Bell,
-  Search,
   Home,
   Compass,
-  Building,
   Building2,
 } from "lucide-react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
@@ -29,6 +25,7 @@ import { getUnreadCount } from "@/services/notifications";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { motion } from "framer-motion";
 import LoginButton from "./MobileTopBar";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 const BRAND_ANIMATION_KEY = "nhyvas-navbar-logo-played";
 const BRAND_ANIMATION_DURATION = 2200;
@@ -100,6 +97,7 @@ function BrandLogo({ playTrigger }: { playTrigger: number }) {
       priority
       width={144}
       height={44}
+      style={{ width: "auto", height: "auto" }}
       className="h-10 w-auto object-contain sm:h-11"
     />
   );
@@ -116,7 +114,7 @@ function MainNavLink({
   label: string;
   icon: React.ReactNode;
   active: boolean;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }) {
   return (
     <Link
@@ -174,6 +172,7 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
   const unreadCount = useNotificationsStore((s) => s.unreadCount);
   const setUnreadCount = useNotificationsStore((s) => s.setUnreadCount);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const initialLoadRef = useRef(false);
@@ -251,14 +250,6 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
               </div>
 
               <div className="flex items-center gap-1 sm:gap-2">
-                {/* <IconAction
-                                    href="/explore"
-                                    label={t("tabs.explore")}
-                                    active={isRouteActive(pathname, "/explore")}
-                                >
-                                    <Search className="h-4.5 w-4.5" />
-                                </IconAction> */}
-
                 <div className="flex! flex-row gap-1 sm:block">
                   <ThemeToggle />
                   <LanguageToggle />
@@ -342,12 +333,20 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
                     </Link>
                   </div>
                 ) : (
-                  <LoginButton loginText={t("common.login")} />
+                  <LoginButton 
+                    loginText={t("common.login")} 
+                    onClick={() => setLoginOpen(true)}
+                  />
                 )}
               </div>
             </div>
           </div>
         </div>
+
+        <LoginModal 
+          open={loginOpen} 
+          onClose={() => setLoginOpen(false)} 
+        />
       </header>
 
       {/* Mobile Bottom Nav */}
@@ -386,9 +385,13 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
                 ]
               : [
                   {
-                    href: "/login",
+                    href: "#login",
                     icon: <User className="h-6 w-6" />,
                     id: "login",
+                    onClick: (e: React.MouseEvent) => {
+                      e.preventDefault();
+                      setLoginOpen(true);
+                    }
                   },
                 ]),
           ].map((item) => {

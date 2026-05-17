@@ -1,7 +1,7 @@
 "use client";
 
 import Image, { StaticImageData } from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,6 +14,8 @@ import {
   MessageCircle,
   Share2,
   Users,
+  Eye,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -25,17 +27,20 @@ import {
   favouritesService,
   leadsService,
   storiesService,
+  activityService,
 } from "@/services/apiService";
+import type { PropertyViewer } from "@/services/apiService/activity";
 import { uploadToR2 } from "@/services/apiService/media";
 import type { ExploreListing } from "@/services/apiService/explore";
 import { formatPrice } from "@/lib/formatPrice";
-import { tAmenity, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
+import { tAmenity, tAmenityCategory, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
 import { pageBgClass } from "@/constant";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { useToast } from "@/context/ToastContext";
 import { CoverageMap } from "@/components/map/CoverageMap";
+import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 
 function getListingImages(listing: ExploreListing | null) {
   if (!listing) return [];
@@ -56,7 +61,6 @@ async function shareOrCopy(url: string) {
   } catch {
     // fall back to copy
   }
-
   try {
     await navigator.clipboard.writeText(url);
     return "copied";
@@ -77,7 +81,10 @@ export default function PropertyPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
+  const [mobileMapOpen, setMobileMapOpen] = useState(false);
+  const [desktopMapOpen, setDesktopMapOpen] = useState(false);
+  const [viewersOpen, setViewersOpen] = useState(false);
+  const [optimisticViewed, setOptimisticViewed] = useState(false);
 
   const nextUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
@@ -106,6 +113,36 @@ export default function PropertyPage() {
   const listing = listingQuery.data?.listing ?? null;
   const isOwner = Boolean(currentUserId && listing?.listed_by && listing.listed_by === currentUserId);
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    // Only proceed if we have listing details and we know for sure user is NOT the owner
+    if (!id || !listingQuery.isSuccess || isOwner || !isAuthenticated) return;
+    
+    activityService.hasViewedListing(id).then((viewed) => {
+      if (!viewed) {
+        setOptimisticViewed(true);
+        void activityService.recordPropertyView(id);
+      }
+    });
+  }, [id, isOwner, isAuthenticated, listingQuery.isSuccess]);
+
+  const displayViewCount = useMemo(() => {
+    const base = listing?.view_count ?? 0;
+    return optimisticViewed ? base + 1 : base;
+  }, [listing?.view_count, optimisticViewed]);
+
+  const hasMap = Boolean(listing?.latitude != null && listing?.longitude != null);
+  const lat = listing?.latitude != null ? Number(listing.latitude) : NaN;
+  const lng = listing?.longitude != null ? Number(listing.longitude) : NaN;
+  const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
+
   const favouriteIdsQuery = useQuery({
     queryKey: ["listing-details-favorite", id],
     queryFn: () => favouritesService.getMyFavouriteListingIdsForListings([id]),
@@ -130,6 +167,12 @@ export default function PropertyPage() {
     enabled: Boolean(id && isOwner),
   });
   const ownerLeadCount = (ownerLeadsQuery.data ?? []).length;
+
+  const viewersQuery = useQuery({
+    queryKey: ["listing-viewers", id],
+    queryFn: () => activityService.getPropertyViewers(id),
+    enabled: Boolean(id && isOwner && viewersOpen),
+  });
 
   const toggleFavouriteMutation = useMutation({
     mutationFn: async () => {
@@ -202,7 +245,6 @@ export default function PropertyPage() {
   });
 
   const images = useMemo(() => getListingImages(listing), [listing]);
-  const activeImage = images[Math.min(activeImageIndex, Math.max(0, images.length - 1))] ?? noImagePlaceholder;
 
   const amenityLabels = useMemo(() => {
     return (listing?.amenity_tags ?? [])
@@ -213,13 +255,13 @@ export default function PropertyPage() {
 
   const enrichedAmenities = listingQuery.data?.enrichedAmenities ?? [];
   const groupedAmenities = useMemo(() => {
-    const groups: Record<string, { category_name: string; amenities: typeof enrichedAmenities }> = {};
+    const groups: Record<string, { category_name: string; category_code: string; amenities: typeof enrichedAmenities }> = {};
     for (const amenity of enrichedAmenities) {
       const key = amenity.category_id || "uncategorized";
       if (groups[key]) {
         groups[key].amenities.push(amenity);
       } else {
-        groups[key] = { category_name: amenity.category_name || "Other", amenities: [amenity] };
+        groups[key] = { category_name: amenity.category_name || "Other", category_code: amenity.category_code || "", amenities: [amenity] };
       }
     }
     return Object.values(groups);
@@ -232,7 +274,7 @@ export default function PropertyPage() {
     return (
       <main className={`min-h-screen ${pageBgClass}`}>
         <div className="mx-auto w-full max-w-3xl px-4 py-10">
-          <div className="rounded-3xl border border-border bg-bg-card p-6 text-text-secondary">
+          <div className="rounded border border-border bg-bg-page p-6 text-text-secondary">
             {t("property.missing_id", "Missing property id.")}
           </div>
         </div>
@@ -241,269 +283,401 @@ export default function PropertyPage() {
   }
 
   return (
-    <main className={`min-h-screen ${pageBgClass}`}>
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="flex items-center justify-between gap-3">
-          {/* <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("common.back", "Back")}
-          </button> */}
+    <>
+      <LoginModal
+        open={loginOpen}
+        nextUrl={nextUrl}
+        onClose={() => setLoginOpen(false)}
+        title={t("auth.login_required", "Login required")}
+        description={t("auth.login_required_desc", "Please sign in to continue with this action.")}
+      />
 
-          <div className="flex items-center gap-2">
-            {/* <button
-              type="button"
-              onClick={() =>
-                requireAuth(async () => {
-                  const url = typeof window !== "undefined" ? window.location.href : "";
-                  if (!url) return;
-                  const result = await shareOrCopy(url);
-                  showToast({
-                    variant: result === "failed" ? "error" : "success",
-                    message:
-                      result === "copied"
-                        ? t("common.copied", "Copied to clipboard.")
-                        : result === "shared"
-                          ? t("common.shared", "Shared.")
-                          : t("common.share_failed", "Could not share."),
-                  });
-                })
-              }
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-card text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800"
-              aria-label={t("common.share", "Share")}
+      {/* ── MOBILE LAYOUT ── */}
+      <div className="min-h-dvh md:hidden bg-bg-page">
+        {/* Full-bleed hero */}
+        <div className="sticky top-0 h-[50dvh] w-full overflow-hidden bg-secondary-100 dark:bg-secondary-800">
+          <AnimatePresence initial={false}>
+            <motion.div
+              key={activeImageIndex}
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -60 }}
+              transition={{ duration: 0.2 }}
+              drag={images.length > 1 ? "x" : false}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.3}
+              onDragEnd={(_, info) => {
+                if (images.length <= 1) return;
+                const swipe = info.offset.x;
+                if (swipe < -80) {
+                  setActiveImageIndex((p) => Math.min(images.length - 1, p + 1));
+                } else if (swipe > 80) {
+                  setActiveImageIndex((p) => Math.max(0, p - 1));
+                }
+              }}
+              className="absolute inset-0"
             >
-              <Share2 className="h-5 w-5" />
-            </button> */}
+              <Image
+                src={images[activeImageIndex] ?? noImagePlaceholder}
+                alt=""
+                fill
+                priority
+                className="object-cover pointer-events-none"
+                sizes="100vw"
+                draggable={false}
+              />
+            </motion.div>
+          </AnimatePresence>
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/50 via-black/15 to-black/70" />
 
-            {!isOwner ? (
+          {/* Top bar */}
+          <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between px-4 pt-6">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex h-10 w-10 items-center justify-center bg-black/35 text-white backdrop-blur-lg transition hover:bg-black/55"
+              aria-label={t("common.back", "Back")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                disabled={toggleFavouriteMutation.isPending}
-                onClick={() => requireAuth(() => toggleFavouriteMutation.mutate())}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-card text-text-primary transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
-                aria-label={t("property.actions.shortlist", "Shortlist")}
+                onClick={() => isOwner && setViewersOpen(true)}
+                className={`flex items-center gap-1.5 rounded-full bg-black/35 px-3 py-2 text-white backdrop-blur-lg border border-white/10 ${isOwner ? "cursor-pointer active:scale-95 transition-transform" : "cursor-default"}`}
               >
-                {toggleFavouriteMutation.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Heart className={`h-5 w-5 ${isFavourite ? "fill-primary-600 text-primary-600" : ""}`} />
-                )}
+                <Eye className="h-4 w-4" />
+                <span className="text-xs font-bold">{displayViewCount}</span>
               </button>
-            ) : null}
+              <button
+                type="button"
+                onClick={() =>
+                  requireAuth(async () => {
+                    const url = typeof window !== "undefined" ? window.location.href : "";
+                    if (!url) return;
+                    const result = await shareOrCopy(url);
+                    showToast({
+                      variant: result === "failed" ? "error" : "success",
+                      message:
+                        result === "copied"
+                          ? t("common.copied", "Copied to clipboard.")
+                          : result === "shared"
+                            ? t("common.shared", "Shared.")
+                            : t("common.share_failed", "Could not share."),
+                    });
+                  })
+                }
+                className="inline-flex h-10 w-10 items-center justify-center bg-black/35 text-white backdrop-blur-lg transition hover:bg-black/55"
+                aria-label={t("common.share", "Share")}
+              >
+                <Share2 className="h-4.5 w-4.5" />
+              </button>
+              {!isOwner ? (
+                <button
+                  type="button"
+                  disabled={toggleFavouriteMutation.isPending}
+                  onClick={() => requireAuth(() => toggleFavouriteMutation.mutate())}
+                  className="inline-flex h-10 w-10 items-center justify-center bg-black/35 text-white backdrop-blur-lg transition hover:bg-black/55 disabled:opacity-60"
+                  aria-label={t("property.actions.shortlist", "Shortlist")}
+                >
+                  {toggleFavouriteMutation.isPending ? (
+                    <Loader2 className="h-4.5 w-4.5 animate-spin" />
+                  ) : (
+                    <Heart className={`h-4.5 w-4.5 ${isFavourite ? "fill-white" : ""}`} />
+                  )}
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Dots */}
+          <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+            <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1.5 backdrop-blur-lg">
+              {images.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveImageIndex(idx)}
+                  className={`h-1.5 transition-all ${idx === activeImageIndex ? "w-6 bg-white" : "w-1.5 bg-white/50"}`}
+                  aria-label={`Photo ${idx + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        <LoginModal
-          open={loginOpen}
-          nextUrl={nextUrl}
-          onClose={() => setLoginOpen(false)}
-          title={t("auth.login_required", "Login required")}
-          description={t(
-            "auth.login_required_desc",
-            "Please sign in to continue with this action."
-          )}
-        />
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-start">
-          <section className="space-y-6">
-            {/* Media */}
-            <PropertyHero
-              title={listing?.property_title ?? t("property.title", "Property")}
-              images={images}
-              activeIndex={activeImageIndex}
-              onChangeIndex={setActiveImageIndex}
-              isFavourite={isFavourite}
-              favouriteBusy={toggleFavouriteMutation.isPending}
-              onToggleFavourite={!isOwner ? () => requireAuth(() => toggleFavouriteMutation.mutate()) : undefined}
-              onShare={() =>
-                requireAuth(async () => {
-                  const url = typeof window !== "undefined" ? window.location.href : "";
-                  if (!url) return;
-                  const result = await shareOrCopy(url);
-                  showToast({
-                    variant: result === "failed" ? "error" : "success",
-                    message:
-                      result === "copied"
-                        ? t("common.copied", "Copied to clipboard.")
-                        : result === "shared"
-                          ? t("common.shared", "Shared.")
-                          : t("common.share_failed", "Could not share."),
-                  });
-                })
-              }
-            />
-
-            {/* Main info */}
-            <div className="rounded-[28px] border border-border bg-bg-card p-5 shadow-sm sm:p-6">
-              {listingQuery.isLoading ? (
-                <div className="space-y-3">
-                  <div className="h-7 w-2/3 animate-pulse rounded bg-secondary-200 dark:bg-secondary-700" />
-                  <div className="h-5 w-1/2 animate-pulse rounded bg-secondary-200 dark:bg-secondary-700" />
-                  <div className="h-10 w-1/3 animate-pulse rounded bg-secondary-200 dark:bg-secondary-700" />
+        {/* Content - single continuous div */}
+        <div className="relative -mt-8 z-10">
+          <div className="mx-4 bg-bg-page border border-border shadow-xl rounded-[28px]">
+            {/* Price + Title */}
+            <div className="px-5 pb-4 pt-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl font-extrabold text-text-primary leading-tight">
+                    {listing?.property_title ?? t("property.title", "Property")}
+                  </h1>
+                  {listing?.location_text ? (
+                    <div className="mt-1.5 flex items-center gap-1.5 text-sm text-text-tertiary">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-primary-400" />
+                      <span className="line-clamp-1">{listing.location_text}</span>
+                    </div>
+                  ) : null}
                 </div>
-              ) : listing ? (
-                <>
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h1 className="text-2xl font-semibold text-text-primary sm:text-3xl">
-                        {listing.property_title}
-                      </h1>
-                      <div className="mt-2 flex items-center gap-2 text-sm text-text-secondary">
-                        <MapPin className="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                        <span className="line-clamp-1">{listing.location_text}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-1 shrink-0 rounded-2xl bg-primary-100 px-4 py-3 text-primary-800 dark:bg-primary-900/35 dark:text-primary-200">
-                      {/* <div className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                        {t("property.price", "Price")}
-                      </div> */}
-                      <div className="mt-0.5 text-xl font-bold opacity-80">{tCurrency(listing.currency_code)}</div>
-                      <div className="mt-1 text-xl font-extrabold">
-                        {formatPrice(listing.price, "")}
-                      </div>
-                    </div>
+                <div className="shrink-0 bg-linear-to-br from-primary-500 to-tertiary-600 px-4 py-2.5 text-white shadow-sm rounded-2xl">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90">
+                    {t("explore.price_label", "Price")}
                   </div>
+                  <div className="mt-0.5 flex items-baseline gap-1">
+                    <span className="text-sm font-bold">{tCurrency(listing?.currency_code ?? "NPR")}</span>
+                    <span className="text-lg font-extrabold">{formatPrice(listing?.price ?? 0, "")}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {listing?.property_category ? (
+                  <span className="bg-primary-400/10 px-3 py-1 text-xs font-semibold text-primary-500 rounded-full">
+                    {tPropertyCategory(listing.property_category)}
+                  </span>
+                ) : null}
+                {listing?.subcategory ? (
+                  <span className="bg-tertiary-400/10 px-3 py-1 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400 rounded-full">
+                    {tPropertySubcategory(listing.subcategory)}
+                  </span>
+                ) : null}
+              </div>
+            </div>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-semibold text-text-secondary dark:bg-secondary-800">
-                      {tPropertyCategory(listing.property_category)}
-                    </span>
-                    {listing.subcategory ? (
-                      <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-semibold text-text-secondary dark:bg-secondary-800">
-                        {tPropertySubcategory(listing.subcategory)}
-                      </span>
+            {/* Divider */}
+            <div className="mx-5 h-px bg-border" />
+
+            {listingQuery.isLoading ? (
+              <div className="p-5 space-y-3">
+                <div className="h-4 w-3/4 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
+                <div className="h-4 w-1/2 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
+                <div className="h-24 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
+              </div>
+            ) : !listing ? (
+              <div className="p-6 text-center text-text-secondary">
+                {t("property.not_found", "Property not found.")}
+              </div>
+            ) : (
+              <>
+                {/* Description */}
+                {description ? (
+                  <div className="px-5 py-5">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                      <span className="h-1 w-1 bg-primary-400" />
+                      {t("property.description_title", "Description")}
+                    </div>
+                    <p className="mt-3 whitespace-pre-line text-sm leading-7 text-text-secondary">
+                      {displayDescription}
+                      {!showFullDescription && description.length > 420 ? "…" : ""}
+                    </p>
+                    {description.length > 420 ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowFullDescription((prev) => !prev)}
+                        className="mt-2 text-sm font-semibold text-primary-500 transition hover:text-primary-400"
+                      >
+                        {showFullDescription ? t("common.show_less", "Show less") : t("common.show_more", "Show more")}
+                      </button>
                     ) : null}
                   </div>
+                ) : null}
 
-                  {description ? (
-                    <div className="mt-6">
-                      <div className="text-sm font-semibold text-text-primary">
-                        {t("property.description_title", "Description")}
-                      </div>
-                      <p className="mt-2 whitespace-pre-line text-sm leading-7 text-text-secondary">
-                        {displayDescription}
-                        {!showFullDescription && description.length > 420 ? "…" : ""}
-                      </p>
-                      {description.length > 420 ? (
-                        <button
-                          type="button"
-                          onClick={() => setShowFullDescription((prev) => !prev)}
-                          className="mt-2 text-sm font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-                        >
-                          {showFullDescription ? t("common.show_less", "Show less") : t("common.show_more", "Show more")}
-                        </button>
-                      ) : null}
+                {/* Divider */}
+                {description ? <div className="mx-5 h-px bg-border" /> : null}
+
+                {/* Walkthrough story */}
+                {listing.is_story ? (
+                  <>
+                    <div className="px-5 py-5">
+                      <PropertyWalkthroughSection listingId={listing.id} isOwner={isOwner} />
                     </div>
-                  ) : null}
+                    <div className="mx-5 h-px bg-border" />
+                  </>
+                ) : null}
 
-                  {listing.is_story ? (
-                    <PropertyWalkthroughSection listingId={listing.id} isOwner={isOwner} />
-                  ) : null}
-
-                  <div className="mt-6">
-                    <div className="text-sm font-semibold text-text-primary">
-                      {t("explore.amenities", "Amenities")}
-                    </div>
+                {/* Amenities */}
+                <div className="px-5 py-5">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                    <span className="h-1 w-1 bg-tertiary-400" />
+                    {t("explore.amenities", "Amenities")}
+                  </div>
+                  <div className="mt-4 space-y-4">
                     {groupedAmenities.length ? (
-                      <div className="mt-3 space-y-4">
-                        {groupedAmenities.map((group) => (
-                          <div key={group.category_name}>
-                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
-                              {group.category_name}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {group.amenities.map((amenity) => (
-                                <span
-                                  key={amenity.id}
-                                  className="rounded-full border border-border bg-bg-input px-3 py-2 text-sm font-medium text-text-secondary"
-                                >
-                                  {tAmenity(amenity.code || amenity.name)}
-                                </span>
-                              ))}
-                            </div>
+                      groupedAmenities.map((group) => (
+                        <div key={group.category_code || group.category_name}>
+                          <div className="mb-2.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                            {tAmenityCategory(group.category_code || group.category_name)}
                           </div>
-                        ))}
-                      </div>
-                    ) : amenityLabels.length ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            {group.amenities.map((amenity) => (
+                              <span
+                                key={amenity.id}
+                                className="bg-bg-input px-3.5 py-1.5 text-xs font-medium text-text-secondary border border-border rounded-full"
+                              >
+                                {tAmenity(amenity.code || amenity.name)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
                         {amenityLabels.map((label) => (
                           <span
                             key={label}
-                            className="rounded-full border border-border bg-bg-input px-3 py-2 text-sm font-medium text-text-secondary"
+                            className="bg-bg-input px-3.5 py-1.5 text-xs font-medium text-text-secondary border border-border rounded-full"
                           >
                             {label}
                           </span>
                         ))}
                       </div>
-                    ) : (
-                      <div className="mt-2 text-sm text-text-secondary">
-                        {t("property.no_amenities", "No amenities listed.")}
-                      </div>
                     )}
                   </div>
-                </>
-              ) : (
-                <div className="text-text-secondary">
-                  {t("property.not_found", "Property not found.")}
                 </div>
-              )}
-            </div>
-          </section>
 
-          {/* Actions */}
-          <aside className="lg:sticky lg:top-24">
-            <div className="rounded-[28px] border border-border bg-bg-card p-5 shadow-sm sm:p-6">
-              <div className="text-lg font-semibold text-text-primary">
-                {t("property.actions.title", "Actions")}
-              </div>
-              <div className="mt-4 space-y-3">
-                {isOwner ? (
-                  <a
-                    href={`/profile/leads?listingId=${id}`}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500"
+                {/* Divider */}
+                <div className="mx-5 h-px bg-border" />
+
+                {/* View Map */}
+                {hasMap ? (
+                  <button
+                    type="button"
+                    onClick={() => requireAuth(() => setMobileMapOpen(true))}
+                    disabled={!hasPoint}
+                    className="flex w-full mb-30 items-center gap-3 px-5 py-4 text-left transition hover:bg-secondary-50 dark:hover:bg-secondary-900/30 disabled:opacity-50"
                   >
-                    <Users className="h-4 w-4" />
-                    {t("property.actions.my_interested", "My Interested")}
-                    {ownerLeadCount > 0 ? ` (${ownerLeadCount})` : ""}
-                  </a>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      disabled={hasInterested || createLeadMutation.isPending}
-                      onClick={() => requireAuth(() => createLeadMutation.mutate())}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:opacity-60"
-                    >
-                      {createLeadMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <LinkIcon className="h-4 w-4" />
-                      )}
-                      {hasInterested
-                        ? t("property.actions.interested_done", "Interest sent")
-                        : t("property.actions.interested", "I'm interested")}
-                    </button>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-tertiary-400/10 text-tertiary-600 dark:text-tertiary-400">
+                      <Map className="h-4.5 w-4.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-text-primary">
+                        {t("map.view_map", "View Map")}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-text-tertiary">
+                        {listing?.location_text ?? ""}
+                      </div>
+                    </div>
+                    <ArrowLeft className="h-4 w-4 rotate-180 shrink-0 text-text-tertiary" />
+                  </button>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
 
-                    <button
-                      type="button"
-                      disabled={createChatRoomMutation.isPending}
-                      onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-bg-input px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
-                    >
-                      {createChatRoomMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <MessageCircle className="h-4 w-4" />
-                      )}
-                      {t("property.actions.chat", "Chat with owner")}
-                    </button>
-                  </>
-                )}
+        {/* Fixed bottom bar */}
+        {listing && !listingQuery.isLoading ? (
+          <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-page/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] backdrop-blur-xl">
+            {isOwner ? (
+              <a
+                href={`/profile/leads?listingId=${id}`}
+                className="flex w-full items-center justify-center gap-2 bg-linear-to-br from-primary-500 via to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] rounded-2xl"
+              >
+                <Users className="h-4 w-4" />
+                {t("property.actions.my_interested", "My Interested")}
+                {ownerLeadCount > 0 ? ` (${ownerLeadCount})` : ""}
+              </a>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={hasInterested || createLeadMutation.isPending}
+                  onClick={() => requireAuth(() => createLeadMutation.mutate())}
+                  className="flex flex-1 items-center justify-center gap-2 border border-border bg-bg-input py-3.5 text-sm font-semibold text-text-primary transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
+                >
+                  {createLeadMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LinkIcon className="h-4 w-4" />
+                  )}
+                  {hasInterested
+                    ? t("property.actions.interested_done", "Interest sent")
+                    : t("property.actions.interested", "I'm interested")}
+                </button>
+                <button
+                  type="button"
+                  disabled={createChatRoomMutation.isPending}
+                  onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
+                  className="flex flex-1 items-center justify-center gap-2 bg-linear-to-br from-primary-500 to-tertiary-600 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
+                >
+                  {createChatRoomMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <MessageCircle className="h-4 w-4" />
+                  )}
+                  {t("property.actions.chat", "Chat")}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : null}
 
+        {/* Mobile Map Bottom Sheet */}
+        <MobileBottomSheet
+          open={mobileMapOpen}
+          title={t("property.map.title", "Map view")}
+          description={listing?.location_text ?? ""}
+          onClose={() => setMobileMapOpen(false)}
+        >
+          {hasPoint ? (
+            <div className="h-[50dvh]">
+              <CoverageMap
+                center={{ latitude: lat, longitude: lng }}
+                radiusMeters={listing?.show_exact_location ? 30 : 200}
+                height={400}
+                gesturesEnabled
+                active
+                variant={listing?.show_exact_location ? "pin" : "pulse"}
+              />
+            </div>
+          ) : (
+            <div className="flex h-48 items-center justify-center text-text-secondary">
+              {t("property.map.unavailable", "Location map unavailable.")}
+            </div>
+          )}
+        </MobileBottomSheet>
+
+        {/* Viewers Bottom Sheet (Mobile) */}
+        {isMobile && (
+          <MobileBottomSheet
+            open={viewersOpen}
+            title={t("property.viewers.title", "Property Viewers")}
+            description={t("property.viewers.desc", "Users who have viewed your property")}
+            onClose={() => setViewersOpen(false)}
+          >
+            <div className="pt-2">
+              <ViewerList viewers={viewersQuery.data ?? []} isLoading={viewersQuery.isLoading} />
+            </div>
+          </MobileBottomSheet>
+        )}
+      </div>
+
+      {/* ── DESKTOP LAYOUT ── */}
+      <main className={`hidden min-h-dvh md:block ${pageBgClass}`}>
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          {/* Top bar */}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-2xl"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t("common.back", "Back")}
+            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => isOwner && setViewersOpen(true)}
+                className={`flex items-center gap-2 rounded-full border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 ${isOwner ? "cursor-pointer active:scale-98" : "cursor-default"}`}
+              >
+                <Eye className="h-4 w-4 text-primary-500" />
+                <span className="font-bold">{displayViewCount} <span className="font-medium text-text-secondary ml-1">{t("property.views", "views")}</span></span>
+              </button>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() =>
@@ -522,56 +696,440 @@ export default function PropertyPage() {
                       });
                     })
                   }
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-bg-card px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800"
+                  className="inline-flex items-center gap-2 border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-2xl"
                 >
                   <Share2 className="h-4 w-4" />
                   {t("common.share", "Share")}
                 </button>
+                {!isOwner ? (
+                  <button
+                    type="button"
+                    disabled={toggleFavouriteMutation.isPending}
+                    onClick={() => requireAuth(() => toggleFavouriteMutation.mutate())}
+                    className="inline-flex items-center gap-2 border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800 rounded-2xl"
+                  >
+                    {toggleFavouriteMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Heart className={`h-4 w-4 ${isFavourite ? "fill-primary-600 text-primary-600" : ""}`} />
+                    )}
+                    {isFavourite ? t("property.actions.shortlisted", "Saved") : t("property.actions.shortlist", "Save")}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
 
-                <button
-                  type="button"
-                  disabled={!listing || listing.latitude == null || listing.longitude == null}
-                  onClick={() =>
-                    requireAuth(() => {
-                      setMapOpen(true);
-                    })
-                  }
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-bg-card px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800"
-                >
-                  <Map className="h-4 w-4" />
-                  {t("property.actions.view_map", "View map")}
-                </button>
+          <div className="mt-6 grid grid-cols-[1.4fr_1fr] gap-8">
+            {/* Left - Images gallery */}
+            <div className="space-y-5">
+              <div className="overflow-hidden border border-border bg-bg-page shadow-sm rounded-[28px]">
+                <div className="relative aspect-16/10 w-full bg-secondary-100 dark:bg-secondary-800">
+                  <AnimatePresence initial={false}>
+                    <motion.div
+                      key={activeImageIndex}
+                      initial={{ opacity: 0, x: 40 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -40 }}
+                      transition={{ duration: 0.2 }}
+                      drag={images.length > 1 ? "x" : false}
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.3}
+                      onDragEnd={(_, info) => {
+                        if (images.length <= 1) return;
+                        if (info.offset.x < -80) {
+                          setActiveImageIndex((p) => Math.min(images.length - 1, p + 1));
+                        } else if (info.offset.x > 80) {
+                          setActiveImageIndex((p) => Math.max(0, p - 1));
+                        }
+                      }}
+                      className="absolute inset-0"
+                    >
+                      <Image
+                        src={images[activeImageIndex] ?? noImagePlaceholder}
+                        alt=""
+                        fill
+                        priority
+                        className="object-cover pointer-events-none"
+                        sizes="(max-width: 1280px) 60vw, 800px"
+                        draggable={false}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                    <div className="flex gap-2 bg-black/25 px-3 py-2 backdrop-blur-lg">
+                      {images.map((_, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setActiveImageIndex(idx)}
+                          className={`h-2 transition-all ${idx === activeImageIndex ? "w-6 bg-white" : "w-2 bg-white/45 hover:bg-white/70"}`}
+                          aria-label={`Photo ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {images.length > 1 ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setActiveImageIndex((p) => Math.max(0, p - 1))}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/30 p-2 text-white backdrop-blur-lg transition hover:bg-black/50"
+                        aria-label="Previous"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveImageIndex((p) => Math.min(images.length - 1, p + 1))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/30 p-2 text-white backdrop-blur-lg transition hover:bg-black/50"
+                        aria-label="Next"
+                      >
+                        <ArrowLeft className="h-4 w-4 rotate-180" />
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
 
-              {listing ? (
-                <div className="mt-6 rounded-2xl border border-border bg-bg-input px-4 py-4 text-sm text-text-secondary">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-semibold text-text-primary">
-                      {t("property.quick.price", "Price")}
-                    </span>
-                    <span className="font-semibold text-text-primary">
-                      {formatPrice(listing.price, listing.currency_code)}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <span className="font-semibold text-text-primary">
-                      {t("property.quick.category", "Category")}
-                    </span>
-                    <span className="truncate">{listing.property_category}</span>
-                  </div>
+              {images.length > 1 ? (
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {images.map((src, idx) => (
+                    <button
+                      key={`thumb-${idx}`}
+                      type="button"
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative h-20 w-28 shrink-0 overflow-hidden border-2 transition ${idx === activeImageIndex ? "border-primary-400" : "border-transparent opacity-70 hover:opacity-100"}`}
+                    >
+                      <Image src={src} alt="" fill className="object-cover" sizes="112px" />
+                    </button>
+                  ))}
                 </div>
               ) : null}
-            </div>
-          </aside>
-        </div>
-      </div>
 
-      <PropertyMapModal
-        open={mapOpen}
-        onClose={() => setMapOpen(false)}
-        listing={listing}
-      />
-    </main>
+              {/* Description - desktop */}
+              {description ? (
+                <div className="border border-border bg-bg-page p-6 shadow-sm">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                    <span className="h-1 w-1 bg-primary-400" />
+                    {t("property.description_title", "Description")}
+                  </div>
+                  <p className="mt-3 whitespace-pre-line text-sm leading-7 text-text-secondary">
+                    {displayDescription}
+                    {!showFullDescription && description.length > 420 ? "…" : ""}
+                  </p>
+                  {description.length > 420 ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowFullDescription((prev) => !prev)}
+                      className="mt-2 text-sm font-semibold text-primary-500 transition hover:text-primary-400"
+                    >
+                      {showFullDescription ? t("common.show_less", "Show less") : t("common.show_more", "Show more")}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {/* View Map (desktop) */}
+              {hasMap ? (
+                <button
+                  type="button"
+                  onClick={() => requireAuth(() => setDesktopMapOpen(true))}
+                  disabled={!hasPoint}
+                  className="flex w-full items-center gap-4 border border-border bg-bg-page p-5 shadow-sm transition hover:bg-secondary-50 dark:hover:bg-secondary-900/30 disabled:opacity-50"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-tertiary-400/10 text-tertiary-600 dark:text-tertiary-400">
+                    <Map className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="text-sm font-semibold text-text-primary">
+                      {t("map.view_map", "View Map")}
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-text-tertiary">
+                      {listing?.location_text ?? ""}
+                    </p>
+                  </div>
+                  <ArrowLeft className="h-4 w-4 rotate-180 shrink-0 text-text-tertiary" />
+                </button>
+              ) : null}
+
+              {/* Walkthrough - desktop */}
+              {listing?.is_story ? (
+                <PropertyWalkthroughSection listingId={listing.id} isOwner={isOwner} />
+              ) : null}
+            </div>
+
+            {/* Right - Details */}
+            <div className="space-y-5">
+              {listingQuery.isLoading ? (
+                <div className="border border-border bg-bg-page p-6">
+                  <div className="space-y-4">
+                    <div className="h-6 w-2/3 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
+                    <div className="h-4 w-1/3 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
+                    <div className="h-4 w-1/2 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
+                    <div className="h-20 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
+                  </div>
+                </div>
+              ) : !listing ? (
+                <div className="border border-border bg-bg-page p-6 text-center text-text-secondary">
+                  {t("property.not_found", "Property not found.")}
+                </div>
+              ) : (
+                <>
+                  {/* Info card */}
+                  <div className="border border-border bg-bg-page p-6 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <h1 className="text-2xl font-extrabold text-text-primary">
+                          {listing.property_title}
+                        </h1>
+                        {listing.location_text ? (
+                          <div className="mt-2 flex items-center gap-1.5 text-sm text-text-tertiary">
+                            <MapPin className="h-4 w-4 text-primary-500" />
+                            <span>{listing.location_text}</span>
+                          </div>
+                        ) : null}
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="bg-primary-400/10 px-3.5 py-1 text-xs font-semibold text-primary-500 rounded-full">
+                            {tPropertyCategory(listing.property_category)}
+                          </span>
+                          {listing.subcategory ? (
+                            <span className="bg-tertiary-400/10 px-3.5 py-1 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400 rounded-full">
+                              {tPropertySubcategory(listing.subcategory)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="shrink-0 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-5 py-3 text-white shadow-sm rounded-2xl">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90">
+                          {t("explore.price_label", "Price")}
+                        </div>
+                        <div className="mt-0.5 flex items-baseline gap-1">
+                          <span className="text-sm font-bold">{tCurrency(listing.currency_code ?? "NPR")}</span>
+                          <span className="text-xl font-extrabold">{formatPrice(listing.price, "")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Amenities */}
+                  <div className="border border-border bg-bg-page p-6 shadow-sm">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                      <span className="h-1 w-1 bg-tertiary-400" />
+                      {t("explore.amenities", "Amenities")}
+                    </div>
+                    <div className="mt-4 space-y-5">
+                      {groupedAmenities.length ? (
+                        groupedAmenities.map((group) => (
+                          <div key={group.category_name}>
+                            <div className="mb-2.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                              {tAmenityCategory(group.category_code || group.category_name)}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {group.amenities.map((amenity) => (
+                                <span
+                                  key={amenity.id}
+                                  className="bg-bg-input px-4 py-1.5 text-xs font-medium text-text-secondary border border-border rounded-full"
+                                >
+                                  {tAmenity(amenity.code || amenity.name)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {amenityLabels.map((label) => (
+                            <span
+                              key={label}
+                              className="bg-bg-input px-4 py-1.5 text-xs font-medium text-text-secondary border border-border rounded-full"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="border border-border bg-bg-page p-6 shadow-sm">
+                    <div className="text-sm font-semibold text-text-primary">
+                      {t("property.actions.title", "Actions")}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      {isOwner ? (
+                        <a
+                          href={`/profile/leads?listingId=${id}`}
+                          className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 to-tertiary-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 rounded-2xl"
+                        >
+                          <Users className="h-4 w-4" />
+                          {t("property.actions.my_interested", "My Interested")}
+                          {ownerLeadCount > 0 ? ` (${ownerLeadCount})` : ""}
+                        </a>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            disabled={hasInterested || createLeadMutation.isPending}
+                            onClick={() => requireAuth(() => createLeadMutation.mutate())}
+                            className="inline-flex items-center gap-2 border border-border bg-bg-input px-6 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800 rounded-2xl"
+                          >
+                            {createLeadMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <LinkIcon className="h-4 w-4" />
+                            )}
+                            {hasInterested
+                              ? t("property.actions.interested_done", "Interest sent")
+                              : t("property.actions.interested", "I'm interested")}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={createChatRoomMutation.isPending}
+                            onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
+                            className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 to-tertiary-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                          >
+                            {createChatRoomMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MessageCircle className="h-4 w-4" />
+                            )}
+                            {t("property.actions.chat", "Chat with owner")}
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          requireAuth(async () => {
+                            const url = typeof window !== "undefined" ? window.location.href : "";
+                            if (!url) return;
+                            const result = await shareOrCopy(url);
+                            showToast({
+                              variant: result === "failed" ? "error" : "success",
+                              message:
+                                result === "copied"
+                                  ? t("common.copied", "Copied to clipboard.")
+                                  : result === "shared"
+                                    ? t("common.shared", "Shared.")
+                                    : t("common.share_failed", "Could not share."),
+                            });
+                          })
+                        }
+                        className="inline-flex items-center gap-2 border border-border bg-bg-page px-6 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-2xl"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        {t("common.share", "Share")}
+                      </button>
+                    </div>
+
+                    <div className="mt-5 bg-linear-to-br from-primary-400/5 to-tertiary-400/5 px-4 py-3 border border-primary-400/10">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-semibold text-text-primary">
+                          {t("explore.price_label", "Price")}
+                        </span>
+                        <span className="font-semibold text-text-primary">
+                          {formatPrice(listing.price, listing.currency_code)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-semibold text-text-primary">
+                          {t("property.quick.category", "Category")}
+                        </span>
+                        <span className="text-text-secondary">{listing.property_category}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Viewers Modal (Desktop) */}
+        {viewersOpen && !isMobile && (
+          <div className="fixed inset-0 z-85 hidden md:block">
+            <button
+              type="button"
+              onClick={() => setViewersOpen(false)}
+              className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+            />
+            <div className="relative mx-auto flex min-h-full w-full max-w-lg items-center justify-center px-4 py-10">
+              <div className="w-full overflow-hidden border border-border bg-bg-page shadow-xl rounded-[28px]">
+                <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-5">
+                  <h2 className="text-xl font-extrabold text-text-primary">
+                    {t("property.viewers.title", "Property Viewers")}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setViewersOpen(false)}
+                    className="p-2 text-text-secondary hover:text-text-primary transition"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="p-6 max-h-[60vh] overflow-y-auto">
+                  <ViewerList viewers={viewersQuery.data ?? []} isLoading={viewersQuery.isLoading} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Desktop Map Modal */}
+      {desktopMapOpen ? (
+        <div className="fixed inset-0 z-85 hidden md:block">
+          <button
+            type="button"
+            aria-label="Close map"
+            onClick={() => setDesktopMapOpen(false)}
+            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+          />
+          <div className="relative mx-auto flex min-h-full w-full max-w-4xl items-center justify-center px-4 py-10">
+            <div className="w-full overflow-hidden border border-border bg-bg-page shadow-xl">
+              <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-text-primary">
+                    {t("property.map.title", "Map view")}
+                  </h2>
+                  <p className="mt-0.5 truncate text-sm text-text-secondary">
+                    {listing?.location_text ?? ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDesktopMapOpen(false)}
+                  className="border border-border bg-bg-input px-3 py-2 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800"
+                >
+                  {t("common.close", "Close")}
+                </button>
+              </div>
+              <div className="aspect-16/10 w-full bg-secondary-100 dark:bg-secondary-800">
+                {hasPoint ? (
+                  <div className="h-full w-full p-4">
+                    <CoverageMap
+                      center={{ latitude: lat, longitude: lng }}
+                      radiusMeters={listing?.show_exact_location ? 30 : 200}
+                      height={420}
+                      gesturesEnabled
+                      active
+                      variant={listing?.show_exact_location ? "pin" : "pulse"}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center px-6 text-center text-text-secondary">
+                    {t("property.map.unavailable", "Exact map location is not available for this property.")}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -619,8 +1177,11 @@ function PropertyWalkthroughSection({
   const active = storyQuery.data ?? null;
 
   return (
-    <div className="mt-6 rounded-[28px] border border-border bg-bg-card p-5 shadow-sm sm:p-6">
-      <div className="text-sm font-semibold text-text-primary">{t("property.story.title")}</div>
+    <div className="border border-border bg-bg-page p-5 shadow-sm sm:p-6">
+      <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+        <span className="h-1 w-1 bg-tertiary-400" />
+        {t("property.story.title")}
+      </div>
       <p className="mt-1 text-xs text-text-tertiary">{t("property.story.subtitle")}</p>
 
       {storyQuery.isLoading ? (
@@ -632,12 +1193,11 @@ function PropertyWalkthroughSection({
         <div className="mt-4 space-y-4">
           {active ? (
             <>
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <video
                 src={active.media_url}
                 controls
                 playsInline
-                className="aspect-video w-full overflow-hidden rounded-2xl bg-black"
+                className="aspect-video w-full overflow-hidden bg-black"
               />
               <div className="text-xs text-text-tertiary">
                 {t("property.story.expires")}: {new Date(active.expires_at).toLocaleString()}
@@ -648,7 +1208,7 @@ function PropertyWalkthroughSection({
           ) : null}
 
           {isOwner ? (
-            <label className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-dashed border-border bg-bg-input px-4 py-4 text-center text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800">
+            <label className="flex cursor-pointer flex-col gap-2 border border-dashed border-border bg-bg-input px-4 py-4 text-center text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800">
               <input
                 type="file"
                 accept="video/*"
@@ -676,247 +1236,72 @@ function PropertyWalkthroughSection({
   );
 }
 
-function PropertyHero({
-  title,
-  images,
-  activeIndex,
-  onChangeIndex,
-  isFavourite,
-  favouriteBusy,
-  onShare,
-  onToggleFavourite,
-}: {
-  title: string;
-  images: string[] | StaticImageData[];
-  activeIndex: number;
-  onChangeIndex: (next: number) => void;
-  isFavourite: boolean;
-  favouriteBusy: boolean;
-  onShare: () => void;
-  onToggleFavourite?: () => void;
-}) {
-  const swipeConfidenceThreshold = 10000;
-  const swipePower = (offset: number, velocity: number) => Math.abs(offset) * velocity;
-
-  const safeImages = images.length ? images : [noImagePlaceholder];
-  const listingImage = safeImages[activeIndex] ?? safeImages[0] ?? noImagePlaceholder;
-
-  return (
-    <div className="overflow-hidden rounded-[28px] border border-border bg-bg-card shadow-sm">
-      <div className="group relative aspect-16/10 w-full bg-secondary-100 dark:bg-secondary-800">
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={`${activeIndex}-${listingImage}`}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.25 }}
-            drag={safeImages.length > 1 ? "x" : false}
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={1}
-            onDragEnd={(_, info) => {
-              if (safeImages.length <= 1) return;
-              const swipe = swipePower(info.offset.x, info.velocity.x);
-              if (swipe < -swipeConfidenceThreshold) {
-                onChangeIndex(Math.min(activeIndex + 1, safeImages.length - 1));
-              } else if (swipe > swipeConfidenceThreshold) {
-                onChangeIndex(Math.max(activeIndex - 1, 0));
-              }
-            }}
-            className="absolute inset-0"
-          >
-            <Image
-              src={listingImage}
-              alt={title}
-              fill
-              priority
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 800px"
-            />
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/55 via-black/15 to-transparent" />
-          </motion.div>
-        </AnimatePresence>
-
-        <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-          <div className="rounded-full bg-black/35 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-            {safeImages.length} photo{safeImages.length === 1 ? "" : "s"}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onShare}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-md transition hover:bg-black/55"
-              aria-label="Share"
-            >
-              <Share2 className="h-5 w-5" />
-            </button>
-            {onToggleFavourite ? (
-              <button
-                type="button"
-                onClick={onToggleFavourite}
-                disabled={favouriteBusy}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-md transition hover:bg-black/55 disabled:opacity-60"
-                aria-label="Save"
-              >
-                {favouriteBusy ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Heart className={`h-5 w-5 ${isFavourite ? "fill-white" : ""}`} />
-                )}
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        {safeImages.length > 1 ? (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-            <div className="flex gap-2 rounded-full bg-black/30 px-3 py-2 backdrop-blur-md">
-              {safeImages.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => onChangeIndex(idx)}
-                  className={`h-2 rounded-full transition-all ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/45 hover:bg-white/70"
-                    }`}
-                  aria-label={`Go to image ${idx + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      {safeImages.length > 1 ? (
-        <div className="flex gap-2 overflow-x-auto border-t border-border bg-bg-card px-4 py-3">
-          {safeImages.map((src, idx) => (
-            <button
-              key={`${src}-${idx}`}
-              type="button"
-              onClick={() => onChangeIndex(idx)}
-              className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-2xl border transition ${idx === activeIndex ? "border-primary-400" : "border-border hover:border-primary-200"
-                }`}
-              aria-label={`Image ${idx + 1}`}
-            >
-              <Image src={src} alt="" fill className="object-cover" sizes="96px" />
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function PropertyMapModal({
-  open,
-  onClose,
-  listing,
-}: {
-  open: boolean;
-  onClose: () => void;
-  listing: ExploreListing | null;
-}) {
+function ViewerList({ viewers, isLoading }: { viewers: PropertyViewer[]; isLoading: boolean }) {
   const { t } = useTranslation();
-
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    if (!open) return;
-
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
-
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
-    };
-  }, [open]);
-
-  const lat =
-    listing?.latitude != null
-      ? Number(listing.latitude)
-      : NaN;
-
-  const lng =
-    listing?.longitude != null
-      ? Number(listing.longitude)
-      : NaN;
-
-  const hasPoint =
-    Number.isFinite(lat) &&
-    Number.isFinite(lng);
-
-  // Hooks must run before conditional returns
-  if (!open) return null;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+      </div>
+    );
+  if (!viewers.length)
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary-100 dark:bg-secondary-800 mb-4">
+          <Eye className="h-8 w-8 text-text-tertiary" />
+        </div>
+        <p className="text-text-secondary font-medium">
+          {t("property.viewers.none", "No viewers yet.")}
+        </p>
+      </div>
+    );
 
   return (
-    <div className="fixed inset-0 z-85">
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close map"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-      />
-
-      {/* Modal */}
-      <div className="relative mx-auto flex min-h-full w-full max-w-4xl items-center justify-center px-4 py-10">
-        <div className="w-full overflow-hidden rounded-[28px] border border-border bg-bg-card shadow-xl">
-
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-text-primary">
-                {t("property.map.title", "Map view")}
-              </h2>
-
-              <p className="mt-0.5 truncate text-sm text-text-secondary">
-                {listing?.location_text ?? ""}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-2xl border border-border bg-bg-input px-3 py-2 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800"
-            >
-              {t("common.close", "Close")}
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="aspect-16/10 w-full bg-secondary-100 dark:bg-secondary-800">
-            {hasPoint ? (
-              <div className="h-full w-full p-4">
-                <CoverageMap
-                  center={{
-                    latitude: lat,
-                    longitude: lng,
-                  }}
-                  radiusMeters={
-                    listing?.show_exact_location
-                      ? 30
-                      : 200
-                  }
-                  height={420}
-                  gesturesEnabled
-                  active
-                  variant={
-                    listing?.show_exact_location
-                      ? "pin"
-                      : "pulse"
-                  }
-                />
-              </div>
+    <div className="divide-y divide-border">
+      {viewers.map((v) => (
+        <div
+          key={v.viewer_user_id}
+          className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
+        >
+          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-secondary-100 dark:bg-secondary-800 border border-border">
+            {v.avatar_url ? (
+              <Image
+                src={v.avatar_url}
+                alt={v.full_name}
+                fill
+                className="object-cover"
+                sizes="48px"
+              />
             ) : (
-              <div className="flex h-full items-center justify-center px-6 text-center text-text-secondary">
-                {t(
-                  "property.map.unavailable",
-                  "Exact map location is not available for this property."
-                )}
+              <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary-400/20 to-tertiary-400/20 text-primary-600 font-bold text-lg">
+                {v.full_name.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="font-extrabold text-text-primary truncate">
+                {v.full_name}
+              </h4>
+              <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider bg-secondary-100 dark:bg-secondary-800 px-2 py-0.5 rounded-md shrink-0">
+                {new Date(v.last_viewed_at).toLocaleDateString()}
+              </span>
+            </div>
+            <div className="mt-0.5 space-y-0.5">
+              <div className="text-xs text-text-secondary truncate flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-primary-400/50" />
+                {v.email}
+              </div>
+              {v.phone ? (
+                <div className="text-xs text-text-tertiary truncate flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-tertiary-400/50" />
+                  {v.phone}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

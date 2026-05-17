@@ -27,9 +27,9 @@ import { noImagePlaceholder } from "@/assets";
 import { authApi } from "@/services/apiService";
 import { chatService, type ChatMessage, type ChatMessagesPage } from "@/services/apiService/chat";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
-import { pageBgClass } from "@/constant";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ChatRoomSkeleton } from "./ChatRoomSkeleton";
 
 const CHAT_PAGE_SIZE = 10;
 const TOP_FETCH_THRESHOLD = 40;
@@ -116,9 +116,9 @@ const MessageBubble = memo(function MessageBubble({
 
   if (item.message_type === "system") {
     return (
-      <div className="my-4 flex justify-center px-4">
-        <div className="rounded-2xl bg-secondary-100 px-4 py-2 dark:bg-secondary-800">
-          <p className="text-center text-sm text-text-tertiary">{item.content}</p>
+      <div className="my-6 flex justify-center px-4">
+        <div className="rounded-full bg-secondary-100 px-4 py-1.5 dark:bg-secondary-800/50 border border-border/50">
+          <p className="text-center text-[11px] font-bold uppercase tracking-widest text-text-tertiary">{item.content}</p>
         </div>
       </div>
     );
@@ -132,34 +132,56 @@ const MessageBubble = memo(function MessageBubble({
       ? item.content
       : null;
 
+  const timeText = item.created_at 
+    ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : "";
+
   return (
-    <div className={cn("my-1 flex px-4", isMe ? "justify-end" : "justify-start")}>
-      {!isMe ? (
-        <div className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary-200 dark:bg-secondary-700">
+    <div className={cn("my-1.5 flex px-4 group", isMe ? "justify-end" : "justify-start")}>
+      {!isMe && (
+        <div className="relative mr-2.5 mt-auto mb-1 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary-100 dark:bg-secondary-800 shadow-sm transition-transform group-hover:scale-110">
           {counterpartyAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={counterpartyAvatarUrl} alt="" className="h-full w-full object-cover" />
+            <Image src={counterpartyAvatarUrl} alt="" fill className="object-cover" sizes="32px" />
           ) : (
             <User className="h-4 w-4 text-text-tertiary" aria-hidden />
           )}
         </div>
-      ) : null}
+      )}
 
-      <div
-        className={cn(
-          "max-w-[75%] rounded-2xl border px-4 py-2.5",
-          isMe
-            ? "rounded-br-md border-transparent bg-primary-600 text-white"
-            : "rounded-bl-md border-border bg-bg-card text-text-primary"
-        )}
-      >
-        {imgSrc ? (
-          <a href={imgSrc} target="_blank" rel="noopener noreferrer">
-            {/* eslint-disable-next-line @next/next/no-img-element -- remote chat attachment URL */}
-            <img src={imgSrc} alt={t("chat.room.image_attachment_alt", "Attached image")} className="max-h-52 rounded-lg" />
-          </a>
-        ) : (
-          <p className="text-[15px] leading-snug">{item.content}</p>
+      <div className={cn(
+        "relative flex flex-col max-w-[85%] sm:max-w-[70%]",
+        isMe ? "items-end" : "items-start"
+      )}>
+        <div
+          className={cn(
+            "rounded-[20px] px-4 py-2.5 shadow-sm transition-all duration-200",
+            isMe
+              ? "rounded-br-none bg-primary-500 text-white shadow-primary-500/10"
+              : "rounded-bl-none border border-border bg-bg-card text-text-primary shadow-black/5"
+          )}
+        >
+          {imgSrc ? (
+            <a href={imgSrc} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg">
+              <Image 
+                src={imgSrc} 
+                alt={t("chat.room.image_attachment_alt", "Attached image")} 
+                width={320}
+                height={240}
+                className="max-h-64 object-cover hover:scale-105 transition-transform duration-300" 
+              />
+            </a>
+          ) : (
+            <p className="text-[14px] font-medium leading-relaxed whitespace-pre-wrap break-words">{item.content}</p>
+          )}
+        </div>
+        
+        {timeText && (
+          <span className={cn(
+            "text-[9px] font-bold uppercase tracking-tight mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+            isMe ? "text-primary-600 dark:text-primary-400" : "text-text-tertiary"
+          )}>
+            {timeText}
+          </span>
         )}
       </div>
     </div>
@@ -212,12 +234,12 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
         .from("user_blocks")
         .select("blocker_id, blocked_id")
         .or(`and(blocker_id.eq.${me},blocked_id.eq.${other}),and(blocker_id.eq.${other},blocked_id.eq.${me})`)
-        .limit(1);
+        .limit(2);
 
       if (error) throw error;
-      const row = (data ?? [])[0] as { blocker_id: string; blocked_id: string } | undefined;
-      if (!row) return { blocked: false, byMe: false };
-      return { blocked: true, byMe: row.blocker_id === me };
+      const rows = (data ?? []) as Array<{ blocker_id: string; blocked_id: string }>;
+      if (!rows.length) return { blocked: false, byMe: false };
+      return { blocked: true, byMe: rows.some((r) => r.blocker_id === me) };
     },
   });
 
@@ -378,10 +400,16 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
   const blockMutation = useMutation({
     mutationFn: async () => {
       if (!roomDetails?.counterparty?.id || !currentUserId) return;
-      await chatService.blockUser(currentUserId, roomDetails.counterparty.id);
+      if (blockInfo?.blocked && blockInfo.byMe) {
+        await chatService.unblockUser(currentUserId, roomDetails.counterparty.id);
+      } else {
+        await chatService.blockUser(currentUserId, roomDetails.counterparty.id);
+      }
     },
     onSuccess: () => {
-      router.push("/chat");
+      void queryClient.invalidateQueries({ queryKey: ["chat_block_status"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat_room", roomId] });
+      void queryClient.invalidateQueries({ queryKey: ["chat_rooms"] });
     },
   });
 
@@ -399,6 +427,13 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
   const dialogCopy = useMemo(() => {
     const name = roomDetails?.counterparty?.full_name ?? t("chat.unknown_user");
     if (confirmModal === "block") {
+      if (blockInfo?.blocked && blockInfo.byMe) {
+        return {
+          title: t("chat.menu.confirm_unblock_title"),
+          body: t("chat.menu.confirm_unblock_body", { name }),
+          confirm: t("chat.menu.confirm_unblock_action"),
+        };
+      }
       return {
         title: t("chat.menu.confirm_block_title"),
         body: t("chat.menu.confirm_block_body", { name }),
@@ -413,7 +448,137 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
       };
     }
     return null;
-  }, [confirmModal, roomDetails?.counterparty?.full_name, t]);
+  }, [confirmModal, roomDetails?.counterparty?.full_name, blockInfo?.blocked, blockInfo?.byMe, t]);
+
+  const isInitialLoading = (messagesLoading || (!roomDetails && !!roomId));
+
+  if (isInitialLoading) {
+    return <ChatRoomSkeleton />;
+  }
+
+  const embeddedHeader: ReactNode = embedded ? (
+    <div className="sticky top-0 z-30 border-b border-border bg-bg-card/85 backdrop-blur-md">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => router.push("/chat")}
+            className="md:hidden shrink-0 rounded-full p-1 text-text-primary hover:bg-secondary-100 dark:hover:bg-secondary-800"
+            aria-label={t("common.back")}
+          >
+            <ChevronLeft className="h-6 w-6 text-text-primary" />
+          </button>
+
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary-200 dark:bg-secondary-700">
+            {roomDetails?.counterparty?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={roomDetails.counterparty.avatar_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-5 w-5 text-text-tertiary" />
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <p className="truncate text-sm font-extrabold text-text-primary">
+              {roomDetails?.counterparty?.full_name ?? t("chat.room.loading_contact", "Loading…")}
+            </p>
+            {roomDetails?.property_title ? (
+              <p className="truncate text-[11px] font-bold text-text-tertiary">
+                {roomDetails.property_title}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div ref={menuRef} className="relative">
+          <button
+            type="button"
+            className="rounded-full p-2 text-text-primary hover:bg-secondary-100 dark:hover:bg-secondary-800"
+            aria-label={t("chat.room.chat_actions")}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <MoreVertical className="h-6 w-6" />
+          </button>
+          {menuOpen ? (
+            <div className="absolute right-0 z-40 mt-1 w-[min(100vw-2rem,18rem)] overflow-hidden rounded-2xl border border-border bg-bg-card py-2 shadow-lg">
+              <button
+                type="button"
+                className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-secondary-50 dark:hover:bg-secondary-900"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmModal("block");
+                }}
+              >
+                <div className={cn(
+                  "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                  blockInfo?.byMe ? "bg-green-500/15" : "bg-red-500/15"
+                )}>
+                  <span className="sr-only">{blockInfo?.byMe ? t("chat.menu.unblock") : t("chat.menu.block")}</span>
+                  <span className={cn(
+                    "font-bold",
+                    blockInfo?.byMe ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                  )}>
+                    {blockInfo?.byMe ? "✓" : "⨉"}
+                  </span>
+                </div>
+                <span>
+                  <span className={cn(
+                    "block font-semibold",
+                    blockInfo?.byMe ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                  )}>
+                    {blockInfo?.byMe
+                      ? t("chat.menu.unblock_title", { name: roomDetails?.counterparty?.full_name ?? t("chat.unknown_user") })
+                      : t("chat.menu.block_title", { name: roomDetails?.counterparty?.full_name ?? t("chat.unknown_user") })
+                    }
+                  </span>
+                  <span className="mt-0.5 block text-xs text-text-tertiary">
+                    {blockInfo?.byMe ? t("chat.menu.unblock_hint") : t("chat.menu.block_hint")}
+                  </span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-secondary-50 dark:hover:bg-secondary-900"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmModal("report");
+                }}
+              >
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/15">
+                  <span className="text-lg">⚠</span>
+                </div>
+                <span>
+                  <span className="block font-semibold text-amber-700 dark:text-amber-400">
+                    {t("chat.menu.report_title")}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-text-tertiary">{t("chat.menu.report_hint")}</span>
+                </span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {roomDetails?.property_title && propertyHref ? (
+        <Link
+          href={propertyHref}
+          className="flex items-center gap-3 px-4 pb-3 -mt-1 transition hover:opacity-90"
+        >
+          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary-100 dark:bg-secondary-800">
+            <Image src={thumb} alt="" fill sizes="36px" className="object-cover" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+              {t("chat.room.discussing_property")}
+            </p>
+            <p className="truncate text-sm font-bold text-text-primary">{roomDetails.property_title}</p>
+          </div>
+        </Link>
+      ) : null}
+    </div>
+  ) : null;
 
   const headerChrome: ReactNode = embedded ? null : (
     <div className="flex items-center justify-between border-b border-border bg-bg-card px-4 py-3">
@@ -421,11 +586,12 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
         <button
           type="button"
           onClick={() => router.push("/chat")}
-          className="shrink-0 rounded-full p-1 text-text-primary hover:bg-secondary-100 dark:hover:bg-secondary-800"
-          aria-label={t("common.back", "Back")}
+          className="shrink-0 rounded-full p-1 text-text-primary hover:bg-secondary-100 dark:hover:bg-secondary-800 md:hidden"
+          aria-label={t("common.back")}
         >
-          <ChevronLeft className="h-7 w-7" />
+          <ChevronLeft className="h-6 w-6 text-text-primary" />
         </button>
+
 
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary-200 dark:bg-secondary-700">
           {roomDetails?.counterparty?.avatar_url ? (
@@ -463,17 +629,30 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
                 setConfirmModal("block");
               }}
             >
-              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15">
-                <span className="sr-only">{t("chat.menu.block")}</span>
-                <span className="font-bold text-red-600 dark:text-red-400">⨉</span>
+              <div className={cn(
+                "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                blockInfo?.byMe ? "bg-green-500/15" : "bg-red-500/15"
+              )}>
+                <span className="sr-only">{blockInfo?.byMe ? t("chat.menu.unblock") : t("chat.menu.block")}</span>
+                <span className={cn(
+                  "font-bold",
+                  blockInfo?.byMe ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                )}>
+                  {blockInfo?.byMe ? "✓" : "⨉"}
+                </span>
               </div>
               <span>
-                <span className="block font-semibold text-red-600 dark:text-red-400">
-                  {t("chat.menu.block_title", {
-                    name: roomDetails?.counterparty?.full_name ?? t("chat.unknown_user"),
-                  })}
+                <span className={cn(
+                  "block font-semibold",
+                  blockInfo?.byMe ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                )}>
+                  {blockInfo?.byMe
+                    ? t("chat.menu.unblock_title", { name: roomDetails?.counterparty?.full_name ?? t("chat.unknown_user") })
+                    : t("chat.menu.block_title", { name: roomDetails?.counterparty?.full_name ?? t("chat.unknown_user") })}
                 </span>
-                <span className="mt-0.5 block text-xs text-text-tertiary">{t("chat.menu.block_hint")}</span>
+                <span className="mt-0.5 block text-xs text-text-tertiary">
+                  {blockInfo?.byMe ? t("chat.menu.unblock_hint") : t("chat.menu.block_hint")}
+                </span>
               </span>
             </button>
 
@@ -502,13 +681,17 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
   );
 
   return (
-    <div className={cn(!embedded ? `flex min-h-dvh flex-col ${pageBgClass}` : "flex h-full min-h-[320px] flex-col bg-transparent")}>
+    <div className={cn(!embedded ? `flex min-h-dvh flex-col` : "flex h-full min-h-80 flex-col bg-bg-page relative")}>
+      {embeddedHeader}
       {headerChrome}
 
       {roomDetails?.property_title && propertyHref ? (
         <Link
           href={propertyHref}
-          className="flex items-center gap-3 border-b border-border bg-secondary-50 px-4 py-2 transition hover:bg-secondary-100 dark:bg-secondary-900/30 dark:hover:bg-secondary-900/50"
+          className={cn(
+            "flex items-center gap-3 border-b border-border bg-secondary-50 px-4 py-2 transition hover:bg-secondary-100 dark:bg-secondary-900/30 dark:hover:bg-secondary-900/50",
+            embedded ? "hidden" : ""
+          )}
         >
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
             <Image src={thumb} alt="" fill sizes="44px" className="object-cover" />
@@ -555,8 +738,22 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
 
       <div className="border-t border-border bg-bg-card px-4 pb-[max(env(safe-area-inset-bottom,0px),0.75rem)] pt-3">
         {blockInfo?.blocked ? (
-          <div className="rounded-full border border-border bg-bg-input py-3 text-center text-sm font-semibold text-text-tertiary">
-            {t("chat.room.unavailable")}
+          <div className="flex flex-col items-center gap-2 py-2">
+            <div className="rounded-full border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400">
+              {blockInfo.byMe
+                ? t("chat.room.blocked_by_you", "You blocked this user. Unblock to send messages.")
+                : t("chat.room.cannot_message_longer", "You cannot message anymore.")}
+            </div>
+            {blockInfo.byMe ? (
+              <button
+                type="button"
+                disabled={blockMutation.isPending}
+                onClick={() => setConfirmModal("block")}
+                className="text-sm font-extrabold text-primary-600 hover:text-primary-500 disabled:opacity-60"
+              >
+                {t("chat.menu.unblock", "Unblock")}
+              </button>
+            ) : null}
           </div>
         ) : (
           <div className="flex items-end gap-2">
@@ -583,7 +780,7 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
               )}
               aria-label={t("chat.room.send")}
             >
-              <Send className="h-[18px] w-[18px]" style={{ marginLeft: -2 }} />
+              <Send className="h-4.5 w-4.5" style={{ marginLeft: -2 }} />
             </button>
           </div>
         )}

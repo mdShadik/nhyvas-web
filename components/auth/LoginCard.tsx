@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useTranslation } from "react-i18next";
+import { X } from "lucide-react";
 
 import { env } from "@/lib/env";
 import { useTheme } from "@/context/ThemeContext";
@@ -62,22 +63,34 @@ export function LoginCard({
 
   return (
     <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-linear-to-br from-white via-white dark:from-primary-900/30 dark:via-secondary-900/40 dark:to-tertiary-900/50 to-tertiary-50 p-6 shadow-xl sm:p-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 mx-auto">
-          <Image src={darkLogo} alt="Nhyvas" width={112} height={34} className={`h-8 w-auto mx-auto object-contain ${theme === 'light' ? "hidden" : "block"}`} />
-          <Image src={lightLogo} alt="Nhyvas" width={112} height={34} className={`h-8 w-auto mx-auto object-contain ${theme === 'light' ? "block" : "hidden"}`} />
-          <div className="h-6 w-px bg-border" />
-          {/* <div className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
-            {t("auth.login", "Login")}
-          </div> */}
+      <div className="relative mb-8 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <Image 
+            src={darkLogo} 
+            alt="Nhyvas" 
+            width={112} 
+            height={34} 
+            style={{ width: "auto", height: "auto" }} 
+            className={`h-8 w-auto object-contain ${theme === 'light' ? "hidden" : "block"}`} 
+          />
+          <Image 
+            src={lightLogo} 
+            alt="Nhyvas" 
+            width={112} 
+            height={34} 
+            style={{ width: "auto", height: "auto" }} 
+            className={`h-8 w-auto object-contain ${theme === 'light' ? "block" : "hidden"}`} 
+          />
         </div>
+        
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-border bg-bg-input px-3 py-2 text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800"
+            className="absolute right-0 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-input text-text-secondary transition-all hover:bg-secondary-100 hover:text-text-primary active:scale-95 dark:hover:bg-secondary-800"
+            aria-label={t("common.close", "Close")}
           >
-            {t("common.close", "Close")}
+            <X className="h-5 w-5" />
           </button>
         ) : null}
       </div>
@@ -141,4 +154,3 @@ export function LoginCard({
     </div>
   );
 }
-

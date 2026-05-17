@@ -97,7 +97,7 @@ export function MobileBottomSheet({
         </Sheet.Header>
 
         <Sheet.Content
-          className="bg-linear-to-br! dark:from-bg-page dark:via-primary-900/20 dark:to-tertiary-500/50 to-tertiary-50"
+          className="bg-linear-to-br! dark:from-bg-page dark:via-primary-900/10 dark:to-tertiary-500/20 to-tertiary-50"
         >
           <div className="px-4 pb-6">
             {children}

@@ -122,6 +122,11 @@ export const chatService = {
     await requestJson("/api/chat/block", { method: "POST", body: JSON.stringify({ blockedId }) });
   },
 
+  async unblockUser(blockerId: string, blockedId: string): Promise<void> {
+    void blockerId;
+    await requestJson("/api/chat/unblock", { method: "POST", body: JSON.stringify({ blockedId }) });
+  },
+
   async reportUser(reporterId: string, reportedId: string, reason: string): Promise<void> {
     void reporterId;
     await requestJson("/api/chat/report", { method: "POST", body: JSON.stringify({ reportedId, reason }) });

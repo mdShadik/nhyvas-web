@@ -23,7 +23,7 @@ export default function ChatRoomPage() {
 
   return (
     <RequireAuth>
-      <ListingChatRoom roomId={roomId} />
+      <ListingChatRoom roomId={roomId} embedded />
     </RequireAuth>
   );
 }

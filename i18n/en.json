@@ -65,6 +65,11 @@
     "fallback_title": "Property",
     "unique_viewers": "Unique Viewers",
     "no_viewers": "No viewers yet.",
+    "viewers": {
+      "title": "Property Viewers",
+      "desc": "Users who have viewed your property",
+      "none": "No viewers yet."
+    },
     "user": "User",
     "story": {
       "title": "Walkthrough",
@@ -95,7 +100,8 @@
     "privacy_exact": "Opens full screen. Shows exact pin location.",
     "privacy_approx": "Opens full screen. For privacy, shows approximate 200m area.",
     "unavailable_title": "Map unavailable",
-    "unavailable_body": "This listing doesn’t have location coordinates available."
+    "unavailable_body": "This listing doesn’t have location coordinates available.",
+    "view_map": "View Map"
   },
   "navigation": {
     "support_chats": "Support Chats",
@@ -424,19 +430,26 @@
       "type_placeholder": "Type a message…",
       "send": "Send",
       "unavailable": "No longer available to chat",
+      "cannot_message_longer": "You cannot message anymore.",
       "chat_actions": "Chat actions",
       "system_prefix": "[System]: {{text}}",
       "image_attachment_alt": "Attached image"
     },
     "menu": {
       "block_title": "Block {{name}}",
+      "unblock_title": "Unblock {{name}}",
       "block_hint": "Prevent this user from messaging you",
+      "unblock_hint": "Allow this user to message you again",
       "report_title": "Report user",
       "report_hint": "Report spam, scam, or abusive language",
       "block": "Block",
+      "unblock": "Unblock",
       "confirm_block_title": "Block user",
       "confirm_block_body": "Are you sure you want to block {{name}}? You will no longer receive messages from them.",
       "confirm_block_action": "Block",
+      "confirm_unblock_title": "Unblock user",
+      "confirm_unblock_body": "Are you sure you want to unblock {{name}}? You will be able to receive messages from them again.",
+      "confirm_unblock_action": "Unblock",
       "confirm_report_title": "Report user",
       "confirm_report_body": "Are you sure you want to report {{name}} for inappropriate behavior or scam?",
       "confirm_report_action": "Report",

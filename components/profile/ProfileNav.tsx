@@ -56,10 +56,10 @@ export function ProfileNav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-3 px-3 py-4 text-sm font-medium transition-colors border border-border",
               active
                 ? "bg-primary-400/12 text-primary-400"
-                : "text-text-secondary hover:bg-bg-input hover:text-text-primary"
+                : "dark:bg-tertiary-900/30 text-text-secondary hover:bg-bg-input hover:text-text-primary"
             )}
           >
             <span className={cn("opacity-90", active ? "text-primary-400" : "text-text-tertiary")}>

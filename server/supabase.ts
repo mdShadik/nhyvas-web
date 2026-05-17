@@ -25,23 +25,6 @@ function isSessionExpiredError(error: Error | null): boolean {
   return INVALID_SESSION_ERRORS.some((code) => message.includes(code));
 }
 
-// function assertServiceRoleKey(): string {
-//   if (!env.supabaseServiceRoleKey) {
-//     throw new Error("Missing server env var: SUPABASE_SERVICE_ROLE_KEY");
-//   }
-//   return env.supabaseServiceRoleKey;
-// }
-
-export function createSupabaseAdminClient(): SupabaseClient {
-  return createClient(env.supabaseUrl, env.supabasePublishableKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
-}
-
 export async function getRequestAuthTokens(): Promise<
   | { accessToken: string; refreshToken: string }
   | { accessToken: null; refreshToken: null }
@@ -158,4 +141,3 @@ export async function createSupabaseUserClientOrThrowLegacy(): Promise<SupabaseC
   }
   return result.client;
 }
-

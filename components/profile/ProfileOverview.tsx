@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
+import { AvatarUpload } from "@/components/common/AvatarUpload";
 import { useToast } from "@/context/ToastContext";
 import { tAmenity } from "@/i18n/masterData";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,19 @@ function EditProfileForm({
 }) {
   return (
     <div className="space-y-4">
+
+      <div className="space-y-1.5 flex flex-col gap-2 justify-center items-center">
+        <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+          <Camera className="h-4 w-4 text-text-tertiary" />
+          {t("profile.form.avatar")}
+        </div>
+        <AvatarUpload
+          currentAvatarUrl={form.avatarUrl}
+          onAvatarChange={(url) => setForm((p) => ({ ...p, avatarUrl: url }))}
+          className="items-start!"
+        />
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <div className="text-sm font-medium text-text-primary">
@@ -83,20 +97,6 @@ function EditProfileForm({
             placeholder={t("profile.form.email_placeholder")}
           />
         </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-          <Camera className="h-4 w-4 text-text-tertiary" />
-          {t("profile.form.avatar")}
-        </div>
-        <Input
-          value={form.avatarUrl}
-          onChange={(e) =>
-            setForm((p) => ({ ...p, avatarUrl: e.target.value }))
-          }
-          placeholder="https://..."
-        />
       </div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
@@ -178,11 +178,12 @@ function EditProfileForm({
                   }))
                 }
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                  "border px-3 py-1.5 text-xs font-medium transition backdrop-blur-sm",
                   selected
-                    ? "border-primary-400/40 bg-primary-400/12 text-primary-400"
-                    : "border-border bg-bg-input text-text-secondary hover:bg-secondary-100 dark:hover:bg-secondary-800"
+                    ? "border-primary-400/40 bg-primary-400/20 text-primary-400 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
+                    : "border-white/20 bg-white/5 text-text-secondary hover:bg-white/10"
                 )}
+                style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
               >
                 {tAmenity(amenity.name)}
               </button>
@@ -310,12 +311,12 @@ export function ProfileOverview() {
   };
 
   if (bootstrapQuery.isLoading) {
-    return <div className="h-56 animate-pulse rounded-[24px] bg-bg-input" />;
+    return <div className="h-56 animate-pulse border border-white/20 bg-white/5 backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }} />;
   }
 
   if (!profile) {
     return (
-      <div className="rounded-[24px] border border-border bg-bg-card p-5">
+      <div className="border border-white/20 bg-white/5 p-5 backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
         <div className="text-base font-bold text-text-primary">
           {t("auth.profile_load_failed")}
         </div>
@@ -345,11 +346,11 @@ export function ProfileOverview() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* ─── MOBILE: messenger-style header ─── */}
-      <section className="overflow-hidden rounded-[28px] bg-bg-page sm:hidden">
-        <div className="bg-linear-to-br from-primary-500/10 dark:via-primary-900/20 to-tertiary-50 dark:to-tertiary-900/50 px-4 pb-5 pt-6">
-          <div className="flex flex-col items-center text-center">
-            <div className="relative h-24 w-24 overflow-hidden rounded-full border border-border bg-bg-input ring-4 ring-bg-card shadow-sm">
+      {/* ─── MOBILE: marsian glassy header ─── */}
+      <section className="sm:hidden" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }}>
+        <div className="relative overflow-hidden border border-border bg-linear-to-br from-primary-500/10 via-primary-600/10 to-tertiary-500/10 p-4 pb-5 pt-6 backdrop-blur-2xl before:absolute before:inset-0 before:bg-linear-to-t before:from-white/5 before:to-transparent before:content-['']">
+          <div className="relative flex flex-col items-center text-center">
+            <div className="relative h-24 w-24 overflow-hidden border border-primary-400/40 bg-primary-500/10 shadow-[0_0_30px_rgba(99,102,241,0.3)]" style={{ clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))" }}>
               {avatar ? (
                 <Image
                   src={avatar}
@@ -359,7 +360,7 @@ export function ProfileOverview() {
                   sizes="96px"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xl font-extrabold text-text-tertiary">
+                <div className="flex h-full w-full items-center justify-center text-xl font-extrabold text-primary-400">
                   {name.slice(0, 2).toUpperCase()}
                 </div>
               )}
@@ -369,8 +370,8 @@ export function ProfileOverview() {
               {name}
             </div>
 
-            <div className="mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-bg-input px-3 py-1.5 text-sm text-text-secondary">
-              <Mail className="h-4 w-4 shrink-0 text-text-tertiary" />
+            <div className="mt-2 inline-flex max-w-full items-center gap-2 border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-text-secondary backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+              <Mail className="h-4 w-4 shrink-0 text-primary-400" />
               <span className="truncate">
                 {email || t("profile.no_email")}
               </span>
@@ -378,8 +379,9 @@ export function ProfileOverview() {
 
             <Button
               onClick={openEdit}
-              className="mt-4 h-9 rounded-full px-4 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
+              className="mt-4 h-9 border border-white/20 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-4 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
               size="sm"
+              style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
             >
               <PencilLine className="mr-2 h-4 w-4" />
               {t("profile.menu.edit_profile")}
@@ -387,57 +389,53 @@ export function ProfileOverview() {
           </div>
         </div>
 
-        <div className="space-y-3 pb-3">
-          <div className="rounded-[22px] rounded-t-none border border-t-0 border-border bg-bg-page! p-2">
-            <div className="px-2 pb-2 pt-1 text-xs font-semibold uppercase tracking-[0.14em] text-text-tertiary">
-              {t("profile.preferences.title")}
-            </div>
-
-            <div className="overflow-hidden rounded-[18px] bg-bg-page">
-              <div className="flex items-start gap-3 px-3 py-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-500/10 text-primary-500">
-                  <Shapes className="h-4 w-4" />
+        <div className="space-y-3 pt-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="relative flex flex-col items-center justify-center gap-2 border border-white/20 bg-white/5 p-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
+              <div className="flex h-11 w-11 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+                <Shapes className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-[11px] font-medium text-text-tertiary">
+                  {t("profile.preferences.preferred_category")}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-text-tertiary">
-                    {t("profile.preferences.preferred_category")}
-                  </div>
-                  <div className="mt-0.5 truncate text-sm font-semibold text-text-primary">
-                    {preferences?.category_code ?? "—"}
-                  </div>
+                <div className="mt-0.5 text-sm font-bold text-text-primary">
+                  {preferences?.category_code ?? "—"}
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-start gap-3 border-t border-border px-3 py-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-tertiary-500/10 text-tertiary-600 dark:text-tertiary-400">
-                  <CircleDollarSign className="h-4 w-4" />
+            <div className="relative flex flex-col items-center justify-center gap-2 border border-white/20 bg-white/5 p-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
+              <div className="flex h-11 w-11 items-center justify-center bg-tertiary-500/20 text-tertiary-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+                <CircleDollarSign className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-[11px] font-medium text-text-tertiary">
+                  {t("profile.preferences.min_price")} /{" "}
+                  {t("profile.preferences.max_price")}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-text-tertiary">
-                    {t("profile.preferences.min_price")} /{" "}
-                    {t("profile.preferences.max_price")}
-                  </div>
-                  <div className="mt-0.5 text-sm font-semibold text-text-primary">
-                    {preferences?.min_price ?? "—"} -{" "}
-                    {preferences?.max_price ?? "—"}
-                  </div>
+                <div className="mt-0.5 text-sm font-bold text-text-primary">
+                  {preferences?.min_price ?? "—"} -{" "}
+                  {preferences?.max_price ?? "—"}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-[22px] border border-border bg-bg-input p-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-              <Sparkles className="h-4 w-4 text-text-tertiary" />
+          <div className="relative flex flex-col items-center gap-2 border border-white/20 bg-white/5 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
+            <div className="flex h-11 w-11 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="text-[11px] font-medium text-text-tertiary">
               {t("explore.amenities")}
             </div>
-
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="flex flex-wrap justify-center gap-1.5">
               {preferredAmenities.length ? (
                 preferredAmenities.slice(0, 12).map((amenityName) => (
                   <span
                     key={amenityName}
-                    className="rounded-full border border-border bg-bg-card px-3 py-1.5 text-xs font-medium text-text-secondary"
+                    className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
+                    style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
                   >
                     {tAmenity(amenityName)}
                   </span>
@@ -452,11 +450,11 @@ export function ProfileOverview() {
         </div>
       </section>
 
-      {/* ─── DESKTOP: original style ─── */}
-      <section className="hidden rounded-[28px] border border-border bg-bg-card p-4 sm:block sm:p-5">
+      {/* ─── DESKTOP: marsian glassy style ─── */}
+      <section className="hidden border border-white/20 bg-white/5 p-4 backdrop-blur-2xl sm:block sm:p-5" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[22px] border border-border bg-bg-input">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-primary-400/40 bg-primary-500/10 shadow-[0_0_20px_rgba(99,102,241,0.3)]" style={{ clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))" }}>
               {avatar ? (
                 <Image
                   src={avatar}
@@ -466,7 +464,7 @@ export function ProfileOverview() {
                   sizes="64px"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-base font-extrabold text-text-tertiary">
+                <div className="flex h-full w-full items-center justify-center text-base font-extrabold text-primary-400">
                   {name.slice(0, 2).toUpperCase()}
                 </div>
               )}
@@ -477,7 +475,7 @@ export function ProfileOverview() {
                 {name}
               </div>
               <div className="mt-1 flex items-center gap-2 text-sm text-text-secondary">
-                <Mail className="h-4 w-4 shrink-0 text-text-tertiary" />
+                <Mail className="h-4 w-4 shrink-0 text-primary-400" />
                 <span className="truncate">
                   {email || t("profile.no_email")}
                 </span>
@@ -487,8 +485,9 @@ export function ProfileOverview() {
 
           <Button
             onClick={openEdit}
-            className="shrink-0 rounded-full"
+            className="shrink-0 border border-white/20 bg-linear-to-r from-primary-500 to-tertiary-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
             size="sm"
+            style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
           >
             <PencilLine className="mr-2 h-4 w-4" />
             {t("profile.menu.edit_profile")}
@@ -496,49 +495,51 @@ export function ProfileOverview() {
         </div>
       </section>
 
-      <section className="hidden gap-4 sm:grid sm:grid-cols-2">
-        <div className="rounded-[24px] border border-border bg-bg-card p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-            <Shapes className="h-4 w-4 text-text-tertiary" />
-            {t("profile.preferences.title")}
+      <section className="hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+        <div className="relative flex flex-col items-center justify-center gap-3 border border-white/20 bg-white/5 p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
+          <div className="flex h-12 w-12 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}>
+            <Shapes className="h-5 w-5" />
           </div>
-
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl bg-bg-input px-3 py-3">
-              <div className="text-xs text-text-tertiary">
-                {t("profile.preferences.preferred_category")}
-              </div>
-              <div className="mt-1 text-sm font-semibold text-text-primary">
-                {preferences?.category_code ?? "—"}
-              </div>
+          <div>
+            <div className="text-xs font-medium text-text-tertiary">
+              {t("profile.preferences.preferred_category")}
             </div>
-
-            <div className="rounded-2xl bg-bg-input px-3 py-3">
-              <div className="flex items-center gap-2 text-xs text-text-tertiary">
-                <CircleDollarSign className="h-4 w-4" />
-                {t("profile.preferences.min_price")} /{" "}
-                {t("profile.preferences.max_price")}
-              </div>
-              <div className="mt-1 text-sm font-semibold text-text-primary">
-                {preferences?.min_price ?? "—"} -{" "}
-                {preferences?.max_price ?? "—"}
-              </div>
+            <div className="mt-1 text-base font-bold text-text-primary">
+              {preferences?.category_code ?? "—"}
             </div>
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-border bg-bg-card p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-            <Sparkles className="h-4 w-4 text-text-tertiary" />
+        <div className="relative flex flex-col items-center justify-center gap-3 border border-white/20 bg-white/5 p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
+          <div className="flex h-12 w-12 items-center justify-center bg-tertiary-500/20 text-tertiary-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}>
+            <CircleDollarSign className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-text-tertiary">
+              {t("profile.preferences.min_price")} /{" "}
+              {t("profile.preferences.max_price")}
+            </div>
+            <div className="mt-1 text-base font-bold text-text-primary">
+              {preferences?.min_price ?? "—"} -{" "}
+              {preferences?.max_price ?? "—"}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative flex flex-col items-center gap-3 border border-white/20 bg-white/5 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:col-span-2 lg:col-span-1" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
+          <div className="flex h-12 w-12 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}>
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="text-xs font-medium text-text-tertiary">
             {t("explore.amenities")}
           </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-center gap-1.5">
             {preferredAmenities.length ? (
               preferredAmenities.slice(0, 12).map((amenityName) => (
                 <span
                   key={amenityName}
-                  className="rounded-full border border-border bg-bg-input px-3 py-1.5 text-xs font-medium text-text-secondary"
+                  className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
+                  style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
                 >
                   {tAmenity(amenityName)}
                 </span>
@@ -566,16 +567,18 @@ export function ProfileOverview() {
           <div className="flex gap-3 pb-[env(safe-area-inset-bottom)]">
             <Button
               variant="outline"
-              className="h-11 flex-1 rounded-2xl text-sm font-semibold"
+              className="h-11 flex-1 border border-white/20 bg-white/5 text-sm font-semibold backdrop-blur-sm"
               onClick={handleClose}
               disabled={busy}
+              style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
             >
               {t("common.cancel")}
             </Button>
             <Button
-              className="h-11 flex-1 rounded-2xl text-sm font-semibold"
+              className="h-11 flex-1 border border-white/20 bg-linear-to-r from-primary-500 to-tertiary-500 text-sm font-semibold shadow-[0_0_20px_rgba(99,102,241,0.4)]"
               onClick={() => saveMutation.mutate()}
               disabled={busy}
+              style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
             >
               {busy ? (
                 <span className="inline-flex items-center gap-2">
@@ -591,20 +594,19 @@ export function ProfileOverview() {
       </MobileBottomSheet>
 
       {/* ─── DESKTOP: dialog for editing ─── */}
-      <div className="hidden sm:contents">
-        <Dialog
-          open={editOpen}
-          title={t("profile.menu.edit_profile")}
-          description={t("profile.preferences.subtitle")}
-          confirmLabel={t("profile.preferences.save")}
-          cancelLabel={t("common.cancel")}
-          busy={busy}
-          onClose={handleClose}
-          onConfirm={() => saveMutation.mutate()}
-        >
-          <EditProfileForm {...sharedFormProps} />
-        </Dialog>
-      </div>
+      <Dialog
+        open={editOpen}
+        title={t("profile.menu.edit_profile")}
+        description={t("profile.preferences.subtitle")}
+        confirmLabel={t("profile.preferences.save")}
+        cancelLabel={t("common.cancel")}
+        busy={busy}
+        onClose={handleClose}
+        onConfirm={() => saveMutation.mutate()}
+        className="hidden sm:flex"
+      >
+        <EditProfileForm {...sharedFormProps} />
+      </Dialog>
     </div>
   );
 }

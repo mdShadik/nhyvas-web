@@ -8,7 +8,6 @@ Copy `nhyvas-web/.env.example` to `nhyvas-web/.env.local` and fill:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Supabase anon key)
-- `SUPABASE_SERVICE_ROLE_KEY` (server-only; required for `/api/auth/verify-otp` profile upsert)
 - `NEXT_PUBLIC_SUPABASE_KYC_BUCKET`
 - `NEXT_PUBLIC_R2_PUBLIC_BASE_URL`
 - `NEXT_PUBLIC_R2_SIGN_URL`

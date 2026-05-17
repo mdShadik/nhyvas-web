@@ -22,6 +22,5 @@ declare namespace NodeJS {
     EXPO_PUBLIC_TOMTOM_STYLE_URL?: string;
     EXPO_PUBLIC_TOMTOM_STYLE_ID?: string;
 
-    SUPABASE_SERVICE_ROLE_KEY?: string;
   }
 }

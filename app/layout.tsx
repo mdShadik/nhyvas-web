@@ -32,15 +32,32 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "min-h-full",
+        "min-h-screen bg-fixed bg-white dark:bg-black ",
         "antialiased",
         geistSans.variable,
         geistMono.variable,
         "font-sans",
         inter.variable
       )}
+      suppressHydrationWarning
     >
-      <body className={cn(pageBgClass, "min-h-dvh flex flex-col")}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = window.localStorage.getItem('admin_theme');
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className={cn("min-h-screen flex flex-col text-text-primary", pageBgClass)}>
         <Providers>
           {children}
         </Providers>

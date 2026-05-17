@@ -18,4 +18,3 @@ export async function POST(req: Request) {
   if (error) return jsonError(error.message, 400);
   return jsonOk({ ok: true });
 }
-

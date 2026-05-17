@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { exploreService } from "@/services/apiService";
 import { noImagePlaceholder } from "../../assets";
-import { pageBgClass } from "@/constant";
 import { formatPrice } from "@/lib/formatPrice";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
@@ -32,7 +31,7 @@ function CategoryCard({ category }: { category: Category }) {
         pathname: "/explore",
         query: category.code ? { category: category.code } : undefined,
       }}
-      className="group relative overflow-hidden rounded-2xl border border-border bg-linear-to-tl from-bg-page via-primary-900/10 to-tertiary-900/40 px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group relative overflow-hidden rounded-2xl border border-border dark:bg-linear-to-tl bg-linear-to-br from-white via-white dark:from-bg-page dark:via-primary-900/10 dark:to-tertiary-900/40 to-tertiary-50 px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">

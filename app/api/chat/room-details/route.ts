@@ -17,6 +17,23 @@ export async function POST(req: Request) {
   if (error) return jsonError(error.message, 400);
 
   const counterpartyId = (data as any).tenant_id === currentUserId ? (data as any).landlord_id : (data as any).tenant_id;
+  if (counterpartyId) {
+    const { data: blockRow, error: blockError } = await supabase
+      .from("user_blocks")
+      .select("blocker_id, blocked_id")
+      .or(
+        `and(blocker_id.eq.${currentUserId},blocked_id.eq.${counterpartyId}),and(blocker_id.eq.${counterpartyId},blocked_id.eq.${currentUserId})`
+      )
+      .limit(1)
+      .maybeSingle();
+    if (blockError) return jsonError(blockError.message, 400);
+    if (blockRow) {
+      (data as any).listing_id = null;
+      (data as any).property_title = null;
+      (data as any).property_thumbnail = null;
+    }
+  }
+
   let counterparty = null as null | { id: string; full_name: string | null; avatar_url: string | null };
   if (counterpartyId) {
     const { data: profile } = await supabase
@@ -29,4 +46,3 @@ export async function POST(req: Request) {
 
   return jsonOk({ row: { ...(data as any), counterparty } });
 }
-

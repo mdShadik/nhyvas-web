@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 import { env } from "@/lib/env";
 import { authCookieNames } from "@/lib/authCookies";
-import { createSupabaseAdminClient } from "@/server/supabase";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -18,8 +18,12 @@ export async function POST(req: Request) {
   let needsOnboarding = true;
 
   try {
-    const admin = createSupabaseAdminClient();
-    const { data: existingProfile } = await admin
+    const userClient = createClient(env.supabaseUrl, env.supabasePublishableKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+    });
+
+    const { data: existingProfile } = await userClient
       .from("profiles")
       .select("is_onboarded")
       .eq("id", user.id)
@@ -32,7 +36,7 @@ export async function POST(req: Request) {
       const fullName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? null;
       const avatarUrl = user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null;
 
-      await admin.from("profiles").upsert(
+      await userClient.from("profiles").upsert(
         {
           id: user.id,
           email: user.email ?? null,

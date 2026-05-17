@@ -15,6 +15,15 @@ export type RecentlyViewedItem = {
   listing: ExploreListing;
 };
 
+export type PropertyViewer = {
+  viewer_user_id: string;
+  full_name: string;
+  phone: string;
+  email: string;
+  avatar_url: string | null;
+  last_viewed_at: string;
+};
+
 export const activityService = {
   async getRecentlyViewed(): Promise<RecentlyViewedItem[]> {
     const { rows } = await requestJson<{ rows: any[] }>("/api/activity/recently-viewed", { method: "POST" });
@@ -25,6 +34,14 @@ export const activityService = {
         ...mapExploreListingRow(row),
       } as ExploreListing,
     })) as RecentlyViewedItem[];
+  },
+
+  async getPropertyViewers(listingId: string): Promise<PropertyViewer[]> {
+    const { viewers } = await requestJson<{ viewers: PropertyViewer[] }>("/api/activity/viewers", {
+      method: "POST",
+      body: JSON.stringify({ listingId }),
+    });
+    return viewers ?? [];
   },
 
   async recordPropertyView(propertyId: string): Promise<void> {

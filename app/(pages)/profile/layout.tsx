@@ -7,7 +7,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft } from "lucide-react";
 import { RequireAuth } from "@/components/profile/RequireAuth";
 import { ProfileNav } from "@/components/profile/ProfileNav";
-import { pageBgClass } from "@/constant";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
@@ -37,9 +36,9 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 
   return (
     <RequireAuth>
-      <div className={cn("min-h-dvh", pageBgClass)}>
-        <div className="mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6 sm:pt-8">
-          <header className="mb-4 sm:mb-6">
+      <div className={cn("min-h-dvh")}>
+        <div className="mx-auto max-w-6xl sm:px-6 sm:pt-8">
+          <header className="mb-4 sm:mb-6 hidden">
             <h1 className="text-xl font-extrabold text-text-primary sm:text-3xl">
               {t("tabs.profile")}
             </h1>
@@ -50,11 +49,11 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 
           {/* Desktop layout */}
           <div className="hidden gap-6 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="h-fit rounded-3xl border border-border bg-bg-background p-3 shadow-sm">
+            <aside className="h-fit border border-border bg-bg-background p-3 shadow-sm">
               <ProfileNav />
             </aside>
 
-            <main className="min-w-0 rounded-3xl border border-border bg-bg-background p-4 shadow-sm sm:p-6">
+            <main className="min-w-0 border border-border bg-bg-background p-4 shadow-sm sm:p-6">
               {children}
             </main>
           </div>
@@ -62,7 +61,7 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
           {/* Mobile layout — menu list on root, slide-over on sub-routes */}
           <div className="md:hidden">
             {isRoot ? (
-              <div className="rounded-[28px] border border-border bg-bg-background p-2 shadow-sm">
+              <div className=" sm:border border-border p-4 shadow-xl">
                 <ProfileNav />
               </div>
             ) : null}
@@ -78,9 +77,9 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                   className="fixed inset-0 z-50"
                   style={{ willChange: "transform" }}
                 >
-                  <div className={cn("flex min-h-dvh flex-col", pageBgClass)}>
+                  <div className={cn("flex min-h-dvh flex-col")}>
                     {!isSupportTicket && (
-                      <div className="sticky top-0 z-10 border-b border-border bg-bg-background/95 backdrop-blur">
+                      <div className="sticky top-0 z-10 border-b border-border bg-bg-page/40 backdrop-blur">
                         <div className="flex items-center gap-3 px-4 py-3">
                           <Link
                             href="/profile"
@@ -107,7 +106,7 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                         <div className="h-full">{children}</div>
                       ) : (
                         <div className="h-full px-4 pb-24 pt-4">
-                          <div className="rounded-[28px] border border-border bg-bg-page p-4 shadow-sm">
+                          <div className="shadow-sm">
                             {children}
                           </div>
                         </div>
