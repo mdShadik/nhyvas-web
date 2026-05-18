@@ -57,7 +57,7 @@ export function ListingCard({
       {/* Image Section */}
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden",
+          "relative shrink-0 overflow-hidden bg-white",
           isCompact
             ? "h-32 w-full rounded-2xl sm:w-32"
             : "h-56 w-full lg:h-auto lg:w-[320px] lg:min-h-60",
@@ -75,7 +75,7 @@ export function ListingCard({
           alt={listing.property_title}
           src={thumbnailUrl}
           fill
-          className="object-cover transition duration-500 group-hover:scale-110"
+          className="object-cover transition duration-500 group-hover:scale-110 bg-linear-to-br  from-primary-500/50 via-primary-200 to-tertiary-500/50"
           sizes={isCompact ? "132px" : "(max-width: 768px) 100vw, 360px"}
         />
 

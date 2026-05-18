@@ -282,14 +282,14 @@ export default function PropertyPage({searchParams}: Props) {
                   setActiveImageIndex((p) => Math.max(0, p - 1));
                 }
               }}
-              className="absolute inset-0"
+              className="absolute inset-0 bg-white"
             >
               <Image
                 src={images[activeImageIndex] ?? noImagePlaceholder}
                 alt=""
                 fill
                 priority
-                className="object-cover pointer-events-none"
+                className="object-cover pointer-events-none bg-linear-to-br  from-primary-500/50 via-primary-200 to-tertiary-500/50"
                 sizes="100vw"
                 draggable={false}
               />
@@ -678,14 +678,14 @@ export default function PropertyPage({searchParams}: Props) {
                           setActiveImageIndex((p) => Math.max(0, p - 1));
                         }
                       }}
-                      className="absolute inset-0"
+                      className="absolute inset-0 bg-white"
                     >
                       <Image
                         src={images[activeImageIndex] ?? noImagePlaceholder}
                         alt=""
                         fill
                         priority
-                        className="object-cover pointer-events-none"
+                        className="object-cover pointer-events-none bg-linear-to-br  from-primary-500/50 via-primary-200 to-tertiary-500/50"
                         sizes="(max-width: 1280px) 60vw, 800px"
                         draggable={false}
                       />
