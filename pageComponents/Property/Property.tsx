@@ -37,6 +37,7 @@ import { useToast } from "@/context/ToastContext";
 import { CoverageMap } from "@/components/map/CoverageMap";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { SearchParamsProps } from "@/app/(pages)/property/page";
+import { Button } from "@/components/ui/button";
 
 
 
@@ -556,11 +557,11 @@ export default function PropertyPage({searchParams}: Props) {
                     ? t("property.actions.interested_done", "Interest sent")
                     : t("property.actions.interested", "I'm interested")}
                 </button>
-                <button
+                <Button
                   type="button"
                   disabled={createChatRoomMutation.isPending}
                   onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                  className="flex flex-1 items-center justify-center gap-2 bg-linear via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
+                  className="flex flex-1 items-center justify-center gap-2 bg-linear-to-br via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
                 >
                   {createChatRoomMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -568,7 +569,7 @@ export default function PropertyPage({searchParams}: Props) {
                     <MessageCircle className="h-4 w-4" />
                   )}
                   {t("property.actions.chat", "Chat")}
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -924,7 +925,7 @@ export default function PropertyPage({searchParams}: Props) {
                             type="button"
                             disabled={createChatRoomMutation.isPending}
                             onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                            className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                            className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60 rounded-2xl"
                           >
                             {createChatRoomMutation.isPending ? (
                               <Loader2 className="h-4 w-4 animate-spin" />

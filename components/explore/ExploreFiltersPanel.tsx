@@ -395,7 +395,7 @@ export function ExploreFiltersPanel({
                     onChange(reset);
                     onReset(reset);
                   }}
-                  className="inline-flex flex-1 items-center justify-center rounded-full border border-border bg-bg-input px-4 py-3 text-sm font-semibold text-text-primary transition hover:border-primary-200 hover:bg-primary-50"
+                  className="inline-flex flex-1 items-center justify-center rounded-full border border-border bg-bg-input px-4 py-3 text-sm font-semibold text-text-primary transition hover:border-primary-200 hover:dark:border-tertiary-700 hover:bg-primary-50 hover:dark:bg-tertiary-500/30"
                 >
                   {t("explore.reset", "Reset")}
                 </motion.button>
@@ -405,7 +405,7 @@ export function ExploreFiltersPanel({
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onApply}
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500"
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-linear-to-br hover:from-tertiary-500 hover:to-primary-500 from-primary-500 via-primary-500 to-tertiary-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-400"
                 >
                   {t("explore.apply_filters", "Apply Filters")}
                 </motion.button>
