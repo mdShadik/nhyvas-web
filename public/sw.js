@@ -1,9 +1,11 @@
-self.addEventListener("install", () => {
+self.addEventListener("install", (event) => {
   console.log("SW installed");
+  self.skipWaiting();
 });
 
-self.addEventListener("activate", () => {
+self.addEventListener("activate", (event) => {
   console.log("SW activated");
+  event.waitUntil(clients.claim());
 });
 
 self.addEventListener("fetch", () => {});

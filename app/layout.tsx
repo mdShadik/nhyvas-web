@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { pageBgClass } from "@/constant";
 import "maplibre-gl/dist/maplibre-gl.css";
 import PWARegister from "@/components/PWARegister/PWARegister";
+import { PWAInstallPrompt } from "@/components/ui/pwa-install-prompt";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -65,6 +66,7 @@ export default function RootLayout({
       <body className={cn("min-h-screen flex flex-col text-text-primary", pageBgClass)}>
         <Providers>
           <PWARegister />
+          <PWAInstallPrompt />
           {children}
         </Providers>
       </body>

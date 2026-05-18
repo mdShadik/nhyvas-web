@@ -12,7 +12,7 @@
     "build:prod": "env-cmd -f .env.production next build",
     "start": "next start",
     "start:dev": "env-cmd -f .env.development next start",
-    "start:staging": "env-cmd -f .env.staging next start",
+    "start:staging": "env-cmd -f .env.staging next start -p 54321",
     "start:prod": "env-cmd -f .env.production next start",
     "lint": "eslint"
   },

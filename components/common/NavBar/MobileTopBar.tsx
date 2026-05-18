@@ -5,7 +5,12 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Bell } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
-import { darkLogo, lightLogo } from "@/assets";
+import {
+  darkLogo,
+  lightLogo,
+  logoSingleN,
+  logoSingleNForLight,
+} from "@/assets";
 import { useAuth } from "@/context/AuthContext";
 import { ThemeToggle } from "../ThemeToggle";
 import { LanguageToggle } from "../LanguageToggle";
@@ -107,12 +112,18 @@ export function MobileTopBar() {
       ? darkLogo
       : lightLogo;
 
+  const singleNLogo = !mounted
+    ? logoSingleNForLight
+    : theme === "dark"
+      ? logoSingleN
+      : logoSingleNForLight;
+
   return (
     <>
       <div className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-border bg-linear-to-br dark:bg-linear-to-tl from-white/10 via-white-50 to-tertiary-50 dark:from-bg-page dark:via-primary-900/20 dark:to-tertiary-900/30 p-4 shadow-sm backdrop-blur-xl md:hidden transition-colors dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-(--accent)/20 to-transparent" />
 
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="hidden sm:flex items-center">
           <Image
             src={logoUrl}
             alt="Nhyvas"
@@ -121,6 +132,17 @@ export function MobileTopBar() {
             height={36}
             style={{ width: "auto", height: "auto" }}
             className="h-9 w-auto object-contain"
+          />
+        </Link>
+
+        <Link href="/" className="flex sm:hidden items-center">
+          <Image
+            src={singleNLogo}
+            alt="Nhyvas"
+            priority
+            width={40}
+            height={30}
+            className="object-contain"
           />
         </Link>
 
@@ -155,18 +177,15 @@ export function MobileTopBar() {
               </MobileBottomSheet>
             </>
           ) : (
-            <LoginButton 
-              loginText={t("common.login")} 
+            <LoginButton
+              loginText={t("common.login")}
               onClick={() => setLoginOpen(true)}
             />
           )}
         </div>
       </div>
 
-      <LoginModal 
-        open={loginOpen} 
-        onClose={() => setLoginOpen(false)} 
-      />
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
   );
 }
