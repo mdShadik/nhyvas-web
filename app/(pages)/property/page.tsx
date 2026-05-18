@@ -14,8 +14,6 @@ import {
   MessageCircle,
   Share2,
   Users,
-  Eye,
-  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -27,14 +25,11 @@ import {
   favouritesService,
   leadsService,
   storiesService,
-  activityService,
 } from "@/services/apiService";
-import type { PropertyViewer } from "@/services/apiService/activity";
 import { uploadToR2 } from "@/services/apiService/media";
 import type { ExploreListing } from "@/services/apiService/explore";
 import { formatPrice } from "@/lib/formatPrice";
 import { tAmenity, tAmenityCategory, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
-import { pageBgClass } from "@/constant";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { LoginModal } from "@/components/auth/LoginModal";
@@ -83,8 +78,6 @@ export default function PropertyPage() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
   const [desktopMapOpen, setDesktopMapOpen] = useState(false);
-  const [viewersOpen, setViewersOpen] = useState(false);
-  const [optimisticViewed, setOptimisticViewed] = useState(false);
 
   const nextUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
@@ -112,32 +105,6 @@ export default function PropertyPage() {
 
   const listing = listingQuery.data?.listing ?? null;
   const isOwner = Boolean(currentUserId && listing?.listed_by && listing.listed_by === currentUserId);
-
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  useEffect(() => {
-    // Only proceed if we have listing details and we know for sure user is NOT the owner
-    if (!id || !listingQuery.isSuccess || isOwner || !isAuthenticated) return;
-    
-    activityService.hasViewedListing(id).then((viewed) => {
-      if (!viewed) {
-        setOptimisticViewed(true);
-        void activityService.recordPropertyView(id);
-      }
-    });
-  }, [id, isOwner, isAuthenticated, listingQuery.isSuccess]);
-
-  const displayViewCount = useMemo(() => {
-    const base = listing?.view_count ?? 0;
-    return optimisticViewed ? base + 1 : base;
-  }, [listing?.view_count, optimisticViewed]);
-
   const hasMap = Boolean(listing?.latitude != null && listing?.longitude != null);
   const lat = listing?.latitude != null ? Number(listing.latitude) : NaN;
   const lng = listing?.longitude != null ? Number(listing.longitude) : NaN;
@@ -167,12 +134,6 @@ export default function PropertyPage() {
     enabled: Boolean(id && isOwner),
   });
   const ownerLeadCount = (ownerLeadsQuery.data ?? []).length;
-
-  const viewersQuery = useQuery({
-    queryKey: ["listing-viewers", id],
-    queryFn: () => activityService.getPropertyViewers(id),
-    enabled: Boolean(id && isOwner && viewersOpen),
-  });
 
   const toggleFavouriteMutation = useMutation({
     mutationFn: async () => {
@@ -272,7 +233,7 @@ export default function PropertyPage() {
 
   if (!id) {
     return (
-      <main className={`min-h-screen ${pageBgClass}`}>
+      <main className={`min-h-screen`}>
         <div className="mx-auto w-full max-w-3xl px-4 py-10">
           <div className="rounded border border-border bg-bg-page p-6 text-text-secondary">
             {t("property.missing_id", "Missing property id.")}
@@ -335,20 +296,12 @@ export default function PropertyPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="inline-flex h-10 w-10 items-center justify-center bg-black/35 text-white backdrop-blur-lg transition hover:bg-black/55"
+              className="inline-flex h-10 w-10 items-center justify-center bg-black/35 text-white backdrop-blur-lg transition hover:bg-black/55 rounded-full"
               aria-label={t("common.back", "Back")}
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => isOwner && setViewersOpen(true)}
-                className={`flex items-center gap-1.5 rounded-full bg-black/35 px-3 py-2 text-white backdrop-blur-lg border border-white/10 ${isOwner ? "cursor-pointer active:scale-95 transition-transform" : "cursor-default"}`}
-              >
-                <Eye className="h-4 w-4" />
-                <span className="text-xs font-bold">{displayViewCount}</span>
-              </button>
               <button
                 type="button"
                 onClick={() =>
@@ -367,7 +320,7 @@ export default function PropertyPage() {
                     });
                   })
                 }
-                className="inline-flex h-10 w-10 items-center justify-center bg-black/35 text-white backdrop-blur-lg transition hover:bg-black/55"
+                className="inline-flex h-10 w-10 items-center justify-center bg-black/35  text-white backdrop-blur-lg transition hover:bg-black/55"
                 aria-label={t("common.share", "Share")}
               >
                 <Share2 className="h-4.5 w-4.5" />
@@ -507,9 +460,9 @@ export default function PropertyPage() {
                   <div className="mt-4 space-y-4">
                     {groupedAmenities.length ? (
                       groupedAmenities.map((group) => (
-                        <div key={group.category_code || group.category_name}>
+                        <div key={group.category_name}>
                           <div className="mb-2.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-                            {tAmenityCategory(group.category_code || group.category_name)}
+                            {tAmenityCategory(group.category_name)}
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {group.amenities.map((amenity) => (
@@ -547,7 +500,7 @@ export default function PropertyPage() {
                     type="button"
                     onClick={() => requireAuth(() => setMobileMapOpen(true))}
                     disabled={!hasPoint}
-                    className="flex w-full mb-30 items-center gap-3 px-5 py-4 text-left transition hover:bg-secondary-50 dark:hover:bg-secondary-900/30 disabled:opacity-50"
+                    className="flex w-full mb-30 sm:mb-30 items-center gap-3 px-5 py-4 text-left transition hover:bg-secondary-50 dark:hover:bg-secondary-900/30 disabled:opacity-50"
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-tertiary-400/10 text-tertiary-600 dark:text-tertiary-400">
                       <Map className="h-4.5 w-4.5" />
@@ -574,7 +527,7 @@ export default function PropertyPage() {
             {isOwner ? (
               <a
                 href={`/profile/leads?listingId=${id}`}
-                className="flex w-full items-center justify-center gap-2 bg-linear-to-br from-primary-500 via to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] rounded-2xl"
+                className="flex w-full items-center justify-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] rounded-2xl"
               >
                 <Users className="h-4 w-4" />
                 {t("property.actions.my_interested", "My Interested")}
@@ -601,7 +554,7 @@ export default function PropertyPage() {
                   type="button"
                   disabled={createChatRoomMutation.isPending}
                   onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                  className="flex flex-1 items-center justify-center gap-2 bg-linear-to-br from-primary-500 to-tertiary-600 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
+                  className="flex flex-1 items-center justify-center gap-2 bg-linear via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
                 >
                   {createChatRoomMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -639,24 +592,10 @@ export default function PropertyPage() {
             </div>
           )}
         </MobileBottomSheet>
-
-        {/* Viewers Bottom Sheet (Mobile) */}
-        {isMobile && (
-          <MobileBottomSheet
-            open={viewersOpen}
-            title={t("property.viewers.title", "Property Viewers")}
-            description={t("property.viewers.desc", "Users who have viewed your property")}
-            onClose={() => setViewersOpen(false)}
-          >
-            <div className="pt-2">
-              <ViewerList viewers={viewersQuery.data ?? []} isLoading={viewersQuery.isLoading} />
-            </div>
-          </MobileBottomSheet>
-        )}
       </div>
 
       {/* ── DESKTOP LAYOUT ── */}
-      <main className={`hidden min-h-dvh md:block ${pageBgClass}`}>
+      <main className={`hidden min-h-dvh md:block`}>
         <div className="mx-auto max-w-7xl px-6 py-8">
           {/* Top bar */}
           <div className="flex items-center justify-between gap-3">
@@ -668,55 +607,45 @@ export default function PropertyPage() {
               <ArrowLeft className="h-4 w-4" />
               {t("common.back", "Back")}
             </button>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => isOwner && setViewersOpen(true)}
-                className={`flex items-center gap-2 rounded-full border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 ${isOwner ? "cursor-pointer active:scale-98" : "cursor-default"}`}
+                onClick={() =>
+                  requireAuth(async () => {
+                    const url = typeof window !== "undefined" ? window.location.href : "";
+                    if (!url) return;
+                    const result = await shareOrCopy(url);
+                    showToast({
+                      variant: result === "failed" ? "error" : "success",
+                      message:
+                        result === "copied"
+                          ? t("common.copied", "Copied to clipboard.")
+                          : result === "shared"
+                            ? t("common.shared", "Shared.")
+                            : t("common.share_failed", "Could not share."),
+                    });
+                  })
+                }
+                className="inline-flex items-center gap-2 border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-2xl"
               >
-                <Eye className="h-4 w-4 text-primary-500" />
-                <span className="font-bold">{displayViewCount} <span className="font-medium text-text-secondary ml-1">{t("property.views", "views")}</span></span>
+                <Share2 className="h-4 w-4" />
+                {t("common.share", "Share")}
               </button>
-              <div className="flex items-center gap-2">
+              {!isOwner ? (
                 <button
                   type="button"
-                  onClick={() =>
-                    requireAuth(async () => {
-                      const url = typeof window !== "undefined" ? window.location.href : "";
-                      if (!url) return;
-                      const result = await shareOrCopy(url);
-                      showToast({
-                        variant: result === "failed" ? "error" : "success",
-                        message:
-                          result === "copied"
-                            ? t("common.copied", "Copied to clipboard.")
-                            : result === "shared"
-                              ? t("common.shared", "Shared.")
-                              : t("common.share_failed", "Could not share."),
-                      });
-                    })
-                  }
-                  className="inline-flex items-center gap-2 border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-2xl"
+                  disabled={toggleFavouriteMutation.isPending}
+                  onClick={() => requireAuth(() => toggleFavouriteMutation.mutate())}
+                  className="inline-flex items-center gap-2 border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800 rounded-2xl"
                 >
-                  <Share2 className="h-4 w-4" />
-                  {t("common.share", "Share")}
+                  {toggleFavouriteMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Heart className={`h-4 w-4 ${isFavourite ? "fill-primary-600 text-primary-600" : ""}`} />
+                  )}
+                  {isFavourite ? t("property.actions.shortlisted", "Saved") : t("property.actions.shortlist", "Save")}
                 </button>
-                {!isOwner ? (
-                  <button
-                    type="button"
-                    disabled={toggleFavouriteMutation.isPending}
-                    onClick={() => requireAuth(() => toggleFavouriteMutation.mutate())}
-                    className="inline-flex items-center gap-2 border border-border bg-bg-page px-4 py-2 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800 rounded-2xl"
-                  >
-                    {toggleFavouriteMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Heart className={`h-4 w-4 ${isFavourite ? "fill-primary-600 text-primary-600" : ""}`} />
-                    )}
-                    {isFavourite ? t("property.actions.shortlisted", "Saved") : t("property.actions.shortlist", "Save")}
-                  </button>
-                ) : null}
-              </div>
+              ) : null}
             </div>
           </div>
 
@@ -756,7 +685,7 @@ export default function PropertyPage() {
                       />
                     </motion.div>
                   </AnimatePresence>
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+                  <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/30 via-transparent to-black/50" />
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                     <div className="flex gap-2 bg-black/25 px-3 py-2 backdrop-blur-lg">
                       {images.map((_, idx) => (
@@ -962,7 +891,7 @@ export default function PropertyPage() {
                       {isOwner ? (
                         <a
                           href={`/profile/leads?listingId=${id}`}
-                          className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 to-tertiary-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 rounded-2xl"
+                          className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 rounded-2xl"
                         >
                           <Users className="h-4 w-4" />
                           {t("property.actions.my_interested", "My Interested")}
@@ -989,7 +918,7 @@ export default function PropertyPage() {
                             type="button"
                             disabled={createChatRoomMutation.isPending}
                             onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                            className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 to-tertiary-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                            className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
                           >
                             {createChatRoomMutation.isPending ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -1018,7 +947,7 @@ export default function PropertyPage() {
                             });
                           })
                         }
-                        className="inline-flex items-center gap-2 border border-border bg-bg-page px-6 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-2xl"
+                        className="inline-flex items-center gap-2  border border-border bg-bg-page px-6 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-2xl"
                       >
                         <Share2 className="h-4 w-4" />
                         {t("common.share", "Share")}
@@ -1047,36 +976,6 @@ export default function PropertyPage() {
             </div>
           </div>
         </div>
-
-        {/* Viewers Modal (Desktop) */}
-        {viewersOpen && !isMobile && (
-          <div className="fixed inset-0 z-85 hidden md:block">
-            <button
-              type="button"
-              onClick={() => setViewersOpen(false)}
-              className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-            />
-            <div className="relative mx-auto flex min-h-full w-full max-w-lg items-center justify-center px-4 py-10">
-              <div className="w-full overflow-hidden border border-border bg-bg-page shadow-xl rounded-[28px]">
-                <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-5">
-                  <h2 className="text-xl font-extrabold text-text-primary">
-                    {t("property.viewers.title", "Property Viewers")}
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setViewersOpen(false)}
-                    className="p-2 text-text-secondary hover:text-text-primary transition"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="p-6 max-h-[60vh] overflow-y-auto">
-                  <ViewerList viewers={viewersQuery.data ?? []} isLoading={viewersQuery.isLoading} />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Desktop Map Modal */}
@@ -1232,76 +1131,6 @@ function PropertyWalkthroughSection({
           ) : null}
         </div>
       )}
-    </div>
-  );
-}
-
-function ViewerList({ viewers, isLoading }: { viewers: PropertyViewer[]; isLoading: boolean }) {
-  const { t } = useTranslation();
-  if (isLoading)
-    return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-      </div>
-    );
-  if (!viewers.length)
-    return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary-100 dark:bg-secondary-800 mb-4">
-          <Eye className="h-8 w-8 text-text-tertiary" />
-        </div>
-        <p className="text-text-secondary font-medium">
-          {t("property.viewers.none", "No viewers yet.")}
-        </p>
-      </div>
-    );
-
-  return (
-    <div className="divide-y divide-border">
-      {viewers.map((v) => (
-        <div
-          key={v.viewer_user_id}
-          className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
-        >
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-secondary-100 dark:bg-secondary-800 border border-border">
-            {v.avatar_url ? (
-              <Image
-                src={v.avatar_url}
-                alt={v.full_name}
-                fill
-                className="object-cover"
-                sizes="48px"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary-400/20 to-tertiary-400/20 text-primary-600 font-bold text-lg">
-                {v.full_name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <h4 className="font-extrabold text-text-primary truncate">
-                {v.full_name}
-              </h4>
-              <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider bg-secondary-100 dark:bg-secondary-800 px-2 py-0.5 rounded-md shrink-0">
-                {new Date(v.last_viewed_at).toLocaleDateString()}
-              </span>
-            </div>
-            <div className="mt-0.5 space-y-0.5">
-              <div className="text-xs text-text-secondary truncate flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-primary-400/50" />
-                {v.email}
-              </div>
-              {v.phone ? (
-                <div className="text-xs text-text-tertiary truncate flex items-center gap-1.5">
-                  <span className="h-1 w-1 rounded-full bg-tertiary-400/50" />
-                  {v.phone}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

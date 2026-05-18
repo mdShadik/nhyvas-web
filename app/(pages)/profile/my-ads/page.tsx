@@ -1,12 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, MapPin, Pencil } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Pencil } from "lucide-react";
 import { manageService } from "@/services/apiService/manage";
-import type { ExploreListing } from "@/services/apiService/explore";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { cacheListings } from "@/stores/myAdsStore";
@@ -14,6 +12,7 @@ import { ListingCard } from "@/components/explore/ListingCard";
 
 export default function ProfileMyAdsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const adsQuery = useQuery({
     queryKey: ["profile", "my-ads"],
     queryFn: () => manageService.getMyAds(),
@@ -23,6 +22,11 @@ export default function ProfileMyAdsPage() {
   useEffect(() => {
     if (rows.length > 0) cacheListings(rows);
   }, [rows]);
+
+  const handleToggleRented = async (listingId: string, isRented: boolean) => {
+    await manageService.toggleIsRented(listingId, isRented);
+    await queryClient.invalidateQueries({ queryKey: ["profile", "my-ads"] });
+  };
 
   if (adsQuery.isLoading) return <div className="h-60 animate-pulse rounded-2xl bg-bg-input" />;
 
@@ -52,6 +56,8 @@ export default function ProfileMyAdsPage() {
               key={item.id}
               listing={item}
               variant="compact"
+              isOwnAd
+              onToggleRented={handleToggleRented}
               action={
                 <Link href={{ pathname: "/add-property", query: { listingId: item.id } }}>
                   <Button variant="outline" size="sm" className="h-9 px-3">

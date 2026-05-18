@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { MapPin, Save, ChevronLeft, LocateFixed } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { RequireAuth } from "@/components/profile/RequireAuth";
 import { AddressMapPicker, type Coordinate } from "@/components/address/AddressMapPicker";
 import { Button } from "@/components/ui/button";
+import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 
 import { useToast } from "@/context/ToastContext";
 import { useAddressBook } from "@/hooks/useAddressBook";
@@ -30,7 +31,7 @@ function formatAdmin(admin: NepalLookupResult | null) {
   return parts.join(", ");
 }
 
-export default function AddressPickPage() {
+function AddressPickContent() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const router = useRouter();
@@ -49,6 +50,7 @@ export default function AddressPickPage() {
   const [adminLabel, setAdminLabel] = useState("");
   const [locating, setLocating] = useState(false);
   const [resolvingAdmin, setResolvingAdmin] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const reverseReqIdRef = useRef(0);
 
@@ -68,6 +70,14 @@ export default function AddressPickPage() {
     if (editing) return;
     setCoord(DEFAULT_NEPAL_CENTER);
   }, [editing]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
 
   const settleCoordinate = useCallback(
     async (next: Coordinate) => {
@@ -160,21 +170,32 @@ export default function AddressPickPage() {
     router.push("/addresses");
   };
 
+  const picker = (
+    <AddressMapPicker
+      value={coord}
+      onChange={(next) => void settleCoordinate(next)}
+      onLocate={useCurrentLocation}
+      locating={locating}
+      className="order-1 h-full"
+    />
+  );
+
   return (
     <RequireAuth>
-      <div className="min-h-dvh bg-[var(--color-bg-page)]">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8">
+      {/* Desktop Layout */}
+      <div className="hidden lg:block">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 lg:px-8 lg:pt-8">
           <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6">
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-bg-card px-3 py-1 text-xs font-medium text-text-secondary shadow-sm">
                 <MapPin className="h-3.5 w-3.5 text-primary-500" />
                 <span>{editing ? t("addresses.edit_address") : t("navigation.pick_address")}</span>
               </div>
 
-              <h1 className="mt-3 text-xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-2xl">
+              <h1 className="mt-3 text-xl font-extrabold tracking-tight text-text-primary sm:text-2xl">
                 {t("navigation.pick_address")}
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-[var(--color-text-secondary)]">
+              <p className="mt-1 max-w-2xl text-sm text-text-secondary">
                 {t("addresses.empty_hint")}
               </p>
             </div>
@@ -183,7 +204,7 @@ export default function AddressPickPage() {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="hidden shrink-0 rounded-2xl sm:inline-flex"
+              className="shrink-0 rounded-2xl"
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
               {t("common.cancel")}
@@ -191,26 +212,22 @@ export default function AddressPickPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,420px)] lg:gap-6">
-            <AddressMapPicker
-              value={coord}
-              onChange={(next) => void settleCoordinate(next)}
-              onLocate={useCurrentLocation}
-              locating={locating}
-              className="order-1"
-            />
+            <div>
+              {picker}
+            </div>
 
             <aside className="order-2">
-              <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm sm:p-5 lg:sticky lg:top-6">
+              <div className="rounded-3xl border border-border bg-bg-card p-4 shadow-sm sm:p-5 lg:sticky lg:top-6">
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600 dark:text-primary-300">
                     <MapPin className="h-5 w-5" />
                   </div>
 
                   <div className="min-w-0">
-                    <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+                    <h2 className="text-base font-semibold text-text-primary">
                       {t("navigation.pick_address")}
                     </h2>
-                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    <p className="mt-1 text-sm text-text-secondary">
                       {resolvingAdmin
                         ? t("addresses.locating")
                         : adminLabel ||
@@ -221,26 +238,24 @@ export default function AddressPickPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)] p-3 sm:p-4">
-
-
+                <div className="mt-5 rounded-2xl border border-border bg-bg-input p-3 sm:p-4">
                   <div className="mt-4 grid grid-cols-1 gap-2">
-                    <div className="rounded-2xl border border-dashed border-[var(--color-border)] px-3 py-2">
-                      <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                    <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                      <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                         Coordinates
                       </div>
-                      <div className="mt-1 text-sm text-[var(--color-text-primary)]">
+                      <div className="mt-1 text-sm text-text-primary">
                         {coord
                           ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
                           : "--"}
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-dashed border-[var(--color-border)] px-3 py-2">
-                      <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                    <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                      <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                         Area
                       </div>
-                      <div className="mt-1 text-sm text-[var(--color-text-primary)] break-words">
+                      <div className="mt-1 text-sm text-text-primary wrap-break-word">
                         {adminLabel || "--"}
                       </div>
                     </div>
@@ -251,9 +266,9 @@ export default function AddressPickPage() {
                   <Button
                     type="button"
                     onClick={onSave}
-                    className="h-11 rounded-2xl"
+                    className="h-11 rounded-2xl bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
                   >
-                    <Save className="mr-2 h-4 w-4" />
+                    <Save className="mr-2 h-4 w-4 " />
                     {t("common.continue")}
                   </Button>
 
@@ -267,21 +282,126 @@ export default function AddressPickPage() {
                     <LocateFixed className="mr-2 h-4 w-4" />
                     {locating ? t("addresses.locating") : t("addresses.use_current_location")}
                   </Button>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => router.back()}
-                    className="h-11 rounded-2xl sm:col-span-2 lg:col-span-1 sm:hidden"
-                  >
-                    {t("common.cancel")}
-                  </Button>
                 </div>
               </div>
             </aside>
           </div>
         </div>
       </div>
+
+      {/* Mobile Layout: Full screen map + bottom sheet with address form */}
+      {isMobile ? (
+      <div className="lg:hidden fixed inset-0">
+        <div className="h-full w-full">
+          <AddressMapPicker
+            value={coord}
+            onChange={(next) => void settleCoordinate(next)}
+            onLocate={useCurrentLocation}
+            locating={locating}
+            fullScreen={true}
+            className="h-full"
+          />
+        </div>
+
+	        <MobileBottomSheet
+	          open={true}
+	          onClose={() => {}}
+	          title={t("navigation.pick_address")}
+	          modal={false}
+	          disableDismiss={true}
+	          snapPoints={[0, 0.3, 0.6, 1]}
+	          initialSnap={1}
+	          minSnap={0.3}
+	        >
+          <aside>
+            <div className="rounded-3xl p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600 dark:text-primary-300">
+                  <MapPin className="h-5 w-5" />
+                </div>
+
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold text-text-primary">
+                    {t("navigation.pick_address")}
+                  </h2>
+                  <p className="mt-1 text-sm text-text-secondary">
+                    {resolvingAdmin
+                      ? t("addresses.locating")
+                      : adminLabel ||
+                        (coord
+                          ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
+                          : t("addresses.map_hint"))}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-border p-3">
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                    <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                      Coordinates
+                    </div>
+                    <div className="mt-1 text-sm text-text-primary">
+                      {coord
+                        ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
+                        : "--"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                    <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                      Area
+                    </div>
+                    <div className="mt-1 text-sm text-text-primary wrap-break-word">
+                      {adminLabel || "--"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-2">
+                <Button
+                  type="button"
+                  onClick={onSave}
+                  className="h-11 rounded-2xl bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {t("common.continue")}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={useCurrentLocation}
+                  disabled={locating}
+                  className="h-11 rounded-2xl"
+                >
+                  <LocateFixed className="mr-2 h-4 w-4" />
+                  {locating ? t("addresses.locating") : t("addresses.use_current_location")}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => router.back()}
+                  className="h-11 rounded-2xl"
+                >
+                  {t("common.cancel")}
+                </Button>
+              </div>
+            </div>
+          </aside>
+        </MobileBottomSheet>
+      </div>
+      ) : null}
     </RequireAuth>
+  );
+}
+
+export default function AddressPickPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AddressPickContent />
+    </Suspense>
   );
 }

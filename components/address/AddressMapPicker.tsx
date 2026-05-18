@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LocateFixed, MapPin, Navigation } from "lucide-react";
+import { LocateFixed, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getTomTomStyleUrl } from "@/lib/tomtomStyle";
 import { cn } from "@/lib/utils";
@@ -47,12 +47,14 @@ export function AddressMapPicker({
   onLocate,
   locating = false,
   className,
+  fullScreen = false,
 }: {
   value: Coordinate | null;
   onChange: (coord: Coordinate) => void;
   onLocate?: () => void;
   locating?: boolean;
   className?: string;
+  fullScreen?: boolean;
 }) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -104,21 +106,23 @@ export function AddressMapPicker({
         [NEPAL_BOUNDS.east, NEPAL_BOUNDS.north],
       ]);
 
+      const marker = new maplibregl.Marker({
+        draggable: true,
+      })
+        .setLngLat([initialCenter.longitude, initialCenter.latitude])
+        .addTo(map);
+
       const emitCenter = () => {
-        const c = map.getCenter();
+        const { lng, lat } = marker.getLngLat();
         const next = clampToNepal({
-          latitude: c.lat,
-          longitude: c.lng,
+          latitude: lat,
+          longitude: lng,
         });
         onChangeRef(next);
       };
 
-      map.on("load", () => {
-        if (disposed) return;
-        emitCenter();
-      });
-
-      map.on("moveend", emitCenter);
+      marker.on("dragend", emitCenter);
+      map.on("load", emitCenter);
     })();
 
     return () => {
@@ -151,17 +155,19 @@ export function AddressMapPicker({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-sm",
+        "overflow-hidden rounded-3xl border border-border bg-bg-card shadow-sm",
+        fullScreen ? "h-full border-0 rounded-none" : "",
         className
       )}
     >
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3 sm:px-5">
+      {!fullScreen && (
+      <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+          <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
             <MapPin className="h-4 w-4 text-primary-500" />
             <span>{t("navigation.pick_address")}</span>
           </div>
-          <p className="mt-1 text-xs sm:text-sm text-[var(--color-text-secondary)]">
+          <p className="mt-1 text-xs sm:text-sm text-text-secondary">
             {t("addresses.map_hint")}
           </p>
         </div>
@@ -172,8 +178,8 @@ export function AddressMapPicker({
           disabled={locating}
           aria-label={t("addresses.use_current_location")}
           className={cn(
-            "inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 text-sm font-medium text-[var(--color-text-primary)] transition",
-            "hover:bg-[var(--color-secondary-100)] dark:hover:bg-[var(--color-secondary-800)]",
+            "inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-2xl border border-border bg-bg-input px-3 text-sm font-medium text-text-primary transition",
+            "hover:bg-secondary-100 dark:hover:bg-secondary-800",
             "disabled:pointer-events-none disabled:opacity-60"
           )}
         >
@@ -183,23 +189,17 @@ export function AddressMapPicker({
           </span>
         </button>
       </div>
+      )}
 
-      <div className="relative">
-        <div
+      <div className={cn("relative", fullScreen && "h-full")}>        <div
           ref={containerRef}
-          className="h-[320px] w-full sm:h-[380px] lg:h-[460px]"
+          className={cn(
+            "w-full",
+            fullScreen ? "h-full" : "h-80 sm:h-95 lg:h-115"
+          )}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-full">
-          <div className="mx-auto flex w-fit flex-col items-center">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg ring-4 ring-primary-500/20 sm:h-12 sm:w-12">
-              <Navigation className="h-5 w-5" />
-            </div>
-            <div className="-mt-1.5 h-4 w-4 rotate-45 rounded-[3px] bg-primary-500 shadow-md" />
-          </div>
-        </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/10 to-transparent p-3 sm:p-4">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/10 to-transparent p-3 sm:p-4">
           {!value ? (
             <div className="w-fit rounded-2xl border border-white/40 bg-white/90 px-3 py-2 text-xs text-slate-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-900/85 dark:text-slate-200">
               {t("addresses.map_hint")}

@@ -393,7 +393,9 @@
     "boost": "Boost",
     "view_moderator_note": "View Moderator Note",
     "currently_rented": "Currently Rented (Hidden)",
-    "mark_as_rented": "Mark as Rented"
+    "mark_as_rented": "Mark as Rented",
+    "mark_rented": "Mark as Rented",
+    "marked_rented": "Marked as Rented"
   },
   "recently_viewed": {
     "empty_title": "No recently viewed properties",

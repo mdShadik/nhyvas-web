@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { Sheet } from "react-modal-sheet";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,11 @@ type Props = {
   children: ReactNode;
   className?: string;
   showCloseButton?: boolean;
+  modal?: boolean;
+  disableDismiss?: boolean;
+  snapPoints?: number[];
+  initialSnap?: number;
+  minSnap?: number;
 };
 
 export function MobileBottomSheet({
@@ -23,19 +28,40 @@ export function MobileBottomSheet({
   showCloseButton = false,
   children,
   className,
+  modal = true,
+  disableDismiss = false,
+  snapPoints = [0, 0.6, 1],
+  initialSnap = 1,
+  minSnap = 0,
 }: Props) {
+  const sheetRef = useRef<{ snapTo?: (index: number) => void } | null>(null);
+
   return (
     <Sheet
+      ref={sheetRef}
       isOpen={open}
       onClose={onClose}
-      snapPoints={[0, 0.6, 1]}
-      initialSnap={1}
-      className={cn("nhyvas-mobile-sheet", className)}
+      disableDismiss={disableDismiss}
+      snapPoints={snapPoints}
+      initialSnap={initialSnap}
+      onSnap={(index) => {
+        // If we snap to a point below minSnap (usually 0), snap back to minSnap
+        const snapped = snapPoints[index];
+        if (snapped != null && snapped < minSnap) {
+          const minIndex = snapPoints.findIndex((p) => p >= minSnap);
+          if (minIndex !== -1) {
+            sheetRef.current?.snapTo?.(minIndex);
+          }
+        }
+      }}
+      className={cn("nhyvas-mobile-sheet", className, !modal && "pointer-events-none!")}
     >
-      <Sheet.Backdrop
-        onTap={onClose}
-        className="bg-slate-950/55!"
-      />
+      {modal && (
+        <Sheet.Backdrop
+          onTap={onClose}
+          className="bg-slate-950/55!"
+        />
+      )}
 
       <Sheet.Container
         className={cn(
@@ -43,7 +69,8 @@ export function MobileBottomSheet({
           "border! border-border! border-b-0!",
           "rounded-t-[28px]!",
           "shadow-2xl!",
-          "overflow-hidden!"
+          "overflow-hidden!",
+          !modal && "pointer-events-auto!"
         )}
       >
         <Sheet.Header
@@ -99,9 +126,7 @@ export function MobileBottomSheet({
         <Sheet.Content
           className="bg-linear-to-br! dark:from-bg-page dark:via-primary-900/10 dark:to-tertiary-500/20 to-tertiary-50"
         >
-          <div className="px-4 pb-6">
             {children}
-          </div>
         </Sheet.Content>
       </Sheet.Container>
     </Sheet>

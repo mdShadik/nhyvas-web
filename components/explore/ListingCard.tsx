@@ -21,6 +21,8 @@ interface ListingCardProps {
   className?: string;
   onFavoriteClick?: (e: React.MouseEvent) => void;
   isFavorite?: boolean;
+  isOwnAd?: boolean;
+  onToggleRented?: (listingId: string, isRented: boolean) => void;
 }
 
 export function ListingCard({
@@ -30,10 +32,15 @@ export function ListingCard({
   className,
   onFavoriteClick,
   isFavorite = false,
+  isOwnAd = false,
+  onToggleRented,
 }: ListingCardProps) {
   const { t } = useTranslation();
   const thumbnailUrl = listing.thumbnail_url || noImagePlaceholder;
   const isCompact = variant === "compact";
+  const isPublished = listing.status === "approved" || listing.status === "published";
+  const shouldShowEditButton = isOwnAd && !isPublished;
+  const shouldShowRentedToggle = isOwnAd && isPublished;
 
   const cardContent = (
     <article
@@ -150,7 +157,26 @@ export function ListingCard({
               </div>
             </div>
 
-            {isCompact && action}
+            {isCompact && !shouldShowRentedToggle && action}
+
+            {isCompact && shouldShowRentedToggle && onToggleRented && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onToggleRented(listing.id, !listing.is_rented);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow transition-all",
+                  listing.is_rented
+                    ? "bg-linear-to-br from-green-500 to-emerald-500"
+                    : "bg-linear-to-br from-primary-500 to-tertiary-500",
+                )}
+              >
+                {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
+              </button>
+            )}
           </div>
         </div>
 
@@ -176,15 +202,40 @@ export function ListingCard({
             </div>
           </div>
 
-          {!isCompact && !action && (
+          {!isCompact && !action && !shouldShowEditButton && !shouldShowRentedToggle && (
             <div className="flex items-center gap-2 rounded-xl bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all group-hover:shadow-[0_0_25px_rgba(99,102,241,0.5)]">
               {t("explore.view_details")}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </div>
           )}
 
-          {!isCompact && action && (
+          {!isCompact && action && !shouldShowEditButton && !shouldShowRentedToggle && (
             <div onClick={(e) => e.preventDefault()}>{action}</div>
+          )}
+
+          {!isCompact && shouldShowEditButton && (
+            <div onClick={(e) => e.preventDefault()}>{action}</div>
+          )}
+
+          {!isCompact && shouldShowRentedToggle && onToggleRented && (
+            <div onClick={(e) => e.preventDefault()}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onToggleRented(listing.id, !listing.is_rented);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow transition-all",
+                  listing.is_rented
+                    ? "bg-linear-to-br from-green-500 to-emerald-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)]"
+                    : "bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)]",
+                )}
+              >
+                {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
+              </button>
+            </div>
           )}
         </div>
       </div>

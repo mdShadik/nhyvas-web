@@ -244,7 +244,7 @@ export function ExploreFiltersPanel({
       className={`w-full shrink-0 ${className ?? ""}`}
     >
       <div className="lg:sticky lg:top-24">
-        <div className="flex h-full max-h-[calc(100dvh-6rem)] flex-col overflow-hidden bg-page-bg-from shadow-[0_18px_55px_-30px_rgba(15,23,42,0.45)] dark:shadow-[0_18px_55px_-30px_rgba(2,6,23,0.7)]">
+        <div className="flex flex-col lg:h-full lg:max-h-[calc(100dvh-6rem)] lg:overflow-hidden bg-page-bg-from shadow-[0_18px_55px_-30px_rgba(15,23,42,0.45)] dark:shadow-[0_18px_55px_-30px_rgba(2,6,23,0.7)]">
           {/* Header */}
           <div className="relative border-b border-border/70 px-5 py-5">
             <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-primary-500/5 via-transparent to-tertiary-500/5" />
@@ -290,7 +290,7 @@ export function ExploreFiltersPanel({
           </div>
 
           {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto px-5 py-5">
+          <div className="flex-1 px-5 py-5 lg:overflow-y-auto">
             <div className="space-y-6">
               <LocationSearchField
                 value={value.locationNode}
@@ -405,7 +405,7 @@ export function ExploreFiltersPanel({
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onApply}
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500"
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500"
                 >
                   {t("explore.apply_filters", "Apply Filters")}
                 </motion.button>

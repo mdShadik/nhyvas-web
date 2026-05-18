@@ -326,7 +326,9 @@
     "boost": "बुस्ट",
     "view_moderator_note": "मोडरेटर नोट हेर्नुहोस्",
     "currently_rented": "हाल भाडामा (लुकाइएको)",
-    "mark_as_rented": "भाडामा दिएको चिन्ह लगाउनुहोस्"
+    "mark_as_rented": "भाडामा दिएको चिन्ह लगाउनुहोस्",
+    "mark_rented": "भाडामा दिएको चिन्ह लगाउनुहोस्",
+    "marked_rented": "भाडामा दिइएको"
   },
   "recently_viewed": {
     "empty_title": "हालै हेरिएका सम्पत्ति छैनन्",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +14,7 @@ import {
   type MasterAmenityCategory,
   type MasterSubcategory,
 } from "@/services/apiService/explore";
-import { manageService } from "@/services/apiService/manage";
+import { manageService, type ManagePropertyDetails } from "@/services/apiService/manage";
 import { profileService } from "@/services/apiService/profile";
 import { getCachedListing } from "@/stores/myAdsStore";
 import { uploadToR2 } from "@/services/apiService/media";
@@ -66,7 +66,9 @@ type FormValues = {
   amenityIds: string[];
 };
 
-export default function AddPropertyPage() {
+type PrefillDetails = Partial<ManagePropertyDetails> & Record<string, unknown>;
+
+function AddPropertyContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -83,7 +85,7 @@ export default function AddPropertyPage() {
   const [isPrefilling, setIsPrefilling] = useState(Boolean(listingId));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([]);
-  const [prefillDetails, setPrefillDetails] = useState<any | null>(null);
+  const [prefillDetails, setPrefillDetails] = useState<PrefillDetails | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [prefilledLocation, setPrefilledLocation] = useState<{
     label: string;
@@ -275,8 +277,8 @@ export default function AddPropertyPage() {
           landlordPhone: details.landlord_phone ?? "",
           amenityIds: details.amenity_tags ?? [],
         });
-        const rawLat = (details as any)?.latitude;
-        const rawLng = (details as any)?.longitude;
+        const rawLat = (details as { latitude?: number | string | null }).latitude;
+        const rawLng = (details as { longitude?: number | string | null }).longitude;
         const latitude = typeof rawLat === "number" ? rawLat : Number(rawLat);
         const longitude = typeof rawLng === "number" ? rawLng : Number(rawLng);
         if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
@@ -286,11 +288,12 @@ export default function AddPropertyPage() {
             longitude,
           });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Could not load listing details.";
         showToast({
           variant: "error",
           title: t("common.error", "Error"),
-          message: error?.message ?? "Could not load listing details.",
+          message,
         });
         router.replace("/my-ads");
       } finally {
@@ -427,11 +430,12 @@ export default function AddPropertyPage() {
       });
 
       router.replace("/my-ads");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Submission failed.";
       showToast({
         variant: "error",
         title: t("common.error", "Error"),
-        message: error?.message ?? "Submission failed.",
+        message,
       });
     } finally {
       setIsSubmitting(false);
@@ -939,26 +943,26 @@ export default function AddPropertyPage() {
                     {t("listing_media.selected", "Selected")} ({Math.min(existingPhotoUrls.length + selectedFiles.length, 10)})
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {existingPhotoUrls.map((url, idx) => (
-                      <div key={`${url}-${idx}`} className="relative overflow-hidden rounded-2xl border border-border bg-bg-input">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt="" className="h-28 w-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => setExistingPhotoUrls((prev) => prev.filter((_, i) => i !== idx))}
+	                    {existingPhotoUrls.map((url, idx) => (
+	                      <div key={`${url}-${idx}`} className="relative overflow-hidden rounded-2xl border border-border bg-bg-input">
+	                        {/* eslint-disable-next-line @next/next/no-img-element */}
+	                        <img src={url} alt="" className="h-28 w-full object-cover" />
+	                        <button
+	                          type="button"
+	                          onClick={() => setExistingPhotoUrls((prev) => prev.filter((_, i) => i !== idx))}
                           className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
                         >
                           {t("common.remove", "Remove")}
                         </button>
                       </div>
-                    ))}
-                    {selectedFiles.map((file, idx) => (
-                      <div key={`${file.name}-${idx}`} className="relative overflow-hidden rounded-2xl border border-border bg-bg-input">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={URL.createObjectURL(file)} alt="" className="h-28 w-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))}
+	                    ))}
+	                    {selectedFiles.map((file, idx) => (
+	                      <div key={`${file.name}-${idx}`} className="relative overflow-hidden rounded-2xl border border-border bg-bg-input">
+	                        {/* eslint-disable-next-line @next/next/no-img-element */}
+	                        <img src={URL.createObjectURL(file)} alt="" className="h-28 w-full object-cover" />
+	                        <button
+	                          type="button"
+	                          onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))}
                           className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
                         >
                           {t("common.remove", "Remove")}
@@ -971,21 +975,29 @@ export default function AddPropertyPage() {
             </div>
           ) : null}
 
-          <div className="mt-5 flex items-center justify-end">
-            <Button type="button" onClick={handleNext} disabled={isSubmitting || isPrefilling}>
-              {isSubmitting
-                ? listingId
-                  ? t("landlord.create.saving")
-                  : t("landlord.create.submitting")
-                : currentStep === totalSteps
-                  ? listingId
-                    ? t("landlord.create.save_changes")
-                    : t("landlord.create.submit_for_review")
-                  : t("landlord.create.continue")}
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
+	          <div className="mt-5 flex items-center justify-end">
+	            <Button type="button" onClick={handleNext} disabled={isSubmitting || isPrefilling}>
+	              {isSubmitting
+	                ? listingId
+	                  ? t("landlord.create.saving")
+	                  : t("landlord.create.submitting")
+	                : currentStep === totalSteps
+	                  ? listingId
+	                    ? t("landlord.create.save_changes")
+	                    : t("landlord.create.submit_for_review")
+	                  : t("landlord.create.continue")}
+	            </Button>
+	          </div>
+	        </>
+	      )}
+	    </div>
+	  );
+}
+
+ export default function AddPropertyPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AddPropertyContent />
+    </Suspense>
   );
 }

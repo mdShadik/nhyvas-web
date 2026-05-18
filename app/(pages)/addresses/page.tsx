@@ -16,9 +16,11 @@ export default function AddressesPage() {
   const router = useRouter();
   const { entries, defaultId, remove, setDefault } = useAddressBook();
 
+  console.log({ entries });
+
   return (
     <RequireAuth>
-      <div className="mx-auto max-w-4xl px-4 pb-24 pt-4 sm:px-6 sm:pt-8">
+      <div className="mx-auto min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-90px)] max-w-4xl px-4 pb-24 pt-4 sm:px-6 sm:pt-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-extrabold text-text-primary">
@@ -29,12 +31,17 @@ export default function AddressesPage() {
             </p>
           </div>
 
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/addresses/pick">
-              <Plus className="mr-2 h-4 w-4" />
-              {t("addresses.add_address")}
-            </Link>
-          </Button>
+          {entries.length > 0 && entries.length < 3 && (
+            <Button
+              asChild
+              className="w-full sm:w-auto bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
+            >
+              <Link href="/addresses/pick">
+                <Plus className="mr-2 h-4 w-4" />
+                {t("addresses.add_address")}
+              </Link>
+            </Button>
+          )}
         </div>
 
         {entries.length === 0 ? (
@@ -47,7 +54,10 @@ export default function AddressesPage() {
             </div>
 
             <div className="mt-5">
-              <Button asChild className="w-full sm:w-auto">
+              <Button
+                asChild
+                className="w-full bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
+              >
                 <Link href="/addresses/pick">
                   <Plus className="mr-2 h-4 w-4" />
                   {t("addresses.add_address")}
@@ -93,7 +103,7 @@ export default function AddressesPage() {
                     <div className="flex sm:justify-end gap-2">
                       <Button
                         variant="outline"
-                        className=""
+                        className="bg-linear-to-br"
                         disabled={isDefault}
                         onClick={() => {
                           setDefault(entry.id);
@@ -107,15 +117,20 @@ export default function AddressesPage() {
                       </Button>
 
                       <Button asChild variant="outline" className="">
-                        <Link href={{ pathname: "/addresses/pick", query: { addressId: entry.id } }}>
-                          <Pencil className="mr-2 h-4 w-4" />
+                        <Link
+                          href={{
+                            pathname: "/addresses/pick",
+                            query: { addressId: entry.id },
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
                           {/* {t("common.view")} */}
                         </Link>
                       </Button>
 
                       <Button
                         variant="outline"
-                        className=" text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                        className=" text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-linear-to-br"
                         onClick={() => {
                           remove(entry.id);
                           showToast({
@@ -124,7 +139,7 @@ export default function AddressesPage() {
                           });
                         }}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                         {/* {t("profile.delete.delete")} */}
                       </Button>
                     </div>
@@ -137,7 +152,7 @@ export default function AddressesPage() {
 
         <div className="mt-6">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => router.back()}
             className="w-full sm:w-auto"
           >
