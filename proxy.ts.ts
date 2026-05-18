@@ -5,7 +5,7 @@ import { authCookieNames } from "@/lib/authCookies";
 const publicRoutes = ["/", "/explore", "/property", "/terms", "/privacy"];
 const authRoutes = ["/login"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const token = request.cookies.get(authCookieNames.accessToken)?.value;
@@ -42,6 +42,6 @@ export const config = {
      * - assets (public assets)
      * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      */
-    "/((?!api|_next/static|_next/image|assets|favicon.ico|sitemap.xml|robots.txt).*)",
+    "/((?!api|_next/static|_next/image|assets|icons|favicon.ico|sitemap.xml|robots.txt|manifest.webmanifest|sw.js).*)",
   ],
 };
