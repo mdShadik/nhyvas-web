@@ -631,5 +631,12 @@
   },
   "currency": {
     "npr": "Rs."
+  },
+  "pwa": {
+    "title": "Install Nhyvas",
+    "description": "Install Nhyvas for a better browsing experience.",
+    "message": "Get quicker access to properties and enjoy a smoother experience.",
+    "install": "Install App",
+    "later": "Maybe Later"
   }
 }
