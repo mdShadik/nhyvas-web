@@ -15,8 +15,13 @@ import {
   LogOut,
   Trash2,
   User,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Button } from "../ui/button";
+import { Dialog } from "../ui/dialog";
+import { PWAInstallPrompt } from "../ui/pwa-install-prompt";
 
 type NavItem = {
   href: string;
@@ -25,7 +30,8 @@ type NavItem = {
 };
 
 function isActive(pathname: string, href: string) {
-  if (href === "/profile/overview") return pathname === "/profile" || pathname === "/profile/overview";
+  if (href === "/profile/overview")
+    return pathname === "/profile" || pathname === "/profile/overview";
   if (href === "/profile") return pathname === "/profile";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -33,17 +39,61 @@ function isActive(pathname: string, href: string) {
 export function ProfileNav() {
   const { t } = useTranslation();
   const pathname = usePathname();
+  const [openInstall, setOpenInstall] = useState<boolean>(false);
+  const [openLogout, setOpenLogout] = useState<boolean>(false);
+
+  const handleLogout = () => {
+    setOpenLogout(false);
+    // Handle actual logout logic here
+    console.log("User logged out");
+  };
 
   const items: NavItem[] = [
-    { href: "/profile/overview", label: t("profile.menu.edit_profile"), icon: <User className="h-4 w-4" /> },
-    { href: "/profile/saved", label: t("profile.menu.shortlisted"), icon: <Heart className="h-4 w-4" /> },
-    { href: "/profile/my-ads", label: t("profile.menu.my_ads"), icon: <Building2 className="h-4 w-4" /> },
-    { href: "/profile/leads", label: t("profile.menu.my_leads"), icon: <Users className="h-4 w-4" /> },
-    { href: "/profile/recently-viewed", label: t("profile.menu.recently_viewed"), icon: <Clock className="h-4 w-4" /> },
-    { href: "/addresses", label: t("navigation.addresses"), icon: <MapPin className="h-4 w-4" /> },
-    { href: "/profile/help-center", label: t("help_center.title"), icon: <HelpCircle className="h-4 w-4" /> },
-    { href: "/profile/support-chats", label: t("navigation.support_chats"), icon: <MessageCircle className="h-4 w-4" /> },
-    { href: "/profile/terms-and-conditions", label: t("profile.menu.terms"), icon: <FileText className="h-4 w-4" /> },
+    {
+      href: "/profile/overview",
+      label: t("profile.menu.edit_profile"),
+      icon: <User className="h-4 w-4" />,
+    },
+    {
+      href: "/profile/saved",
+      label: t("profile.menu.shortlisted"),
+      icon: <Heart className="h-4 w-4" />,
+    },
+    {
+      href: "/profile/my-ads",
+      label: t("profile.menu.my_ads"),
+      icon: <Building2 className="h-4 w-4" />,
+    },
+    {
+      href: "/profile/leads",
+      label: t("profile.menu.my_leads"),
+      icon: <Users className="h-4 w-4" />,
+    },
+    {
+      href: "/profile/recently-viewed",
+      label: t("profile.menu.recently_viewed"),
+      icon: <Clock className="h-4 w-4" />,
+    },
+    {
+      href: "/addresses",
+      label: t("navigation.addresses"),
+      icon: <MapPin className="h-4 w-4" />,
+    },
+    {
+      href: "/profile/help-center",
+      label: t("help_center.title"),
+      icon: <HelpCircle className="h-4 w-4" />,
+    },
+    {
+      href: "/profile/support-chats",
+      label: t("navigation.support_chats"),
+      icon: <MessageCircle className="h-4 w-4" />,
+    },
+    {
+      href: "/profile/terms-and-conditions",
+      label: t("profile.menu.terms"),
+      icon: <FileText className="h-4 w-4" />,
+    },
   ];
 
   return (
@@ -59,10 +109,15 @@ export function ProfileNav() {
               "flex items-center gap-3 px-3 py-4 text-sm font-medium transition-colors border border-border",
               active
                 ? "bg-primary-400/12 text-primary-400"
-                : "dark:bg-tertiary-900/30 text-text-secondary hover:bg-bg-input hover:text-text-primary"
+                : "dark:bg-tertiary-900/30 text-text-secondary hover:bg-bg-input hover:text-text-primary",
             )}
           >
-            <span className={cn("opacity-90", active ? "text-primary-400" : "text-text-tertiary")}>
+            <span
+              className={cn(
+                "opacity-90",
+                active ? "text-primary-400" : "text-text-tertiary",
+              )}
+            >
               {item.icon}
             </span>
             <span className="min-w-0 truncate">{item.label}</span>
@@ -71,14 +126,21 @@ export function ProfileNav() {
       })}
 
       <div className="my-3 h-px bg-border" />
+      <Button
+        onClick={() => setOpenInstall(true)}
+        className="flex md:hidden w-full items-center gap-3 border border-border px-3 py-4 text-sm font-medium transition-colors duration-400 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 hover:bg-linear-to-tl"
+      >
+        <Download className="h-4 w-4 text-white" />
+        <span>{t("pwa.install", "Install App")}</span>
+      </Button>
 
-      <Link
-        href="/logout"
-        className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-input hover:text-text-primary"
+      <button
+        onClick={() => setOpenLogout(true)}
+        className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-input hover:text-text-primary"
       >
         <LogOut className="h-4 w-4 text-text-tertiary" />
         <span>{t("profile.logout.log_out")}</span>
-      </Link>
+      </button>
       <Link
         href="/profile/delete-account"
         className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-red-500/90 transition-colors hover:bg-red-500/10 hover:text-red-500"
@@ -86,6 +148,24 @@ export function ProfileNav() {
         <Trash2 className="h-4 w-4" />
         <span>{t("profile.delete.delete_account")}</span>
       </Link>
+
+      <PWAInstallPrompt
+        openTrigger={openInstall}
+        onCloseTrigger={() => setOpenInstall(false)}
+      />
+
+      <Dialog
+        open={openLogout}
+        title={t("profile.logout.confirm_title", "Log Out?")}
+        description={t(
+          "profile.logout.confirm_description",
+          "Are you sure you want to log out of your account?"
+        )}
+        confirmLabel={t("profile.logout.log_out", "Log Out")}
+        cancelLabel={t("common.cancel", "Cancel")}
+        onClose={() => setOpenLogout(false)}
+        onConfirm={handleLogout}
+      />
     </nav>
   );
 }

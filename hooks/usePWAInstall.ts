@@ -4,20 +4,23 @@ import { useCallback, useEffect, useState } from "react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{
-    outcome: "accepted" | "dismissed";
-  }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const PWA_DISMISSED_KEY = "pwa_install_dismissed";
-const PWA_INSTALLED_KEY = "pwa_install_accepted";
+const DISMISSED_KEY = "pwa_dismissed";
+const INSTALLED_KEY = "pwa_installed";
 
-function getStoredBool(key: string, defaultValue = false): boolean {
-  if (typeof window === "undefined") return defaultValue;
+function isIOSDevice() {
+  if (typeof window === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+}
+
+function getStored(key: string): boolean {
+  if (typeof window === "undefined") return false;
   return localStorage.getItem(key) === "true";
 }
 
-function setStoredBool(key: string, value: boolean): void {
+function setStored(key: string, value: boolean) {
   if (typeof window === "undefined") return;
   localStorage.setItem(key, String(value));
 }
@@ -26,28 +29,29 @@ export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
 
+  const [isIOS, setIsIOS] = useState(false);
   const [isInstallable, setIsInstallable] = useState(false);
-  const [hasDismissed, setHasDismissed] = useState(false);
   const [hasInstalled, setHasInstalled] = useState(false);
+  const [hasDismissed, setHasDismissed] = useState(false);
 
-  // Check storage on mount (client-side only)
+  /**
+   * INIT STORAGE + PLATFORM CHECK
+   */
   useEffect(() => {
-    setHasDismissed(getStoredBool(PWA_DISMISSED_KEY));
-    setHasInstalled(getStoredBool(PWA_INSTALLED_KEY));
+    setIsIOS(isIOSDevice());
+    setHasInstalled(getStored(INSTALLED_KEY));
+    setHasDismissed(getStored(DISMISSED_KEY));
   }, []);
 
+  /**
+   * LISTEN FOR INSTALL PROMPT (ANDROID / CHROME ONLY)
+   */
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
 
-      // Don't show if already dismissed or installed
-      const dismissed = getStoredBool(PWA_DISMISSED_KEY);
-      const installed = getStoredBool(PWA_INSTALLED_KEY);
-
-      if (!dismissed && !installed) {
-        setDeferredPrompt(e as BeforeInstallPromptEvent);
-        setIsInstallable(true);
-      }
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setIsInstallable(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
@@ -57,15 +61,17 @@ export function usePWAInstall() {
     };
   }, []);
 
+  /**
+   * INSTALL ACTION
+   */
   const install = useCallback(async () => {
     if (!deferredPrompt) return false;
 
-    deferredPrompt.prompt();
-
+    await deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
 
     if (choice.outcome === "accepted") {
-      setStoredBool(PWA_INSTALLED_KEY, true);
+      setStored(INSTALLED_KEY, true);
       setHasInstalled(true);
       setIsInstallable(false);
     }
@@ -74,18 +80,26 @@ export function usePWAInstall() {
     return choice.outcome === "accepted";
   }, [deferredPrompt]);
 
+  /**
+   * DISMISS ACTION
+   */
   const dismiss = useCallback(() => {
-    setStoredBool(PWA_DISMISSED_KEY, true);
+    setStored(DISMISSED_KEY, true);
     setHasDismissed(true);
     setIsInstallable(false);
   }, []);
 
-  const canPrompt = isInstallable && !hasDismissed && !hasInstalled;
+  /**
+   * FINAL COMPUTED STATE
+   */
+  const canInstall =
+    isInstallable && !hasInstalled && !hasDismissed && !isIOS;
 
   return {
-    isInstallable: canPrompt,
+    isIOS,
     install,
     dismiss,
     hasInstalled,
+    isInstallable: canInstall,
   };
 }
