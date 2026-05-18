@@ -10,6 +10,7 @@ declare namespace NodeJS {
     NEXT_PUBLIC_TOMTOM_KEY?: string;
     NEXT_PUBLIC_TOMTOM_STYLE_URL?: string;
     NEXT_PUBLIC_TOMTOM_STYLE_ID?: string;
+    NEXT_PUBLIC_PWA_PROMPT_INTERVAL_MINUTES?: string;
 
     // Back-compat with the mobile app env naming
     EXPO_PUBLIC_ENV?: "development" | "staging" | "production";

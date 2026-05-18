@@ -14,10 +14,7 @@ type Props = {
 
 const DISMISS_KEY = "nhyvas-pwa-dismissed";
 
-export function PWAInstallPrompt({
-  delaySeconds = 20,
-  className,
-}: Props) {
+export function PWAInstallPrompt({ delaySeconds = 20, className }: Props) {
   const { isInstallable, install, hasInstalled } = usePWAInstall();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -33,9 +30,7 @@ export function PWAInstallPrompt({
   const isMobile = useMemo(() => {
     if (typeof window === "undefined") return false;
 
-    return /Android|iPhone|iPad|iPod/i.test(
-      window.navigator.userAgent
-    );
+    return /Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
   }, []);
 
   /**
@@ -51,6 +46,13 @@ export function PWAInstallPrompt({
   /**
    * Delayed prompt display
    */
+
+  const promptIntervalMinutes = Number(
+    process.env.NEXT_PUBLIC_PWA_PROMPT_INTERVAL_MINUTES || 10080,
+  );
+
+  const promptIntervalMs = promptIntervalMinutes * 60 * 1000;
+
   useEffect(() => {
     if (!isClient) return;
     if (!isMobile) return;
@@ -58,10 +60,14 @@ export function PWAInstallPrompt({
     if (hasInstalled) return;
     if (!isInstallable) return;
 
-    const dismissed = localStorage.getItem(DISMISS_KEY);
+    const dismissedAt = localStorage.getItem(DISMISS_KEY);
 
-    if (dismissed === "true") {
-      return;
+    if (dismissedAt) {
+      const shouldWait = Date.now() - Number(dismissedAt) < promptIntervalMs;
+
+      if (shouldWait) {
+        return;
+      }
     }
 
     const timer = setTimeout(() => {
@@ -87,10 +93,7 @@ export function PWAInstallPrompt({
     if (accepted) {
       setIsOpen(false);
 
-      localStorage.setItem(
-        "nhyvas-pwa-installed",
-        "true"
-      );
+      localStorage.setItem("nhyvas-pwa-installed", "true");
     }
   };
 
@@ -98,7 +101,7 @@ export function PWAInstallPrompt({
    * Dismiss prompt
    */
   const handleDismiss = () => {
-    localStorage.setItem(DISMISS_KEY, "true");
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
 
     setIsOpen(false);
   };
@@ -106,12 +109,7 @@ export function PWAInstallPrompt({
   /**
    * Don't render in unsupported cases
    */
-  if (
-    !isClient ||
-    !isMobile ||
-    isStandalone ||
-    hasInstalled
-  ) {
+  if (!isClient || !isMobile || isStandalone || hasInstalled) {
     return null;
   }
 
@@ -132,15 +130,12 @@ export function PWAInstallPrompt({
         </div>
 
         <p className="mb-6 text-sm leading-relaxed text-text-secondary">
-          Install Nhyvas for quicker property browsing,
-          smoother performance, and easy access anytime.
+          Install Nhyvas for quicker property browsing, smoother performance,
+          and easy access anytime.
         </p>
 
         <div className="grid w-full grid-cols-1 gap-2">
-          <Button
-            onClick={handleInstall}
-            className="h-11 rounded-2xl"
-          >
+          <Button onClick={handleInstall} className="h-11 rounded-2xl">
             <Download className="mr-2 h-4 w-4" />
             Install App
           </Button>
