@@ -52,6 +52,8 @@ export type ExploreListing = {
   is_rented?: boolean;
   /** When true, owner may publish a 24h walkthrough story after approval */
   is_story?: boolean;
+  story_image_limit?: number;
+  story_video_limit?: number;
   status?: string;
   moderator_note?: string | null;
   submitted_at: string;
@@ -275,6 +277,8 @@ export const exploreService = {
       property_floor_no: row.property_floor_no != null ? Number(row.property_floor_no) : null,
       view_count: row.view_count != null ? Number(row.view_count) : 0,
       is_story: row.is_story ?? false,
+      story_image_limit: row.story_image_limit != null ? Number(row.story_image_limit) : 5,
+      story_video_limit: row.story_video_limit != null ? Number(row.story_video_limit) : 5,
     } as ListingDetails : null;
 
     return { listing, enrichedAmenities: enrichedAmenities ?? [] };

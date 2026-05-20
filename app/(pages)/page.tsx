@@ -15,6 +15,7 @@ import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFil
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { useTranslation } from "react-i18next";
 import { tPropertyCategory, tPropertyCategoryDescription } from "@/i18n/masterData";
+import { StoryFeed } from "@/components/stories/StoryFeed";
 
 type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
@@ -279,6 +280,10 @@ export default function HomePage() {
   return (
     <main className={`flex-1`}>
       <div className="mx-auto w-full max-w-6xl px-4 py-2 sm:px-6 sm:py-12">
+        <section className="mt-8 sm:mt-0">
+          <StoryFeed />
+        </section>
+
         <section className="mt-10">
           {heroQuery.isLoading ? (
             <HeroBannerSkeleton />

@@ -14,11 +14,20 @@ import {
   type MasterAmenityCategory,
   type MasterSubcategory,
 } from "@/services/apiService/explore";
-import { manageService, type ManagePropertyDetails } from "@/services/apiService/manage";
+import {
+  manageService,
+  type ManagePropertyDetails,
+} from "@/services/apiService/manage";
 import { profileService } from "@/services/apiService/profile";
 import { getCachedListing } from "@/stores/myAdsStore";
 import { uploadToR2 } from "@/services/apiService/media";
-import { tAmenity, tAmenityCategory, tCurrency, tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
+import {
+  tAmenity,
+  tAmenityCategory,
+  tCurrency,
+  tPropertyCategory,
+  tPropertySubcategory,
+} from "@/i18n/masterData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -73,17 +82,17 @@ interface Props {
   searchParams: SearchParamsProps;
 }
 
-export default function AddPropertyPage({
-  searchParams,
-}: Props) {
+export default function AddPropertyPage({ searchParams }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const { showToast } = useToast();
 
-  const listingId = searchParams.listingId && searchParams.listingId.trim() || "";
+  const listingId =
+    (searchParams.listingId && searchParams.listingId.trim()) || "";
   const initialCategoryCode = (searchParams.categoryCode ?? "").trim() || "";
   const lockCategory = Boolean(initialCategoryCode);
-  const { entries: addressEntries, defaultId: defaultAddressId } = useAddressBook();
+  const { entries: addressEntries, defaultId: defaultAddressId } =
+    useAddressBook();
 
   const totalSteps = 3;
   const [currentStep, setCurrentStep] = useState(1);
@@ -91,8 +100,12 @@ export default function AddPropertyPage({
   const [isPrefilling, setIsPrefilling] = useState(Boolean(listingId));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([]);
-  const [prefillDetails, setPrefillDetails] = useState<PrefillDetails | null>(null);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [prefillDetails, setPrefillDetails] = useState<PrefillDetails | null>(
+    null,
+  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
   const [prefilledLocation, setPrefilledLocation] = useState<{
     label: string;
     latitude: number;
@@ -148,14 +161,20 @@ export default function AddPropertyPage({
 
   const subcategories: MasterSubcategory[] = subcategoriesQuery.data ?? [];
   const selectedSubcategoryId = watch("subcategoryId");
-  const selectedSubcategory = subcategories.find((s) => s.id === selectedSubcategoryId) ?? null;
+  const selectedSubcategory =
+    subcategories.find((s) => s.id === selectedSubcategoryId) ?? null;
   const selectedAddressEntry = useMemo(() => {
     if (!selectedAddressId) return null;
-    return addressEntries.find((entry) => entry.id === selectedAddressId) ?? null;
+    return (
+      addressEntries.find((entry) => entry.id === selectedAddressId) ?? null
+    );
   }, [addressEntries, selectedAddressId]);
   const selectedLocation = useMemo(() => {
     if (selectedAddressEntry) {
-      if (selectedAddressEntry.latitude == null || selectedAddressEntry.longitude == null) {
+      if (
+        selectedAddressEntry.latitude == null ||
+        selectedAddressEntry.longitude == null
+      ) {
         return null;
       }
       return {
@@ -166,14 +185,23 @@ export default function AddPropertyPage({
     }
     return prefilledLocation;
   }, [prefilledLocation, selectedAddressEntry]);
-  const locationError = locationTouched && !selectedLocation ? t("landlord.create.validation.location_required") : undefined;
+  const locationError =
+    locationTouched && !selectedLocation
+      ? t("landlord.create.validation.location_required")
+      : undefined;
 
   useEffect(() => {
     if (selectedAddressId) return;
     if (listingId && prefilledLocation) return;
     if (!addressEntries.length) return;
     setSelectedAddressId(defaultAddressId ?? addressEntries[0]!.id);
-  }, [addressEntries, defaultAddressId, listingId, prefilledLocation, selectedAddressId]);
+  }, [
+    addressEntries,
+    defaultAddressId,
+    listingId,
+    prefilledLocation,
+    selectedAddressId,
+  ]);
 
   const amenityCategoriesQuery = useQuery({
     queryKey: ["explore", "amenity-categories"],
@@ -194,11 +222,12 @@ export default function AddPropertyPage({
     const ids = new Set(amenities.map((a) => a.id));
     const nameToId = new Map(amenities.map((a) => [a.name, a.id] as const));
     const resolved = amenityIds
-      .map((value) => (ids.has(value) ? value : nameToId.get(value) ?? value))
+      .map((value) => (ids.has(value) ? value : (nameToId.get(value) ?? value)))
       .filter((v) => ids.has(v));
     const dedup = Array.from(new Set(resolved));
     const sameLength = dedup.length === amenityIds.length;
-    const sameValues = sameLength && dedup.every((v, idx) => v === amenityIds[idx]);
+    const sameValues =
+      sameLength && dedup.every((v, idx) => v === amenityIds[idx]);
     if (!sameValues) setValue("amenityIds", dedup, { shouldDirty: true });
   }, [amenities, amenityIds, setValue]);
 
@@ -213,7 +242,9 @@ export default function AddPropertyPage({
   const groupedAmenities = useMemo(() => {
     const categories = amenityCategories
       .slice()
-      .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0));
+      .sort(
+        (a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0),
+      );
 
     const byCategory: Record<string, MasterAmenity[]> = {};
     for (const amenity of amenities) {
@@ -223,7 +254,9 @@ export default function AddPropertyPage({
 
     return categories.map((cat) => ({
       ...cat,
-      amenities: (byCategory[cat.id] ?? []).slice().sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
+      amenities: (byCategory[cat.id] ?? [])
+        .slice()
+        .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
     }));
   }, [amenities, amenityCategories]);
 
@@ -242,10 +275,20 @@ export default function AddPropertyPage({
           description: (cached.description as string) ?? "",
           price: String(cached.price ?? ""),
           isNegotiable: (cached.is_negotiable as boolean) ?? true,
-          totalFloor: cached.total_floor != null ? String(cached.total_floor) : "",
-          propertyFloorNo: cached.property_floor_no != null ? String(cached.property_floor_no) : "",
-          totalAreaSqft: cached.total_area_sqft != null ? String(cached.total_area_sqft) : "",
-          carpetAreaSqft: cached.carpet_area_sqft != null ? String(cached.carpet_area_sqft) : "",
+          totalFloor:
+            cached.total_floor != null ? String(cached.total_floor) : "",
+          propertyFloorNo:
+            cached.property_floor_no != null
+              ? String(cached.property_floor_no)
+              : "",
+          totalAreaSqft:
+            cached.total_area_sqft != null
+              ? String(cached.total_area_sqft)
+              : "",
+          carpetAreaSqft:
+            cached.carpet_area_sqft != null
+              ? String(cached.carpet_area_sqft)
+              : "",
           landlordPhone: (cached.landlord_phone as string) ?? "",
           amenityIds: (cached.amenity_tags as string[]) ?? [],
         });
@@ -276,15 +319,27 @@ export default function AddPropertyPage({
           description: details.description ?? "",
           price: String(details.price ?? ""),
           isNegotiable: details.is_negotiable ?? true,
-          totalFloor: details.total_floor != null ? String(details.total_floor) : "",
-          propertyFloorNo: details.property_floor_no != null ? String(details.property_floor_no) : "",
-          totalAreaSqft: details.total_area_sqft != null ? String(details.total_area_sqft) : "",
-          carpetAreaSqft: details.carpet_area_sqft != null ? String(details.carpet_area_sqft) : "",
+          totalFloor:
+            details.total_floor != null ? String(details.total_floor) : "",
+          propertyFloorNo:
+            details.property_floor_no != null
+              ? String(details.property_floor_no)
+              : "",
+          totalAreaSqft:
+            details.total_area_sqft != null
+              ? String(details.total_area_sqft)
+              : "",
+          carpetAreaSqft:
+            details.carpet_area_sqft != null
+              ? String(details.carpet_area_sqft)
+              : "",
           landlordPhone: details.landlord_phone ?? "",
           amenityIds: details.amenity_tags ?? [],
         });
-        const rawLat = (details as { latitude?: number | string | null }).latitude;
-        const rawLng = (details as { longitude?: number | string | null }).longitude;
+        const rawLat = (details as { latitude?: number | string | null })
+          .latitude;
+        const rawLng = (details as { longitude?: number | string | null })
+          .longitude;
         const latitude = typeof rawLat === "number" ? rawLat : Number(rawLat);
         const longitude = typeof rawLng === "number" ? rawLng : Number(rawLng);
         if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
@@ -295,7 +350,10 @@ export default function AddPropertyPage({
           });
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Could not load listing details.";
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Could not load listing details.";
         showToast({
           variant: "error",
           title: t("common.error", "Error"),
@@ -318,8 +376,12 @@ export default function AddPropertyPage({
 
     const rawCategory = String(prefillDetails.property_category ?? "").trim();
     if (rawCategory && !watch("categoryCode")) {
-      const matched = rows.find((r) => r.code === rawCategory) ?? rows.find((r) => r.name === rawCategory) ?? null;
-      if (matched) setValue("categoryCode", matched.code, { shouldDirty: false });
+      const matched =
+        rows.find((r) => r.code === rawCategory) ??
+        rows.find((r) => r.name === rawCategory) ??
+        null;
+      if (matched)
+        setValue("categoryCode", matched.code, { shouldDirty: false });
     }
   }, [categoriesQuery.data, listingId, prefillDetails, setValue, watch]);
 
@@ -338,12 +400,17 @@ export default function AddPropertyPage({
     if (matched) setValue("subcategoryId", matched.id, { shouldDirty: false });
   }, [listingId, prefillDetails, setValue, subcategories, watch]);
 
-  const categoryLabel = tPropertyCategory(selectedCategory?.code ?? categoryCode ?? "Room");
+  const categoryLabel = tPropertyCategory(
+    selectedCategory?.code ?? categoryCode ?? "Room",
+  );
   const toggleAmenity = (amenityId: string) => {
     const next = new Set(watch("amenityIds"));
     if (next.has(amenityId)) next.delete(amenityId);
     else next.add(amenityId);
-    setValue("amenityIds", Array.from(next), { shouldDirty: true, shouldTouch: true });
+    setValue("amenityIds", Array.from(next), {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -368,9 +435,15 @@ export default function AddPropertyPage({
         ward_id: null,
       };
 
-      if (selectedLocation?.latitude != null && selectedLocation?.longitude != null) {
+      if (
+        selectedLocation?.latitude != null &&
+        selectedLocation?.longitude != null
+      ) {
         try {
-          const adminAtPoint = await lookupNepalAdminAtPoint(selectedLocation.latitude, selectedLocation.longitude);
+          const adminAtPoint = await lookupNepalAdminAtPoint(
+            selectedLocation.latitude,
+            selectedLocation.longitude,
+          );
           resolvedLocationIds = {
             state_id: adminAtPoint.state?.id ?? null,
             district_id: adminAtPoint.district?.id ?? null,
@@ -388,7 +461,7 @@ export default function AddPropertyPage({
           await uploadToR2({
             file,
             folder: "listing-media",
-          })
+          }),
         );
       }
 
@@ -431,13 +504,18 @@ export default function AddPropertyPage({
 
       showToast({
         variant: "success",
-        title: listingId ? t("landlord.create.save_changes") : t("landlord.create.submit_for_review"),
-        message: listingId ? "Your listing changes have been saved." : "Your listing has been sent for moderation.",
+        title: listingId
+          ? t("landlord.create.save_changes")
+          : t("landlord.create.submit_for_review"),
+        message: listingId
+          ? "Your listing changes have been saved."
+          : "Your listing has been sent for moderation.",
       });
 
-      router.replace("/my-ads");
+      router.replace("/");
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Submission failed.";
+      const message =
+        error instanceof Error ? error.message : "Submission failed.";
       showToast({
         variant: "error",
         title: t("common.error", "Error"),
@@ -480,9 +558,9 @@ export default function AddPropertyPage({
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6">
-      {(isPrefilling || categoriesQuery.isLoading) ? (
-        <div className="rounded-2xl border border-border bg-bg-card p-6 text-center text-text-secondary">
+    <div className="mx-auto min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-90px)] w-full max-w-3xl px-4 py-6">
+      {isPrefilling || categoriesQuery.isLoading ? (
+        <div className="rounded-2xl border border-border bg-bg-page p-6 text-center text-text-secondary">
           {t("landlord.create.loading_listing")}
         </div>
       ) : (
@@ -496,11 +574,14 @@ export default function AddPropertyPage({
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            {t("landlord.create.step_of", { current: currentStep, total: totalSteps })}
+            {t("landlord.create.step_of", {
+              current: currentStep,
+              total: totalSteps,
+            })}
           </div>
 
           {currentStep === 1 ? (
-            <div className="space-y-5 rounded-2xl border border-border bg-bg-card p-5">
+            <div className="space-y-5 rounded-2xl border border-border bg-bg-page/40 p-5">
               <div className="text-base font-semibold text-text-primary">
                 {t("landlord.create.basic_details")}
               </div>
@@ -512,18 +593,29 @@ export default function AddPropertyPage({
                 <Controller
                   name="categoryCode"
                   control={control}
-                  rules={{ required: t("landlord.create.validation.category_required") }}
+                  rules={{
+                    required: t("landlord.create.validation.category_required"),
+                  }}
                   render={({ field, fieldState }) => (
                     <>
                       <Select
                         {...field}
                         onChange={(e) => {
                           field.onChange(e.target.value);
-                          setValue("subcategoryId", "", { shouldTouch: true, shouldValidate: true });
+                          setValue("subcategoryId", "", {
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
                         }}
-                        disabled={lockCategory || categoriesQuery.isLoading || !(categoriesQuery.data ?? []).length}
+                        disabled={
+                          lockCategory ||
+                          categoriesQuery.isLoading ||
+                          !(categoriesQuery.data ?? []).length
+                        }
                         className={cn(
-                          fieldState.error ? "border-destructive" : "border-border"
+                          fieldState.error
+                            ? "border-destructive"
+                            : "border-border",
                         )}
                       >
                         <option value="" disabled>
@@ -536,7 +628,9 @@ export default function AddPropertyPage({
                         ))}
                       </Select>
                       {fieldState.error?.message ? (
-                        <div className="mt-2 text-xs text-destructive">{String(fieldState.error.message)}</div>
+                        <div className="mt-2 text-xs text-destructive">
+                          {String(fieldState.error.message)}
+                        </div>
                       ) : null}
                     </>
                   )}
@@ -549,16 +643,22 @@ export default function AddPropertyPage({
                 </label>
                 <Select
                   {...register("subcategoryId", {
-                    required: t("landlord.create.validation.subcategory_required"),
+                    required: t(
+                      "landlord.create.validation.subcategory_required",
+                    ),
                     onBlur: () => trigger("subcategoryId"),
                   })}
                   disabled={!subcategories.length}
                   className={cn(
-                    touchedFields.subcategoryId && errors.subcategoryId ? "border-destructive" : "border-border"
+                    touchedFields.subcategoryId && errors.subcategoryId
+                      ? "border-destructive"
+                      : "border-border",
                   )}
                 >
                   <option value="" disabled>
-                    {subcategories.length ? t("landlord.create.select_subcategory") : t("landlord.create.no_subcategories")}
+                    {subcategories.length
+                      ? t("landlord.create.select_subcategory")
+                      : t("landlord.create.no_subcategories")}
                   </option>
                   {subcategories.map((sub) => (
                     <option key={sub.id} value={sub.id}>
@@ -566,8 +666,11 @@ export default function AddPropertyPage({
                     </option>
                   ))}
                 </Select>
-                {touchedFields.subcategoryId && errors.subcategoryId?.message ? (
-                  <div className="mt-2 text-xs text-destructive">{String(errors.subcategoryId.message)}</div>
+                {touchedFields.subcategoryId &&
+                errors.subcategoryId?.message ? (
+                  <div className="mt-2 text-xs text-destructive">
+                    {String(errors.subcategoryId.message)}
+                  </div>
                 ) : null}
               </div>
 
@@ -581,10 +684,17 @@ export default function AddPropertyPage({
                     onBlur: () => trigger("propertyTitle"),
                   })}
                   placeholder={t("landlord.create.placeholder.ad_title")}
-                  className={touchedFields.propertyTitle && errors.propertyTitle ? "border-destructive" : undefined}
+                  className={
+                    touchedFields.propertyTitle && errors.propertyTitle
+                      ? "border-destructive"
+                      : undefined
+                  }
                 />
-                {touchedFields.propertyTitle && errors.propertyTitle?.message ? (
-                  <div className="mt-2 text-xs text-destructive">{String(errors.propertyTitle.message)}</div>
+                {touchedFields.propertyTitle &&
+                errors.propertyTitle?.message ? (
+                  <div className="mt-2 text-xs text-destructive">
+                    {String(errors.propertyTitle.message)}
+                  </div>
                 ) : null}
               </div>
 
@@ -594,43 +704,72 @@ export default function AddPropertyPage({
                 </label>
                 <textarea
                   {...register("description", {
-                    required: t("landlord.create.validation.description_required"),
+                    required: t(
+                      "landlord.create.validation.description_required",
+                    ),
                     onBlur: () => trigger("description"),
                   })}
                   placeholder={t("landlord.create.placeholder.description")}
                   className={cn(
                     "min-h-28 w-full resize-y rounded-2xl border bg-bg-input px-4 py-3 text-sm text-text-primary outline-none placeholder:text-placeholder focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15",
-                    touchedFields.description && errors.description ? "border-destructive" : "border-border"
+                    touchedFields.description && errors.description
+                      ? "border-destructive"
+                      : "border-border",
                   )}
                 />
                 {touchedFields.description && errors.description?.message ? (
-                  <div className="mt-2 text-xs text-destructive">{String(errors.description.message)}</div>
+                  <div className="mt-2 text-xs text-destructive">
+                    {String(errors.description.message)}
+                  </div>
                 ) : null}
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-text-secondary">
-                  {t("landlord.create.price_label", { currency: tCurrency("NPR") })}
+                  {t("landlord.create.price_label", {
+                    currency: tCurrency("NPR"),
+                  })}
                 </label>
                 <Input
                   {...register("price", {
                     required: t("landlord.create.validation.price_required"),
                     validate: (value) => {
                       const v = String(value ?? "").trim();
-                      if (!v) return t("landlord.create.validation.price_required");
+                      if (!v)
+                        return t("landlord.create.validation.price_required");
                       const n = Number(v);
-                      if (Number.isNaN(n) || n < 0) return t("landlord.create.validation.valid_price");
+                      if (Number.isNaN(n) || n < 0)
+                        return t("landlord.create.validation.valid_price");
                       return true;
                     },
                     onBlur: () => trigger("price"),
                   })}
                   inputMode="numeric"
                   placeholder={t("landlord.create.placeholder.price_label")}
-                  className={touchedFields.price && errors.price ? "border-destructive" : undefined}
+                  className={
+                    touchedFields.price && errors.price
+                      ? "border-destructive"
+                      : undefined
+                  }
                 />
                 {touchedFields.price && errors.price?.message ? (
-                  <div className="mt-2 text-xs text-destructive">{String(errors.price.message)}</div>
+                  <div className="mt-2 text-xs text-destructive">
+                    {String(errors.price.message)}
+                  </div>
                 ) : null}
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 text-sm text-text-primary">
+                  <input
+                    type="checkbox"
+                    {...register("isNegotiable")}
+                    className="mt-1 h-4 w-4 accent-primary"
+                  />
+                  <span className="font-semibold">
+                    {t("landlord.create.negotiable")}
+                  </span>
+                </label>
               </div>
 
               <div>
@@ -649,11 +788,20 @@ export default function AddPropertyPage({
                   inputMode="tel"
                   autoComplete="tel"
                   placeholder={t("landlord.create.placeholder.landlord_phone")}
-                  className={touchedFields.landlordPhone && errors.landlordPhone ? "border-destructive" : undefined}
+                  className={
+                    touchedFields.landlordPhone && errors.landlordPhone
+                      ? "border-destructive"
+                      : undefined
+                  }
                 />
-                <p className="mt-1.5 text-xs text-text-tertiary">{t("landlord.create.landlord_phone_help")}</p>
-                {touchedFields.landlordPhone && errors.landlordPhone?.message ? (
-                  <div className="mt-2 text-xs text-destructive">{String(errors.landlordPhone.message)}</div>
+                <p className="mt-1.5 text-xs text-text-tertiary">
+                  {t("landlord.create.landlord_phone_help")}
+                </p>
+                {touchedFields.landlordPhone &&
+                errors.landlordPhone?.message ? (
+                  <div className="mt-2 text-xs text-destructive">
+                    {String(errors.landlordPhone.message)}
+                  </div>
                 ) : null}
               </div>
 
@@ -665,18 +813,29 @@ export default function AddPropertyPage({
                   <Input
                     {...register("totalFloor", {
                       validate: (value) => {
-                        const parsed = parseOptionalInteger(String(value ?? ""));
-                        if (Number.isNaN(parsed) || ((parsed as number) < 0)) return t("landlord.create.validation.valid_total_floor");
+                        const parsed = parseOptionalInteger(
+                          String(value ?? ""),
+                        );
+                        if (Number.isNaN(parsed) || (parsed as number) < 0)
+                          return t(
+                            "landlord.create.validation.valid_total_floor",
+                          );
                         return true;
                       },
                       onBlur: () => trigger(["totalFloor", "propertyFloorNo"]),
                     })}
                     inputMode="numeric"
                     placeholder={t("landlord.create.placeholder.total_floor")}
-                    className={touchedFields.totalFloor && errors.totalFloor ? "border-destructive" : undefined}
+                    className={
+                      touchedFields.totalFloor && errors.totalFloor
+                        ? "border-destructive"
+                        : undefined
+                    }
                   />
                   {touchedFields.totalFloor && errors.totalFloor?.message ? (
-                    <div className="mt-2 text-xs text-destructive">{String(errors.totalFloor.message)}</div>
+                    <div className="mt-2 text-xs text-destructive">
+                      {String(errors.totalFloor.message)}
+                    </div>
                   ) : null}
                 </div>
 
@@ -687,29 +846,50 @@ export default function AddPropertyPage({
                   <Input
                     {...register("propertyFloorNo", {
                       validate: (value) => {
-                        const parsedPropertyFloor = parseOptionalInteger(String(value ?? ""));
-                        if (Number.isNaN(parsedPropertyFloor) || ((parsedPropertyFloor as number) < 0)) {
-                          return t("landlord.create.validation.valid_property_floor");
+                        const parsedPropertyFloor = parseOptionalInteger(
+                          String(value ?? ""),
+                        );
+                        if (
+                          Number.isNaN(parsedPropertyFloor) ||
+                          (parsedPropertyFloor as number) < 0
+                        ) {
+                          return t(
+                            "landlord.create.validation.valid_property_floor",
+                          );
                         }
-                        const parsedTotalFloor = parseOptionalInteger(String(watch("totalFloor") ?? ""));
+                        const parsedTotalFloor = parseOptionalInteger(
+                          String(watch("totalFloor") ?? ""),
+                        );
                         if (
                           parsedPropertyFloor != null &&
                           parsedTotalFloor != null &&
                           !Number.isNaN(parsedTotalFloor) &&
-                          (parsedPropertyFloor as number) > (parsedTotalFloor as number)
+                          (parsedPropertyFloor as number) >
+                            (parsedTotalFloor as number)
                         ) {
-                          return t("landlord.create.validation.valid_property_floor_v2");
+                          return t(
+                            "landlord.create.validation.valid_property_floor_v2",
+                          );
                         }
                         return true;
                       },
                       onBlur: () => trigger(["propertyFloorNo", "totalFloor"]),
                     })}
                     inputMode="numeric"
-                    placeholder={t("landlord.create.placeholder.property_floor")}
-                    className={touchedFields.propertyFloorNo && errors.propertyFloorNo ? "border-destructive" : undefined}
+                    placeholder={t(
+                      "landlord.create.placeholder.property_floor",
+                    )}
+                    className={
+                      touchedFields.propertyFloorNo && errors.propertyFloorNo
+                        ? "border-destructive"
+                        : undefined
+                    }
                   />
-                  {touchedFields.propertyFloorNo && errors.propertyFloorNo?.message ? (
-                    <div className="mt-2 text-xs text-destructive">{String(errors.propertyFloorNo.message)}</div>
+                  {touchedFields.propertyFloorNo &&
+                  errors.propertyFloorNo?.message ? (
+                    <div className="mt-2 text-xs text-destructive">
+                      {String(errors.propertyFloorNo.message)}
+                    </div>
                   ) : null}
                 </div>
 
@@ -721,17 +901,28 @@ export default function AddPropertyPage({
                     {...register("totalAreaSqft", {
                       validate: (value) => {
                         const parsed = parseOptionalNumber(String(value ?? ""));
-                        if (Number.isNaN(parsed) || ((parsed as number) < 0)) return t("landlord.create.validation.valid_total_area");
+                        if (Number.isNaN(parsed) || (parsed as number) < 0)
+                          return t(
+                            "landlord.create.validation.valid_total_area",
+                          );
                         return true;
                       },
-                      onBlur: () => trigger(["totalAreaSqft", "carpetAreaSqft"]),
+                      onBlur: () =>
+                        trigger(["totalAreaSqft", "carpetAreaSqft"]),
                     })}
                     inputMode="numeric"
                     placeholder={t("landlord.create.placeholder.total_area")}
-                    className={touchedFields.totalAreaSqft && errors.totalAreaSqft ? "border-destructive" : undefined}
+                    className={
+                      touchedFields.totalAreaSqft && errors.totalAreaSqft
+                        ? "border-destructive"
+                        : undefined
+                    }
                   />
-                  {touchedFields.totalAreaSqft && errors.totalAreaSqft?.message ? (
-                    <div className="mt-2 text-xs text-destructive">{String(errors.totalAreaSqft.message)}</div>
+                  {touchedFields.totalAreaSqft &&
+                  errors.totalAreaSqft?.message ? (
+                    <div className="mt-2 text-xs text-destructive">
+                      {String(errors.totalAreaSqft.message)}
+                    </div>
                   ) : null}
                 </div>
 
@@ -742,29 +933,49 @@ export default function AddPropertyPage({
                   <Input
                     {...register("carpetAreaSqft", {
                       validate: (value) => {
-                        const parsedCarpetArea = parseOptionalNumber(String(value ?? ""));
-                        if (Number.isNaN(parsedCarpetArea) || ((parsedCarpetArea as number) < 0)) {
-                          return t("landlord.create.validation.valid_carpet_area");
+                        const parsedCarpetArea = parseOptionalNumber(
+                          String(value ?? ""),
+                        );
+                        if (
+                          Number.isNaN(parsedCarpetArea) ||
+                          (parsedCarpetArea as number) < 0
+                        ) {
+                          return t(
+                            "landlord.create.validation.valid_carpet_area",
+                          );
                         }
-                        const parsedTotalArea = parseOptionalNumber(String(watch("totalAreaSqft") ?? ""));
+                        const parsedTotalArea = parseOptionalNumber(
+                          String(watch("totalAreaSqft") ?? ""),
+                        );
                         if (
                           parsedCarpetArea != null &&
                           parsedTotalArea != null &&
                           !Number.isNaN(parsedTotalArea) &&
-                          (parsedCarpetArea as number) > (parsedTotalArea as number)
+                          (parsedCarpetArea as number) >
+                            (parsedTotalArea as number)
                         ) {
-                          return t("landlord.create.validation.valid_carpet_area_v2");
+                          return t(
+                            "landlord.create.validation.valid_carpet_area_v2",
+                          );
                         }
                         return true;
                       },
-                      onBlur: () => trigger(["carpetAreaSqft", "totalAreaSqft"]),
+                      onBlur: () =>
+                        trigger(["carpetAreaSqft", "totalAreaSqft"]),
                     })}
                     inputMode="numeric"
                     placeholder={t("landlord.create.placeholder.carpet_area")}
-                    className={touchedFields.carpetAreaSqft && errors.carpetAreaSqft ? "border-destructive" : undefined}
+                    className={
+                      touchedFields.carpetAreaSqft && errors.carpetAreaSqft
+                        ? "border-destructive"
+                        : undefined
+                    }
                   />
-                  {touchedFields.carpetAreaSqft && errors.carpetAreaSqft?.message ? (
-                    <div className="mt-2 text-xs text-destructive">{String(errors.carpetAreaSqft.message)}</div>
+                  {touchedFields.carpetAreaSqft &&
+                  errors.carpetAreaSqft?.message ? (
+                    <div className="mt-2 text-xs text-destructive">
+                      {String(errors.carpetAreaSqft.message)}
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -776,14 +987,17 @@ export default function AddPropertyPage({
                 <div
                   className={cn(
                     "rounded-2xl border bg-bg-input px-4 py-3",
-                    locationError ? "border-destructive" : "border-border"
+                    locationError ? "border-destructive" : "border-border",
                   )}
                 >
                   {selectedLocation ? (
                     <>
-                      <div className="text-sm font-semibold text-text-primary">{selectedLocation.label}</div>
+                      <div className="text-sm font-semibold text-text-primary">
+                        {selectedLocation.label}
+                      </div>
                       <div className="mt-0.5 text-xs text-text-tertiary">
-                        {selectedLocation.latitude.toFixed(5)}, {selectedLocation.longitude.toFixed(5)}
+                        {selectedLocation.latitude.toFixed(5)},{" "}
+                        {selectedLocation.longitude.toFixed(5)}
                       </div>
                     </>
                   ) : (
@@ -805,7 +1019,11 @@ export default function AddPropertyPage({
                         router.push("/addresses/pick");
                         return;
                       }
-                      const fallbackId = selectedAddressId ?? defaultAddressId ?? addressEntries[0]?.id ?? null;
+                      const fallbackId =
+                        selectedAddressId ??
+                        defaultAddressId ??
+                        addressEntries[0]?.id ??
+                        null;
                       if (fallbackId) {
                         setSelectedAddressId(fallbackId);
                         setPrefilledLocation(null);
@@ -817,7 +1035,11 @@ export default function AddPropertyPage({
                       ? t("landlord.create.add_address_btn")
                       : t("landlord.create.change_address_btn")}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => router.push("/addresses")}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/addresses")}
+                  >
                     {t("landlord.create.manage_btn")}
                   </Button>
                 </div>
@@ -833,7 +1055,9 @@ export default function AddPropertyPage({
                           type="button"
                           className={cn(
                             "block w-full rounded-xl border px-3 py-2 text-left",
-                            active ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20" : "border-border bg-bg-card"
+                            active
+                              ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20"
+                              : "border-border bg-bg-card",
                           )}
                           onClick={() => {
                             setPrefilledLocation(null);
@@ -842,9 +1066,11 @@ export default function AddPropertyPage({
                           }}
                         >
                           <div className="flex items-center gap-2">
-                            <div className="truncate text-sm font-semibold text-text-primary">{entry.label}</div>
+                            <div className="truncate text-sm font-semibold text-text-primary">
+                              {entry.label}
+                            </div>
                             {isDefault ? (
-                              <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                              <span className="rounded bg-primary-500/60 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
                                 {t("landlord.create.default_badge")}
                               </span>
                             ) : null}
@@ -860,68 +1086,84 @@ export default function AddPropertyPage({
                   </div>
                 ) : null}
 
-                {locationError ? <div className="text-xs text-destructive">{locationError}</div> : null}
-              </div>
-
-              <div className="space-y-3">
-                <label className="flex items-start gap-3 text-sm text-text-primary">
-                  <input type="checkbox" {...register("isNegotiable")} className="mt-1 h-4 w-4 accent-primary" />
-                  <span className="font-semibold">{t("landlord.create.negotiable")}</span>
-                </label>
+                {locationError ? (
+                  <div className="text-xs text-destructive">
+                    {locationError}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
 
           {currentStep === 2 ? (
-            <div className="space-y-6 rounded-2xl border border-border bg-bg-card p-5">
+            <div className="space-y-6 rounded-2xl border border-border bg-bg-page/40 p-5">
               <div>
-                <div className="text-base font-semibold text-text-primary">{t("listing_amenities.title")}</div>
-                <div className="mt-1 text-sm text-text-tertiary">{t("listing_amenities.subtitle")}</div>
+                <div className="text-base font-semibold text-text-primary">
+                  {t("listing_amenities.title")}
+                </div>
+                <div className="mt-1 text-sm text-text-tertiary">
+                  {t("listing_amenities.subtitle")}
+                </div>
               </div>
 
-              {(amenityCategoriesQuery.isLoading || amenitiesQuery.isLoading) ? (
-                <div className="text-sm text-text-tertiary">{t("listing_amenities.loading")}</div>
+              {amenityCategoriesQuery.isLoading || amenitiesQuery.isLoading ? (
+                <div className="text-sm text-text-tertiary">
+                  {t("listing_amenities.loading")}
+                </div>
               ) : (
                 <div className="space-y-6">
-                  {groupedAmenities.map((group: MasterAmenityCategory & { amenities: MasterAmenity[] }) => (
-                    <div key={group.id} className="space-y-3">
-                      <div className="text-sm font-semibold text-text-secondary">
-                        {tAmenityCategory(group.code ?? group.name)}
+                  {groupedAmenities.map(
+                    (
+                      group: MasterAmenityCategory & {
+                        amenities: MasterAmenity[];
+                      },
+                    ) => (
+                      <div key={group.id} className="space-y-3">
+                        <div className="text-sm font-semibold text-text-secondary">
+                          {tAmenityCategory(group.code ?? group.name)}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {group.amenities.map((amenity) => {
+                            const active = (watch("amenityIds") ?? []).includes(
+                              amenity.id,
+                            );
+                            return (
+                              <button
+                                key={amenity.id}
+                                type="button"
+                                onClick={() => toggleAmenity(amenity.id)}
+                                className={cn(
+                                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition",
+                                  active
+                                    ? "border-primary-400 bg-primary-50 text-primary-700 dark:bg-primary-900/35 dark:text-primary-200"
+                                    : "border-border bg-bg-input text-text-secondary hover:border-primary-200 hover:text-text-primary",
+                                )}
+                              >
+                                {tAmenity(amenity.code || amenity.name)}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {group.amenities.map((amenity) => {
-                          const active = (watch("amenityIds") ?? []).includes(amenity.id);
-                          return (
-                            <button
-                              key={amenity.id}
-                              type="button"
-                              onClick={() => toggleAmenity(amenity.id)}
-                              className={cn(
-                                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition",
-                                active
-                                  ? "border-primary-400 bg-primary-50 text-primary-700 dark:bg-primary-900/35 dark:text-primary-200"
-                                  : "border-border bg-bg-input text-text-secondary hover:border-primary-200 hover:text-text-primary"
-                              )}
-                            >
-                              {tAmenity(amenity.code || amenity.name)}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               )}
             </div>
           ) : null}
 
           {currentStep === 3 ? (
-            <div className="space-y-5 rounded-2xl border border-border bg-bg-card p-5">
+            <div className="space-y-5 rounded-2xl border border-border bg-bg-page/40 p-5">
               <div>
-                <div className="text-base font-semibold text-text-primary">{t("listing_media.title", "Add Photos")}</div>
-                <div className="mt-1 text-sm text-text-tertiary">
-                  {t("listing_media.subtitle", "Upload visually appealing photos. You can add up to 10 photos.")}
+                <div className="text-base font-semibold text-text-primary">
+                  {t("listing_media.title", "Add Photos")}
                 </div>
+                {/* <div className="mt-1 text-sm text-text-tertiary">
+                  {t(
+                    "listing_media.subtitle",
+                    "Upload visually appealing photos. You can add up to 10 photos.",
+                  )}
+                </div> */}
               </div>
 
               <div className="space-y-3">
@@ -934,41 +1176,74 @@ export default function AddPropertyPage({
                   multiple
                   onChange={(e) => {
                     const files = Array.from(e.target.files ?? []);
-                    setSelectedFiles((prev) => [...prev, ...files].slice(0, 10));
+                    setSelectedFiles((prev) =>
+                      [...prev, ...files].slice(0, 10),
+                    );
                     e.target.value = "";
                   }}
+                  className="border border-primary-400 p-4 pr-0 rounded-full "
                 />
                 <div className="text-xs text-text-tertiary">
-                  {t("listing_media.tip_cover", "Tip: the first image becomes the cover photo.")}
+                  {t(
+                    "listing_media.tip_cover",
+                    "Tip: the first image becomes the cover photo.",
+                  )}
                 </div>
               </div>
 
-              {(existingPhotoUrls.length || selectedFiles.length) ? (
+              {existingPhotoUrls.length || selectedFiles.length ? (
                 <div className="space-y-3">
                   <div className="text-sm font-semibold text-text-secondary">
-                    {t("listing_media.selected", "Selected")} ({Math.min(existingPhotoUrls.length + selectedFiles.length, 10)})
+                    {t("listing_media.selected", "Selected")} (
+                    {Math.min(
+                      existingPhotoUrls.length + selectedFiles.length,
+                      10,
+                    )}
+                    )
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-	                    {existingPhotoUrls.map((url, idx) => (
-	                      <div key={`${url}-${idx}`} className="relative overflow-hidden rounded-2xl border border-border bg-bg-input">
-	                        {/* eslint-disable-next-line @next/next/no-img-element */}
-	                        <img src={url} alt="" className="h-28 w-full object-cover" />
-	                        <button
-	                          type="button"
-	                          onClick={() => setExistingPhotoUrls((prev) => prev.filter((_, i) => i !== idx))}
+                    {existingPhotoUrls.map((url, idx) => (
+                      <div
+                        key={`${url}-${idx}`}
+                        className="relative overflow-hidden rounded-2xl border border-border bg-bg-input"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt=""
+                          className="h-28 w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExistingPhotoUrls((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }
                           className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
                         >
                           {t("common.remove", "Remove")}
                         </button>
                       </div>
-	                    ))}
-	                    {selectedFiles.map((file, idx) => (
-	                      <div key={`${file.name}-${idx}`} className="relative overflow-hidden rounded-2xl border border-border bg-bg-input">
-	                        {/* eslint-disable-next-line @next/next/no-img-element */}
-	                        <img src={URL.createObjectURL(file)} alt="" className="h-28 w-full object-cover" />
-	                        <button
-	                          type="button"
-	                          onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                    ))}
+                    {selectedFiles.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="relative overflow-hidden rounded-2xl border border-border bg-bg-input"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt=""
+                          className="h-28 w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedFiles((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }
                           className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
                         >
                           {t("common.remove", "Remove")}
@@ -981,21 +1256,26 @@ export default function AddPropertyPage({
             </div>
           ) : null}
 
-	          <div className="mt-5 flex items-center justify-end">
-	            <Button type="button" onClick={handleNext} disabled={isSubmitting || isPrefilling}>
-	              {isSubmitting
-	                ? listingId
-	                  ? t("landlord.create.saving")
-	                  : t("landlord.create.submitting")
-	                : currentStep === totalSteps
-	                  ? listingId
-	                    ? t("landlord.create.save_changes")
-	                    : t("landlord.create.submit_for_review")
-	                  : t("landlord.create.continue")}
-	            </Button>
-	          </div>
-	        </>
-	      )}
-	    </div>
-	  );
+          <div className="mt-5 flex  items-center sm:justify-end">
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={isSubmitting || isPrefilling}
+              className="flex-1 sm:flex-0 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
+            >
+              {isSubmitting
+                ? listingId
+                  ? t("landlord.create.saving")
+                  : t("landlord.create.submitting")
+                : currentStep === totalSteps
+                  ? listingId
+                    ? t("landlord.create.save_changes")
+                    : t("landlord.create.submit_for_review")
+                  : t("landlord.create.continue")}
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }

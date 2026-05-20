@@ -56,11 +56,13 @@ export function Dialog({
   }
 
   return createPortal(
-    <div className={cn("fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6", className)}>
+    <div className={cn("fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6", className)}>
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity duration-300" 
-        onClick={onClose}
+        onClick={() => {
+          if (!busy) onClose();
+        }}
       />
       
       {/* Dialog content */}
@@ -101,7 +103,7 @@ export function Dialog({
             variant="outline" 
             onClick={onClose} 
             disabled={busy}
-            className="h-11 border-white/10 bg-white/5 font-semibold sm:h-10 sm:min-w-[100px]"
+            className="h-11 border-white/10 bg-white/5 font-semibold sm:h-10 sm:min-w-25"
             style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}
           >
             {cancelLabel}
@@ -111,7 +113,7 @@ export function Dialog({
             onClick={onConfirm} 
             disabled={busy}
             className={cn(
-              "h-11 font-bold shadow-[0_0_20px_rgba(99,102,241,0.2)] sm:h-10 sm:min-w-[120px]",
+              "h-11 font-bold shadow-[0_0_20px_rgba(99,102,241,0.2)] sm:h-10 sm:min-w-30",
               confirmVariant === "default" && "bg-linear-to-r from-primary-500 to-tertiary-500 text-white"
             )}
             style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}

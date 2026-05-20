@@ -356,3 +356,11 @@ body {
 .nhyvas-toast.is-error {
   border-color: color-mix(in srgb, #ef4444 45%, var(--border));
 }
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

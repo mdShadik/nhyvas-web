@@ -7,4 +7,3 @@ export function createSupabasePublicClient() {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 }
-
