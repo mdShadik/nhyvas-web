@@ -49,11 +49,12 @@ async function resolveSupportImageUrl(
 ): Promise<string | null> {
   if (imageFile && imageFile.size > 0) {
     const userId = await getCurrentUserId();
-    return uploadToR2({
+    const { publicUrl } = await uploadToR2({
       file: imageFile,
       folder: "support",
       userId: userId ?? undefined,
     });
+    return publicUrl;
   }
   if (imageUri && (imageUri.startsWith("http://") || imageUri.startsWith("https://"))) return imageUri;
   return null;

@@ -100,7 +100,13 @@ export const storiesService = {
     return rawRows.map(normalizeStoryRow).filter((r) => Boolean(r.story_id));
   },
 
-  async upsertStory(p: { propertyId: string; mediaUrl: string; thumbnailUrl: string | null }): Promise<string> {
+  async upsertStory(p: {
+    propertyId: string;
+    mediaUrl: string;
+    thumbnailUrl: string | null;
+    mediaKey?: string;
+    thumbnailKey?: string;
+  }): Promise<string> {
     const { id } = await requestJson<{ id: string }>("/api/stories/upsert", {
       method: "POST",
       body: JSON.stringify(p),

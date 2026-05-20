@@ -1096,22 +1096,29 @@ function PropertyWalkthroughSection({
          );
       }
 
-      const folder = isVideo ? "property-media/videos" : "property-media/images";
-      const mediaUrl = await uploadToR2({ file, folder });
-      
+      const folder = isVideo ? "property-walkthrough-story/videos" : "property-walkthrough-story/images";
+      const { publicUrl: mediaUrl, objectKey: mediaKey } = await uploadToR2({ file: file, folder });
+
       let thumbnailUrl: string | null = null;
+      let thumbnailKey: string | undefined = undefined;
+
       if (thumbnailFile) {
-        thumbnailUrl = await uploadToR2({ 
+        const thumbResult = await uploadToR2({ 
           file: thumbnailFile, 
-          folder: "property-media/thumbnails" 
+          folder: "property-walkthrough-story/thumbnails" 
         });
+        thumbnailUrl = thumbResult.publicUrl;
+        thumbnailKey = thumbResult.objectKey;
       }
 
       await storiesService.upsertStory({
         propertyId: listingId,
         mediaUrl,
         thumbnailUrl,
+        mediaKey,
+        thumbnailKey,
       });
+
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["property-story", listingId] });

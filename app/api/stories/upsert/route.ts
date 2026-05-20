@@ -6,9 +6,13 @@ export async function POST(req: Request) {
     propertyId?: string;
     mediaUrl?: string;
     thumbnailUrl?: string | null;
+    mediaKey?: string;
+    thumbnailKey?: string;
   };
   const propertyId = typeof body?.propertyId === "string" ? body.propertyId.trim() : "";
   const mediaUrl = typeof body?.mediaUrl === "string" ? body.mediaUrl.trim() : "";
+  const mediaKey = typeof body?.mediaKey === "string" ? body.mediaKey.trim() : null;
+  const thumbnailKey = typeof body?.thumbnailKey === "string" ? body.thumbnailKey.trim() : null;
   if (!propertyId) return jsonError("propertyId is required", 400);
   if (!mediaUrl) return jsonError("mediaUrl is required", 400);
 
@@ -19,8 +23,9 @@ export async function POST(req: Request) {
     p_property_id: propertyId,
     p_media_url: mediaUrl,
     p_thumbnail_url: typeof body?.thumbnailUrl === "string" ? body.thumbnailUrl : null,
+    p_media_key: mediaKey,
+    p_thumbnail_key: thumbnailKey,
   });
   if (error) return jsonError(error.message, 400);
   return jsonOk({ id: data as string });
 }
-

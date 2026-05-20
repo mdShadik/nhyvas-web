@@ -60,21 +60,51 @@ export default function OnboardPage() {
     loadProfile();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const processAvatar = async (url: string | null) => {
+    if (!url || !url.startsWith("http")) return url;
+    
+    try {
+      const res = await fetch("/api/media/proxy-avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        console.error("Avatar proxy failed", { status: res.status, data });
+        return url;
+      }
+      return data?.url ?? url;
+    } catch (e) {
+      console.error("Failed to proxy avatar", e);
+      return url;
+    }
+  };
+
+  const handleFormSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    
+    let finalAvatarUrl = avatarUrl;
+    if (avatarUrl && avatarUrl.startsWith("http")) {
+       finalAvatarUrl = await processAvatar(avatarUrl);
+    }
+    
+    await handleSubmitInternal(e, finalAvatarUrl);
+  };
+  
+  const handleSubmitInternal = async (e: React.FormEvent, finalAvatarUrl: string | null) => {
     if (!fullName.trim()) {
       setError(t("auth.fullname_required"));
+      setSubmitting(false);
       return;
     }
-
-    setSubmitting(true);
-    setError(null);
 
     try {
       const res = await fetch("/api/profile/complete-onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, avatarUrl }),
+        body: JSON.stringify({ fullName, email, avatarUrl: finalAvatarUrl }),
       });
 
       const data = await res.json();
@@ -82,7 +112,6 @@ export default function OnboardPage() {
         throw new Error(data.error || t("auth.onboard_failed"));
       }
 
-      // Save to local storage as requested
       if (typeof window !== "undefined") {
         localStorage.setItem("user_email", email);
         localStorage.setItem("user_name", fullName);
@@ -130,7 +159,7 @@ export default function OnboardPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleFormSubmit} className="space-y-5">
             <div>
               <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-text-primary">
                 {t("auth.full_name")} <span className="text-red-500">*</span>

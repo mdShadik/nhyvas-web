@@ -458,10 +458,12 @@ export default function AddPropertyPage({ searchParams }: Props) {
       const uploadUrls: string[] = [];
       for (const file of selectedFiles) {
         uploadUrls.push(
-          await uploadToR2({
+          (
+            await uploadToR2({
             file,
             folder: "listing-media",
-          }),
+          })
+          ).publicUrl,
         );
       }
 
