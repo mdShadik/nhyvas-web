@@ -169,7 +169,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
           <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
           <div className="relative z-10 flex h-full flex-col justify-between p-3 sm:p-10 pointer-events-none">
-            <div className="rounded-full w-fit bg-primary-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
+            <div className="rounded-full w-fit bg-linear-to-r from-primary-500 to-tertiary-500 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
               {t("home.badge_featured")}
             </div>
 
@@ -193,7 +193,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href={{ pathname: "/property", query: { id: listing.id } }}
-                  className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-500 active:bg-primary-700 pointer-events-auto cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-2xl hover:bg-linear-to-tl bg-linear-to-br from-primary-600 via-primary-500 to-tertiary-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-500 active:bg-primary-700 pointer-events-auto cursor-pointer"
                 >
                   {t("home.view_property")}
                 </Link>

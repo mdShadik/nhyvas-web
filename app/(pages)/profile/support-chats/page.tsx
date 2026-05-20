@@ -3,15 +3,19 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "lucide-react";
+import { Download, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supportService, type SupportTicketStatus } from "@/services/apiService/support";
+import {
+  supportService,
+  type SupportTicketStatus,
+} from "@/services/apiService/support";
 import { useToast } from "@/context/ToastContext";
 import { cn } from "@/lib/utils";
+import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 
 export default function ProfileSupportChatsPage() {
   const { t } = useTranslation();
@@ -25,7 +29,9 @@ export default function ProfileSupportChatsPage() {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!imageFile) {
@@ -37,7 +43,10 @@ export default function ProfileSupportChatsPage() {
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  const queryKey = useMemo(() => ["support-tickets", statusFilter] as const, [statusFilter]);
+  const queryKey = useMemo(
+    () => ["support-tickets", statusFilter] as const,
+    [statusFilter],
+  );
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey,
@@ -64,7 +73,10 @@ export default function ProfileSupportChatsPage() {
       router.push(`/profile/support-ticket/${ticket.id}`);
     },
     onError: (error: unknown) => {
-      const message = typeof (error as { message?: unknown })?.message === "string" ? (error as Error).message : "";
+      const message =
+        typeof (error as { message?: unknown })?.message === "string"
+          ? (error as Error).message
+          : "";
       showToast({
         variant: "error",
         title: t("support.failed_create_title"),
@@ -74,7 +86,8 @@ export default function ProfileSupportChatsPage() {
   });
 
   const subjectError = subject.trim().length > 0 && subject.trim().length < 3;
-  const descriptionError = description.trim().length > 0 && description.trim().length < 10;
+  const descriptionError =
+    description.trim().length > 0 && description.trim().length < 10;
   const canSubmitCreate =
     subject.trim().length >= 3 &&
     (description.trim().length >= 10 || (imageFile && imageFile.size > 0)) &&
@@ -83,8 +96,12 @@ export default function ProfileSupportChatsPage() {
   return (
     <div className="relative">
       <div className="mb-4">
-        <h2 className="text-xl font-extrabold text-text-primary">{t("support.title")}</h2>
-        <p className="mt-1 text-sm text-text-secondary">{t("support.subtitle")}</p>
+        <h2 className="text-xl font-extrabold text-text-primary">
+          {t("support.title")}
+        </h2>
+        <p className="mt-1 text-sm text-text-secondary">
+          {t("support.subtitle")}
+        </p>
 
         <div className="mt-3 flex flex-wrap gap-2">
           {(["open", "closed"] as SupportTicketStatus[]).map((status) => {
@@ -98,10 +115,12 @@ export default function ProfileSupportChatsPage() {
                   "rounded-full border px-3.5 py-2 text-xs font-bold transition",
                   active
                     ? "border-primary-600 bg-primary-600 text-white"
-                    : "border-border bg-bg-input text-text-secondary hover:border-primary-200"
+                    : "border-border bg-bg-input text-text-secondary hover:border-primary-200",
                 )}
               >
-                {status === "open" ? t("support.status_open") : t("support.status_closed")}
+                {status === "open"
+                  ? t("support.status_open")
+                  : t("support.status_closed")}
               </button>
             );
           })}
@@ -109,15 +128,22 @@ export default function ProfileSupportChatsPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-16 text-center text-text-secondary">{t("common.loading", "Loading…")}</div>
+        <div className="py-16 text-center text-text-secondary">
+          {t("common.loading", "Loading…")}
+        </div>
       ) : tickets.length === 0 ? (
         <div className="rounded-2xl border border-border bg-bg-input p-4">
           <p className="font-bold text-text-primary">
             {t("support.no_tickets", {
-              status: statusFilter === "open" ? t("support.status_open") : t("support.status_closed"),
+              status:
+                statusFilter === "open"
+                  ? t("support.status_open")
+                  : t("support.status_closed"),
             })}
           </p>
-          <p className="mt-2 text-sm text-text-secondary">{t("support.no_tickets_hint")}</p>
+          <p className="mt-2 text-sm text-text-secondary">
+            {t("support.no_tickets_hint")}
+          </p>
         </div>
       ) : (
         <ul className="space-y-2.5 pb-24">
@@ -144,119 +170,154 @@ export default function ProfileSupportChatsPage() {
       <button
         type="button"
         onClick={() => setCreateOpen(true)}
-        className="fixed bottom-8 right-6 z-[60] inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-500 sm:right-12"
+        className="fixed bottom-20 right-8 z-60 inline-flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br from-primary-500 to-tertiary-500  text-white shadow-lg hover:bg-primary-500 sm:right-12"
         aria-label={t("support.create_ticket")}
       >
         <Plus className="h-7 w-7" />
       </button>
 
       {createOpen ? (
-        <div className="fixed inset-0 z-[65] flex items-end justify-center sm:items-center">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/50"
-            aria-label={t("common.close", "Close")}
-            onClick={() => {
-              if (createTicketMutation.isPending) return;
-              setCreateOpen(false);
-              resetForm();
-            }}
-          />
-          <div className="relative z-[66] mb-0 w-full max-h-[85vh] overflow-y-auto rounded-t-3xl border border-border bg-bg-card p-5 shadow-xl sm:m-6 sm:max-w-lg sm:rounded-3xl">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-lg font-extrabold text-text-primary">{t("support.create_ticket")}</h3>
-              <button
-                type="button"
-                className="rounded-full p-2 text-text-secondary hover:bg-bg-input"
-                onClick={() => {
-                  if (createTicketMutation.isPending) return;
-                  setCreateOpen(false);
-                  resetForm();
-                }}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="mb-4 text-sm text-text-secondary">{t("support.create_ticket_hint")}</p>
+        <MobileBottomSheet
+          open={createOpen}
+          title={t("support.create_ticket")}
+          description={t("support.create_ticket_hint")}
+          onClose={() => {
+            if (createTicketMutation.isPending) return;
+            setCreateOpen(false);
+            resetForm();
+          }}
+          showCloseButton
+          disableDismiss={createTicketMutation.isPending}
+          snapPoints={[0, 0.75, 1]}
+          initialSnap={1}
+          minSnap={0.75}
+        >
 
-            <label className="mb-1 block text-xs font-semibold text-text-secondary">{t("support.subject_placeholder")}</label>
-            <Input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder={t("support.subject_placeholder")}
-              className={cn("mb-1", subjectError && "border-destructive")}
-            />
-            {subjectError ? (
-              <p className="mb-3 text-xs text-destructive">{t("support_ticket.validation_subject", "At least 3 characters.")}</p>
-            ) : (
-              <div className="mb-3" />
-            )}
+          <div className="flex flex-col gap-3 px-5 pt-2 pb-8">
+    {/* Subject */}
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold text-text-secondary">
+        {t("support.subject_placeholder")}
+      </label>
+      <Input
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        placeholder={t("support.subject_placeholder")}
+        className={cn(subjectError && "border-destructive")}
+      />
+      {subjectError && (
+        <p className="mt-1 text-xs text-destructive">
+          {t("support_ticket.validation_subject", "At least 3 characters.")}
+        </p>
+      )}
+    </div>
 
-            <label className="mb-1 block text-xs font-semibold text-text-secondary">
-              {t("support.description_placeholder")}
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("support.description_placeholder")}
-              rows={4}
-              className={cn(
-                "mb-1 w-full resize-y rounded-2xl border border-border bg-bg-input px-3 py-3 text-sm text-text-primary outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15",
-                descriptionError && "border-destructive"
-              )}
-            />
-            {descriptionError ? (
-              <p className="mb-3 text-xs text-destructive">
-                {t("support_ticket.validation_description", "At least 10 characters (unless you attach an image).")}
-              </p>
-            ) : (
-              <div className="mb-3" />
-            )}
+    {/* Description */}
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold text-text-secondary">
+        {t("support.description_placeholder")}
+      </label>
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder={t("support.description_placeholder")}
+        rows={4}
+        className={cn(
+          "w-full resize-y rounded-2xl border border-border bg-bg-input px-3 py-3 text-sm text-text-primary outline-none",
+          "focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15",
+          "placeholder:text-placeholder",
+          descriptionError && "border-destructive"
+        )}
+      />
+      {descriptionError && (
+        <p className="mt-1 text-xs text-destructive">
+          {t(
+            "support_ticket.validation_description",
+            "At least 10 characters (unless you attach an image)."
+          )}
+        </p>
+      )}
+    </div>
 
-            <label className="mb-2 block rounded-2xl border border-border bg-bg-input px-4 py-3 text-center cursor-pointer hover:bg-secondary-50 dark:hover:bg-secondary-900">
-              <span className="font-bold text-text-primary">
-                {imageFile ? t("support.image_attached") : t("support.attach_image")}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
+    {/* Attachment Upload */}
+    <div>
+      <label
+        className={cn(
+          "flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-bg-input px-4 py-3.5 text-center transition-colors",
+          "hover:border-primary-400/50 hover:bg-primary-500/5",
+          "dark:hover:bg-primary-400/5",
+          imageFile && "border-solid border-primary-400/40 bg-primary-500/5"
+        )}
+      >
+        <Download className="h-4 w-4 text-text-tertiary" />
+        <span className="text-sm font-semibold text-text-primary">
+          {imageFile
+            ? t("support.image_attached")
+            : t("support.attach_image")}
+        </span>
+        <input
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+        />
+      </label>
+    </div>
 
-            {imageFile && attachmentPreview ? (
-              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-bg-input p-3">
-                {/* eslint-disable-next-line @next/next/no-img-element -- local preview */}
-                <img src={attachmentPreview} alt="" className="h-[72px] w-[92px] rounded-xl object-cover" />
-                <div className="min-w-0 flex-1 text-sm font-bold text-text-primary">{t("support.attachment")}</div>
-                <button type="button" onClick={() => setImageFile(null)} aria-label={t("common.remove", "Remove")}>
-                  <X className="h-4 w-4 text-text-secondary" />
-                </button>
-              </div>
-            ) : null}
-
-            <Button
-              className="mt-5 w-full"
-              disabled={!canSubmitCreate}
-              onClick={() => canSubmitCreate && createTicketMutation.mutate()}
-            >
-              {createTicketMutation.isPending ? t("support.creating") : t("support.create_ticket_cta")}
-            </Button>
-            <Button
-              variant="outline"
-              className="mt-2 w-full"
-              type="button"
-              disabled={createTicketMutation.isPending}
-              onClick={() => {
-                setCreateOpen(false);
-                resetForm();
-              }}
-            >
-              {t("support.cancel")}
-            </Button>
+    {/* Attachment Preview */}
+    {imageFile && attachmentPreview && (
+      <div className="flex items-center gap-3 rounded-2xl border border-border bg-bg-input p-3">
+        {/* eslint-disable-next-line @next/next/no-img-element -- local preview */}
+        <img
+          src={attachmentPreview}
+          alt=""
+          className="h-[72px] w-[92px] rounded-xl object-cover"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-bold text-text-primary">
+            {t("support.attachment")}
+          </div>
+          <div className="mt-0.5 text-xs text-text-tertiary">
+            {imageFile.name}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => setImageFile(null)}
+          aria-label={t("common.remove", "Remove")}
+          className="rounded-full p-1.5 text-text-tertiary transition-colors hover:bg-secondary-100 hover:text-text-primary dark:hover:bg-secondary-800"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    )}
+
+    {/* Actions */}
+    <div className="mt-2 flex flex-col gap-2">
+      <Button
+        className="w-full"
+        disabled={!canSubmitCreate}
+        onClick={() => canSubmitCreate && createTicketMutation.mutate()}
+      >
+        {createTicketMutation.isPending
+          ? t("support.creating")
+          : t("support.create_ticket_cta")}
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full"
+        type="button"
+        disabled={createTicketMutation.isPending}
+        onClick={() => {
+          setCreateOpen(false);
+          resetForm();
+        }}
+      >
+        {t("support.cancel")}
+      </Button>
+    </div>
+  </div>
+        </MobileBottomSheet>
       ) : null}
     </div>
   );
