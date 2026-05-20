@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Heart,
@@ -39,13 +39,13 @@ function isActive(pathname: string, href: string) {
 export function ProfileNav() {
   const { t } = useTranslation();
   const pathname = usePathname();
+  const router = useRouter();
   const [openInstall, setOpenInstall] = useState<boolean>(false);
   const [openLogout, setOpenLogout] = useState<boolean>(false);
 
   const handleLogout = () => {
     setOpenLogout(false);
-    // Handle actual logout logic here
-    console.log("User logged out");
+    router.push("/logout");
   };
 
   const items: NavItem[] = [

@@ -150,7 +150,7 @@ export function PWAInstallPrompt({
         <div className="w-full space-y-2">
           {/* ANDROID INSTALL */}
           {!isIOS ? (
-            <div className="relative overflow-hidden rounded-2xl p-[2px]">
+            <div className="relative overflow-hidden rounded-2xl p-0.5">
               <div className="absolute inset-[-1000%] animate-spin bg-conic from-primary-500 via-tertiary-500 to-primary-500" />
 
               <div className="relative rounded-2xl">

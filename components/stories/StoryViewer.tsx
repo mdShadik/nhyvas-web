@@ -1,16 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useMemo, useState } from "react";
 import { X, ChevronUp } from "lucide-react";
 import { type StoryGroup } from "@/services/apiService/stories";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-
-// Dynamic import for react-insta-stories to avoid SSR issues
-const ReactInstaStories = dynamic(() => import("react-insta-stories"), {
-  ssr: false,
-});
+import InstaStories, { type Story as InstaStory } from "@/components/InstaStories";
 
 type Props = {
   groups: StoryGroup[];
@@ -26,29 +21,21 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
   const currentGroup = groups[currentGroupIndex];
   if (!currentGroup) return null;
 
-  const stories = currentGroup.stories.map((s) => ({
-    url: s.media_url,
-    type: s.media_url.match(/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i) ? "video" : "image",
-    duration: 5000,
-    header: {
-      heading: currentGroup.landlordName,
-      subheading: s.property_title,
-      profileImage: currentGroup.landlordAvatar || "/assets/images/default-avatar.png",
-    },
-    seeMore: ({ close }: { close: () => void }) => (
-        <div 
-          className="flex flex-col items-center justify-center p-4 bg-black/40 backdrop-blur-sm cursor-pointer"
-          onClick={() => {
-            close();
-            onClose();
-            router.push(`/property?id=${s.property_id}`);
-          }}
-        >
-          <ChevronUp className="h-6 w-6 text-white animate-bounce" />
-          <span className="text-white text-sm font-semibold">{t("property.view_details", "View Details")}</span>
-        </div>
-      ),
-  }));
+  const stories: InstaStory[] = useMemo(() => {
+    return currentGroup.stories.map((s) => ({
+      id: s.story_id,
+      url: s.media_url,
+      type: s.media_url.match(/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i) ? "video" : "image",
+      duration: 5000,
+      header: {
+        heading: currentGroup.landlordName,
+        subheading: s.property_title,
+        profileImage: currentGroup.landlordAvatar || "/assets/images/default-avatar.png",
+      },
+      slideUpLabel: t("property.view_details", "View Details"),
+      slideUpIcon: <ChevronUp className="h-5 w-5" />,
+    }));
+  }, [currentGroup.landlordAvatar, currentGroup.landlordName, currentGroup.stories, t]);
 
   const onAllStoriesEnd = () => {
     if (currentGroupIndex < groups.length - 1) {
@@ -64,41 +51,44 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     }
   };
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-black">
       <div className="relative h-full w-full max-w-md overflow-hidden">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className="absolute right-4 top-10 z-110 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
-        >
-          <X className="h-6 w-6" />
-        </button>
-
-        <ReactInstaStories
+        <InstaStories
           stories={stories}
-          defaultInterval={5000}
           width="100%"
           height="100%"
-          onAllStoriesEnd={onAllStoriesEnd}
-          onStoryStart={(index: number) => {
-            // Can track seen status here if needed
-          }}
+          defaultInterval={5000}
           keyboardNavigation
+          showCloseButton
+          closeButtonPosition="top-right"
+          closeIcon={<X className="h-5 w-5" />}
+          onClose={onClose}
+          onAllStoriesEnd={onAllStoriesEnd}
+          onPrevious={() => {
+            // If user is at the first story of a group and keeps tapping left,
+            // allow backing out to the previous group.
+            onPrevious();
+          }}
+          slideUpThreshold={80}
+          swipeUpToAction
+          slideUpAction={({ story, close }) => {
+            close();
+            onClose();
+            const storyId = typeof story?.id === "string" ? story.id : "";
+            const match = currentGroup.stories.find((s) => s.story_id === storyId);
+            if (match) router.push(`/property?id=${match.property_id}`);
+          }}
         />
       </div>
-
-      {/* Navigation areas for desktop */}
-      <div 
-        className="absolute inset-y-0 left-0 hidden w-1/4 cursor-pointer items-center justify-center md:flex" 
-        onClick={onPrevious}
-      />
-      <div 
-        className="absolute inset-y-0 right-0 hidden w-1/4 cursor-pointer items-center justify-center md:flex" 
-        onClick={onAllStoriesEnd}
-      />
     </div>
   );
 }

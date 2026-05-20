@@ -70,8 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setIsLoading(true);
-    await supabase.auth.signOut();
-    router.push("/");
+    // Clear browser Supabase session (localStorage) and server cookies.
+    await supabase.auth.signOut().catch(() => null);
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    router.push("/login");
     router.refresh();
   };
 

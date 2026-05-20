@@ -1,5 +1,6 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
 import { createSupabasePublicClient } from "@/app/api/_lib/supabaseClients";
+import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 
 type ExploreFilters = {
   category?: string | null;
@@ -25,7 +26,9 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as null | { filters?: ExploreFilters };
   const filters = body?.filters ?? {};
 
-  const supabase = createSupabasePublicClient();
+  // If the user is logged in, use an authenticated Supabase client so the RPC can
+  // exclude the caller's own listings (see get_app_recommended_listings: auth.uid()).
+  const supabase = (await getAuthenticatedClientOrNull()) ?? createSupabasePublicClient();
   const { data, error } = await supabase.rpc("get_app_recommended_listings", {
     p_limit: filters.limit ?? 60,
     p_offset: filters.offset ?? 0,
@@ -49,4 +52,3 @@ export async function POST(req: Request) {
   if (error) return jsonError(error.message, 400);
   return jsonOk({ rows: data ?? [] });
 }
-

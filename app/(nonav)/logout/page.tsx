@@ -1,23 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
-import { env } from "@/lib/env";
 import { useTranslation } from "react-i18next";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 export default function LogoutPage() {
   const { t } = useTranslation();
 
   useEffect(() => {
     const performLogout = async () => {
-      // 1. Clear Supabase local storage session
-      const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
-      await supabase.auth.signOut();
+      // Clear client-side Supabase session (localStorage) first.
+      await supabaseBrowser.auth.signOut().catch(() => null);
 
-      // 2. Clear secure HttpOnly cookies
-      await fetch("/api/auth/logout", { method: "POST" });
+      // Clear secure HttpOnly cookies (used by server/middleware auth checks).
+      await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
 
-      // 3. Redirect to login
+      // Redirect to login
       window.location.href = "/login";
     };
 
@@ -25,7 +23,7 @@ export default function LogoutPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-(--surface)">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--accent) border-t-transparent" />
         <p className="text-text-secondary">{t("auth.logging_out")}</p>
