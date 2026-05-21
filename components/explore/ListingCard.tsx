@@ -48,28 +48,28 @@ export function ListingCard({
   const cardContent = (
     <article
       className={cn(
-        "group overflow-hidden  border border-white/20 bg-white/5 shadow-sm transition-all duration-300 backdrop-blur-sm hover:border-primary-500/30 hover:shadow-lg dark:shadow-none",
-        isCompact ? "p-3" : "flex flex-col lg:flex-row",
+        "group relative overflow-hidden border border-white/20 bg-white/5 shadow-sm transition-all duration-500 backdrop-blur-md hover:border-primary-500/40 hover:shadow-2xl hover:shadow-primary-500/10 dark:shadow-none",
+        isCompact ? "p-3" : "flex flex-col md:flex-row",
         className,
       )}
       style={{
         clipPath:
-          "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))",
+          "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))",
       }}
     >
       {/* Image Section */}
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden bg-white",
+          "relative shrink-0 overflow-hidden bg-secondary-900/10",
           isCompact
             ? "h-32 w-full rounded-2xl sm:w-32"
-            : "h-56 w-full lg:h-auto lg:w-[320px] lg:min-h-60",
+            : "h-64 w-full md:h-auto md:w-[320px] lg:w-[380px] md:min-h-64",
         )}
         style={
           !isCompact
             ? {
                 clipPath:
-                  "polygon(0 0, 100% 0, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+                  "polygon(0 0, 100% 0, 100% 100%, 18px 100%, 0 calc(100% - 18px))",
               }
             : {}
         }
@@ -78,192 +78,182 @@ export function ListingCard({
           alt={listing.property_title}
           src={thumbnailUrl}
           fill
-          className="object-cover transition duration-500 group-hover:scale-110 bg-linear-to-br  from-primary-500/50 via-primary-200 to-tertiary-500/50"
-          sizes={isCompact ? "132px" : "(max-width: 768px) 100vw, 360px"}
+          unoptimized
+          className="object-cover transition duration-700 group-hover:scale-105 bg-linear-to-br from-primary-500/20 via-primary-200/10 to-tertiary-500/20"
+          sizes={isCompact ? "132px" : "(max-width: 768px) 100vw, 380px"}
         />
 
-        {/* Watermark */}
-        <div className="pointer-events-none absolute left-3 top-3 opacity-20 transition-opacity group-hover:opacity-40">
-          <Image src={logoSingleN} alt="Watermark" width={28} height={28} />
+        {/* Floating Watermark */}
+        <div className="pointer-events-none absolute left-4 top-4 opacity-15 transition-opacity group-hover:opacity-30">
+          <Image src={logoSingleN} alt="" width={32} height={32} />
         </div>
 
-        {/* Badges */}
+        {/* Featured Badge */}
         {!isCompact && listing.is_featured && (
-          <div className="absolute bottom-3 left-3 overflow-hidden rounded-full bg-linear-to-r from-primary-600/90 to-tertiary-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-xl backdrop-blur-md">
-            {/* Shimmer */}
+          <div className="absolute bottom-4 left-4 overflow-hidden rounded-full bg-linear-to-r from-primary-600 via-primary-500 to-tertiary-500 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
             <motion.div
               className="absolute inset-0"
-              initial={{ x: "-120%" }}
-              animate={{ x: "220%" }}
+              initial={{ x: "-150%" }}
+              animate={{ x: "250%" }}
               transition={{
-                duration: 2.2,
+                duration: 2.5,
                 repeat: Infinity,
                 ease: "linear",
-                repeatDelay: 0.4,
+                repeatDelay: 0.5,
               }}
             >
-              <div className="h-full w-10 rotate-12 bg-white/30 blur-md" />
+              <div className="h-full w-12 rotate-25 bg-white/40 blur-lg" />
             </motion.div>
-
-            {/* Content */}
-            <span className="relative z-10 flex items-center gap-1">
-              {t("explore.featured")}
-            </span>
+            <span className="relative z-10">{t("explore.featured")}</span>
           </div>
         )}
 
         {onFavoriteClick && (
           <button
-            onClick={onFavoriteClick}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onFavoriteClick(e);
+            }}
             type="button"
             className={cn(
-              "absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/20 text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95",
-              isFavorite
-                ? "bg-red-500/80 border-red-400/50"
-                : "hover:bg-black/40",
+              "absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur-xl transition-all hover:scale-110 hover:bg-black/40 active:scale-90",
+              isFavorite ? "border-red-400/40 bg-red-500/60 text-white" : "",
             )}
           >
             <Heart
-              className={cn("h-4.5 w-4.5", isFavorite && "fill-current")}
+              className={cn("h-5 w-5 transition-transform", isFavorite ? "fill-current scale-110" : "group-active:scale-90")}
             />
           </button>
         )}
       </div>
 
-      {/* Content Section */}
+      {/* Details Container - Flex row on wider screens */}
       <div
         className={cn(
-          "flex min-w-0 flex-1 flex-col justify-between",
-          isCompact ? "mt-3 sm:mt-0 sm:ml-4" : "p-5",
+          "flex min-w-0 flex-1",
+          isCompact ? "flex-col mt-3 sm:mt-0 sm:ml-5" : "flex-col md:flex-row",
         )}
       >
-        <div className="space-y-2.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="shrink-0 rounded-md bg-primary-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-400 border border-primary-500/20">
-                  {tPropertyCategory(categoryDisplayName)}
+        {/* Main Info Section (Left/Center) */}
+        <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between space-y-4">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="shrink-0 rounded-lg bg-primary-500/10 border border-primary-500/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-600 dark:text-primary-400">
+                {tPropertyCategory(categoryDisplayName)}
+              </span>
+              {subcategoryDisplayName && (
+                <span className="shrink-0 rounded-lg bg-tertiary-500/10 border border-tertiary-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-tertiary-700 dark:text-tertiary-400">
+                  {tPropertySubcategory(subcategoryDisplayName)}
                 </span>
-                {subcategoryDisplayName && (
-                  <span className="shrink-0 rounded-md bg-tertiary-100  dark:bg-tertiary-400/20 px-2 py-0.5 text-[10px] font-medium dark:text-tertiary-400 text-tertiary-700 border border-tertiary-900/10 uppercase">
-                    {tPropertySubcategory(subcategoryDisplayName)}
-                  </span>
-                )}
-                {isOwnAd && listing.status && (
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                      listing.status === "approved" || listing.status === "published"
-                        ? "border-emerald-500/20 bg-emerald-500/20 text-emerald-500 dark:text-emerald-400"
-                        : listing.status === "pending_review" ||
-                            listing.status === "awaiting_payment" ||
-                            listing.status === "payment_verification"
-                          ? "border-amber-500/20 bg-amber-500/20 text-amber-500 dark:text-amber-400"
-                          : "border-red-500/20 bg-red-500/20 text-red-500 dark:text-red-400",
-                    )}
-                  >
-                    {t(`my_ads.status.${listing.status}`, listing.status.replace("_", " "))}
-                  </span>
-                )}
-              </div>
-              <h3 className="line-clamp-1 text-base font-bold text-text-primary group-hover:text-primary-500 transition-colors sm:text-lg">
+              )}
+              {isOwnAd && listing.status && (
+                <span
+                  className={cn(
+                    "shrink-0 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider",
+                    isPublished
+                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : listing.status.includes("pending") || listing.status.includes("payment")
+                        ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                        : "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400",
+                  )}
+                >
+                  {t(`my_ads.status.${listing.status}`, listing.status.replace("_", " "))}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h3 className="line-clamp-2 text-xl font-black text-text-primary group-hover:text-primary-500 transition-colors duration-300 lg:text-3xl leading-tight tracking-tight">
                 {listing.property_title}
               </h3>
 
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-text-secondary">
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-primary-500" />
-                <span className="truncate">{listing.location_text}</span>
-              </div>
-
-              {listing.view_count !== undefined && (
-                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-text-tertiary font-medium">
-                  <Eye className="h-3 w-3" />
-                  <span>{listing.view_count} {t("property.views", "views")}</span>
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary-100 dark:bg-secondary-800">
+                  <MapPin className="h-3.5 w-3.5 text-primary-500" />
                 </div>
-              )}
+                <span className="truncate font-medium">{listing.location_text}</span>
+              </div>
             </div>
-
-            {isCompact && !shouldShowRentedToggle && action}
-
-            {isCompact && shouldShowRentedToggle && onToggleRented && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onToggleRented(listing.id, !listing.is_rented);
-                }}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow transition-all",
-                  listing.is_rented
-                    ? "bg-linear-to-br from-green-500 to-emerald-500"
-                    : "bg-linear-to-br from-primary-500 to-tertiary-500",
-                )}
-              >
-                {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
-              </button>
-            )}
           </div>
-        </div>
 
-        <div
-          className={cn(
-            "flex items-end justify-between gap-4 pt-3",
-            !isCompact && "mt-4 border-t border-border",
-          )}
-        >
-          <div>
-            {!isCompact && (
-              <p className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary mb-0.5">
-                {t("explore.price_label")}
-              </p>
+          <div className="flex items-center gap-4">
+            {!isCompact && listing.view_count !== undefined && (
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary opacity-70">
+                <Eye className="h-4 w-4" />
+                <span>{listing.view_count} {t("property.views", "views")}</span>
+              </div>
             )}
-            <div
-              className={cn(
-                "font-extrabold text-primary-400",
-                isCompact ? "text-lg" : "text-2xl",
-              )}
-            >
+            
+            {/* Mobile-only Price (hidden on md+) */}
+            <div className="md:hidden font-black text-2xl text-primary-500">
               {formatPrice(listing.price, listing.currency_code)}
             </div>
           </div>
-
-          {!isCompact && !action && !shouldShowEditButton && !shouldShowRentedToggle && (
-            <div className="flex items-center gap-2 rounded-xl bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all group-hover:shadow-[0_0_25px_rgba(99,102,241,0.5)]">
-              {t("explore.view_details")}
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </div>
-          )}
-
-          {!isCompact && action && !shouldShowEditButton && !shouldShowRentedToggle && (
-            <div onClick={(e) => e.preventDefault()}>{action}</div>
-          )}
-
-          {!isCompact && shouldShowEditButton && (
-            <div onClick={(e) => e.preventDefault()}>{action}</div>
-          )}
-
-          {!isCompact && shouldShowRentedToggle && onToggleRented && (
-            <div onClick={(e) => e.preventDefault()}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onToggleRented(listing.id, !listing.is_rented);
-                }}
-                className={cn(
-                  "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow transition-all",
-                  listing.is_rented
-                    ? "bg-linear-to-br from-green-500 to-emerald-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)]"
-                    : "bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)]",
-                )}
-              >
-                {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
-              </button>
-            </div>
-          )}
         </div>
+
+        {/* Side Section: Price & Action (Right side on desktop, stacked on mobile) */}
+        {!isCompact && (
+          <div className="md:w-[260px] lg:w-[300px] border-t md:border-t-0 md:border-l border-border/50 p-6 lg:p-8 flex flex-row md:flex-col justify-between md:justify-center items-center md:items-end gap-6 bg-secondary-50/30 dark:bg-secondary-900/10">
+            <div className="flex flex-col md:items-end">
+              <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary mb-1">
+                {t("explore.price_label")}
+              </p>
+              <div className="font-black tracking-tighter text-3xl lg:text-4xl text-primary-500 dark:text-primary-400">
+                {formatPrice(listing.price, listing.currency_code)}
+              </div>
+              <p className="hidden md:block text-[10px] font-medium text-text-tertiary mt-1">
+                Per Month
+              </p>
+            </div>
+
+            <div className="flex gap-2 w-full md:w-auto">
+              {!action && !shouldShowEditButton && !shouldShowRentedToggle && (
+                <div className="group/btn flex items-center justify-center gap-2 w-full rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-4 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-95 group-hover:shadow-primary-500/30">
+                  {t("explore.view_details")}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                </div>
+              )}
+
+              {(action || shouldShowEditButton) && !shouldShowRentedToggle && (
+                <div className="flex items-center gap-2 w-full justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  {action}
+                </div>
+              )}
+
+              {shouldShowRentedToggle && onToggleRented && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onToggleRented(listing.id, !listing.is_rented);
+                  }}
+                  className={cn(
+                    "flex items-center justify-center gap-2 w-full rounded-2xl px-6 py-4 text-sm font-black text-white shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-95",
+                    listing.is_rented
+                      ? "bg-linear-to-br from-green-500 to-emerald-600 shadow-green-500/20"
+                      : "bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 shadow-primary-500/20",
+                  )}
+                >
+                  {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Compact variant action placement */}
+        {isCompact && (
+          <div className="px-4 pb-4 flex justify-end items-center gap-4">
+             <div className="font-black text-xl text-primary-500">
+                {formatPrice(listing.price, listing.currency_code)}
+             </div>
+             <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+               {action}
+             </div>
+          </div>
+        )}
       </div>
     </article>
   );
@@ -271,7 +261,7 @@ export function ListingCard({
   return (
     <Link
       href={{ pathname: "/property", query: { id: listing.id } }}
-      className="block"
+      className="block outline-none"
     >
       {cardContent}
     </Link>

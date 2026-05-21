@@ -10,6 +10,7 @@ export { chatService } from "@/services/apiService/chat";
 export { activityService } from "@/services/apiService/activity";
 export { legalService } from "@/services/apiService/legal";
 export { supportService } from "@/services/apiService/support";
+export { paymentService } from "@/services/apiService/payment";
 export type {
   SupportTicket,
   SupportTicketStatus,

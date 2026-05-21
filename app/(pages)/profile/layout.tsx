@@ -20,9 +20,10 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
   const isRoot = pathname === "/profile";
 
   const isSupportTicket = pathname.startsWith("/profile/support-ticket/");
+  const isPayment = pathname.includes("/payment");
 
   React.useEffect(() => {
-    if (isRoot || isSupportTicket) {
+    if (isRoot || isSupportTicket || isPayment) {
       document.body.style.overflow = "";
       return;
     }
@@ -49,11 +50,11 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 
           {/* Desktop layout */}
           <div className="hidden gap-6 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="h-fit border border-border bg-bg-background p-3 shadow-sm">
+            <aside className="h-fit border border-border bg-bg-page p-3 shadow-sm">
               <ProfileNav />
             </aside>
 
-            <main className="min-w-0 border border-border bg-bg-background p-4 shadow-sm sm:p-6">
+            <main className="min-w-0 border border-border bg-bg-page p-4 shadow-sm sm:p-6">
               {children}
             </main>
           </div>
@@ -74,11 +75,14 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                   animate={{ x: 0 }}
                   exit={{ x: "100%" }}
                   transition={{ type: "spring", stiffness: 320, damping: 34, mass: 0.9 }}
-                  className="fixed inset-0 z-50"
+                  className={cn(
+                    "fixed inset-0 z-50 bg-bg-page",
+                    !(isSupportTicket || isPayment) && "overflow-y-auto"
+                  )}
                   style={{ willChange: "transform" }}
                 >
-                  <div className={cn("flex min-h-dvh flex-col")}>
-                    {!isSupportTicket && (
+                  <div className={cn("flex h-full flex-col")}>
+                    {!isSupportTicket && !isPayment && (
                       <div className="sticky top-0 z-10 border-b border-border bg-bg-page/40 backdrop-blur">
                         <div className="flex items-center gap-3 px-4 py-3">
                           <Link
@@ -101,11 +105,11 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                       </div>
                     )}
 
-                    <div className="flex-1 overflow-y-auto">
-                      {isSupportTicket ? (
+                    <div className={cn("flex-1", (isSupportTicket || isPayment) && "overflow-hidden")}>
+                      {isSupportTicket || isPayment ? (
                         <div className="h-full">{children}</div>
                       ) : (
-                        <div className="h-full px-4 pb-24 pt-4">
+                        <div className="px-4 pb-24 pt-4">
                           <div className="shadow-sm">
                             {children}
                           </div>

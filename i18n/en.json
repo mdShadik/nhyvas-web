@@ -26,7 +26,8 @@
     "view": "View",
     "email": "Email",
     "saving": "Saving...",
-    "continue": "Continue"
+    "continue": "Continue",
+    "back": "Back"
   },
   "auth": {
     "server_session_failed": "Failed to establish server session.",
@@ -643,5 +644,23 @@
     "message": "Get quicker access to properties and enjoy a smoother experience.",
     "install": "Install App",
     "later": "Maybe Later"
+  },
+  "payment": {
+    "complete_payment": "Complete Payment",
+    "listing_fee_subtitle": "Listing Verification Fee",
+    "amount_due": "Amount Due",
+    "qr_instructions": "Scan the QR code below using your mobile banking or wallet app.",
+    "verified_gateway": "Verified Payment Gateway",
+    "details_title": "Payment Details",
+    "transaction_id": "Transaction ID",
+    "remarks_optional": "Remarks (Optional)",
+    "screenshot_label": "Payment Screenshot *",
+    "upload_hint": "Click to upload screenshot",
+    "upload_constraints": "PNG, JPG or JPEG up to 5MB",
+    "submit_button": "Submit Payment Details",
+    "submitting_button": "Uploading Proof...",
+    "disclaimer": "By submitting, you confirm that the payment has been completed. False submissions may lead to account suspension.",
+    "unavailable_title": "Payment Unavailable",
+    "unavailable_desc": "No active payment gateway is configured. Please contact support."
   }
 }
