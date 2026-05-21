@@ -344,7 +344,10 @@ export const exploreService = {
     analysis: AnalyzedQuery;
     listings: ExploreListing[];
   }> {
-    const { analysis, listings } = await requestJson("/api/explore/ai-search", {
+    const { analysis, listings } = await requestJson<{
+      analysis: AnalyzedQuery;
+      listings: any[];
+    }>("/api/explore/ai-search", {
       method: "POST",
       body: JSON.stringify({ query, lat, lng }),
     });

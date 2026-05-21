@@ -429,8 +429,8 @@ export default function HomePage() {
             onChange={setDraftFilters}
             onApply={() => {
               const query: Record<string, string> = {};
-              if (draftFilters.categoryCode) query.category = draftFilters.categoryCode;
-              if (draftFilters.subcategoryId) query.subcategoryId = draftFilters.subcategoryId;
+              if (draftFilters.categoryIds.length) query.categories = draftFilters.categoryIds.join(",");
+              if (draftFilters.subcategoryIds.length) query.subcategories = draftFilters.subcategoryIds.join(",");
               if (draftFilters.minPrice.trim()) query.minPrice = draftFilters.minPrice.trim();
               if (draftFilters.maxPrice.trim()) query.maxPrice = draftFilters.maxPrice.trim();
               if (draftFilters.amenityIds.length) query.amenities = draftFilters.amenityIds.join(",");
