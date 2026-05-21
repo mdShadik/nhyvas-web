@@ -2,6 +2,7 @@ import { ExplorePage } from "@/pageComponents";
 
 export interface SearchParamsProps {
   categoryCode?: string;
+  categoryId?: string;
   category?: string;
   minPrice?: string;
   maxPrice?: string;

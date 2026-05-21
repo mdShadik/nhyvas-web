@@ -1,11 +1,14 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
 import { getUserIdOrThrow } from "@/app/api/_lib/auth";
 import { getAuthenticatedClientAndUserIdOrRespond } from "@/app/api/_lib/supabase";
+import { buildSearchablePropertyText, generateEmbedding } from "@/lib/ai/embedding";
 
 type UpsertListingBody = {
   listingId?: string | null;
   property_category?: string | null;
+  category_id?: string | null;
   subcategory?: string | null;
+  subcategory_id?: string | null;
   property_title?: string | null;
   description?: string | null;
   price?: number | string | null;
@@ -85,9 +88,28 @@ export async function POST(req: Request) {
     Array.isArray(body.amenity_tags) ? body.amenity_tags.map((v) => asString(v)).filter(Boolean) : [];
   const photo_urls = Array.isArray(body.photo_urls) ? body.photo_urls.map((v) => asString(v)).filter(Boolean) : [];
 
+  // Generate embedding for AI search
+  let embedding: number[] | null = null;
+  try {
+    const searchableText = buildSearchablePropertyText({
+      title: property_title,
+      description,
+      category: property_category,
+      subcategory: body.subcategory,
+      location_text,
+      amenity_tags,
+    });
+    embedding = await generateEmbedding(searchableText);
+  } catch (err) {
+    console.error("Failed to generate embedding during upsert:", err);
+    // Continue without embedding rather than failing the whole upsert
+  }
+
   const basePayload = {
     property_category,
+    category_id: body.category_id || null,
     subcategory: body.subcategory != null ? asString(body.subcategory) || null : null,
+    subcategory_id: body.subcategory_id || null,
     property_title,
     description,
     price,
@@ -109,6 +131,7 @@ export async function POST(req: Request) {
     landlord_name,
     landlord_phone,
     listed_by: userId,
+    embedding: embedding, // Store the generated vector
   };
 
   /** Landlords cannot toggle premium map/story flags; admin sets these on the listing. */

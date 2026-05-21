@@ -24,6 +24,7 @@ import { AvatarUpload } from "@/components/common/AvatarUpload";
 import { useToast } from "@/context/ToastContext";
 import { tAmenity } from "@/i18n/masterData";
 import { cn } from "@/lib/utils";
+import { Select } from "@/components/ui/select";
 
 function parseOptionalNumber(value: string) {
   const normalized = value.trim();
@@ -47,13 +48,13 @@ function EditProfileForm({
     avatarUrl: string;
     minPrice: string;
     maxPrice: string;
-    categoryCode: string;
+    categoryId: string;
     amenityIds: string[];
   };
   setForm: React.Dispatch<React.SetStateAction<typeof form>>;
-  categoriesData: { code: string; name: string }[];
+  categoriesData: { id: string; name: string }[];
   amenitiesData: { id: string; name: string }[];
-  selectedCategory: { code: string; name: string } | null;
+  selectedCategory: { id: string; name: string } | null;
   t: (key: string) => string;
 }) {
   return (
@@ -131,26 +132,17 @@ function EditProfileForm({
           <div className="text-sm font-medium text-text-primary">
             {t("profile.preferences.preferred_category")}
           </div>
-          <Input
-            value={form.categoryCode}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, categoryCode: e.target.value }))
-            }
-            placeholder="e.g. apartment"
-            list="profile-category-codes"
-          />
-          <datalist id="profile-category-codes">
+          <Select
+            value={form.categoryId}
+            onChange={(e) => setForm((p) => ({ ...p, categoryId: e.target.value }))}
+          >
+            <option value="">Select a category</option>
             {categoriesData.map((c) => (
-              <option key={c.code} value={c.code}>
+              <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
-          </datalist>
-          {selectedCategory ? (
-            <div className="text-xs text-text-tertiary">
-              Selected: {selectedCategory.name}
-            </div>
-          ) : null}
+          </Select>
         </div>
       </div>
 
@@ -182,7 +174,10 @@ function EditProfileForm({
                     ? "border-primary-400/40 bg-primary-400/20 text-primary-400 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
                     : "border-white/20 bg-white/5 text-text-secondary hover:bg-white/10"
                 )}
-                style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
+                style={{
+                  clipPath:
+                    "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
+                }}
               >
                 {tAmenity(amenity.name)}
               </button>
@@ -227,15 +222,25 @@ export function ProfileOverview() {
     avatarUrl: "",
     minPrice: "",
     maxPrice: "",
-    categoryCode: "",
+    categoryId: "",
     amenityIds: [] as string[],
   });
 
+  const categoriesData = categoriesQuery.data ?? [];
+  const amenitiesData = amenitiesQuery.data ?? [];
+
   const selectedCategory = useMemo(() => {
-    const code = form.categoryCode.trim();
-    if (!code) return null;
-    return (categoriesQuery.data ?? []).find((c) => c.code === code) ?? null;
-  }, [categoriesQuery.data, form.categoryCode]);
+    const id = form.categoryId.trim();
+    if (!id) return null;
+    return categoriesData.find((c) => c.id === id) ?? null;
+  }, [categoriesData, form.categoryId]);
+
+  const preferredCategoryName = useMemo(() => {
+    if (!preferences?.category_id) return "—";
+    return (
+      categoriesData.find((c) => c.id === preferences.category_id)?.name ?? "—"
+    );
+  }, [categoriesData, preferences?.category_id]);
 
   const openEdit = () => {
     if (!profile) return;
@@ -252,7 +257,7 @@ export function ProfileOverview() {
         preferences?.max_price !== null && preferences?.max_price !== undefined
           ? String(preferences.max_price)
           : "",
-      categoryCode: preferences?.category_code ?? "",
+      categoryId: preferences?.category_id ?? "",
       amenityIds: preferences?.preferred_amenities ?? [],
     });
 
@@ -281,7 +286,7 @@ export function ProfileOverview() {
       await profileService.updatePreferences({
         min_price: minPrice,
         max_price: maxPrice,
-        category_code: form.categoryCode.trim() || null,
+        category_id: form.categoryId.trim() || null,
         preferred_amenities: form.amenityIds,
       });
     },
@@ -310,12 +315,26 @@ export function ProfileOverview() {
   };
 
   if (bootstrapQuery.isLoading) {
-    return <div className="h-56 animate-pulse border border-white/20 bg-white/5 backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }} />;
+    return (
+      <div
+        className="h-56 animate-pulse border border-white/20 bg-white/5 backdrop-blur-xl"
+        style={{
+          clipPath:
+            "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+        }}
+      />
+    );
   }
 
   if (!profile) {
     return (
-      <div className="border border-white/20 bg-white/5 p-5 backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
+      <div
+        className="border border-white/20 bg-white/5 p-5 backdrop-blur-xl"
+        style={{
+          clipPath:
+            "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+        }}
+      >
         <div className="text-base font-bold text-text-primary">
           {t("auth.profile_load_failed")}
         </div>
@@ -331,9 +350,6 @@ export function ProfileOverview() {
   const email = profile.email?.trim() || "";
   const preferredAmenities = preferences?.preferred_amenities ?? [];
 
-  const categoriesData = categoriesQuery.data ?? [];
-  const amenitiesData = amenitiesQuery.data ?? [];
-
   const sharedFormProps = {
     form,
     setForm,
@@ -346,10 +362,22 @@ export function ProfileOverview() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* ─── MOBILE: marsian glassy header ─── */}
-      <section className="sm:hidden" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }}>
+      <section
+        className="sm:hidden"
+        style={{
+          clipPath:
+            "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))",
+        }}
+      >
         <div className="relative overflow-hidden border border-border bg-linear-to-br from-primary-500/10 via-primary-600/10 to-tertiary-500/10 p-4 pb-5 pt-6 backdrop-blur-2xl before:absolute before:inset-0 before:bg-linear-to-t before:from-white/5 before:to-transparent before:content-['']">
           <div className="relative flex flex-col items-center text-center">
-            <div className="relative h-24 w-24 overflow-hidden border border-primary-400/40 bg-primary-500/10 shadow-[0_0_30px_rgba(99,102,241,0.3)]" style={{ clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))" }}>
+            <div
+              className="relative h-24 w-24 overflow-hidden border border-primary-400/40 bg-primary-500/10 shadow-[0_0_30px_rgba(99,102,241,0.3)]"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))",
+              }}
+            >
               {avatar ? (
                 <Image
                   src={avatar}
@@ -369,7 +397,13 @@ export function ProfileOverview() {
               {name}
             </div>
 
-            <div className="mt-2 inline-flex max-w-full items-center gap-2 border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-text-secondary backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+            <div
+              className="mt-2 inline-flex max-w-full items-center gap-2 border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-text-secondary backdrop-blur-xl"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+              }}
+            >
               <Mail className="h-4 w-4 shrink-0 text-primary-400" />
               <span className="truncate">
                 {email || t("profile.no_email")}
@@ -380,7 +414,10 @@ export function ProfileOverview() {
               onClick={openEdit}
               className="mt-4 h-9 border border-white/20 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-4 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
               size="sm"
-              style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+              }}
             >
               <PencilLine className="mr-2 h-4 w-4" />
               {t("profile.menu.edit_profile")}
@@ -390,8 +427,20 @@ export function ProfileOverview() {
 
         <div className="space-y-3 pt-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="relative flex flex-col items-center justify-center gap-2 border border-white/20 bg-white/5 p-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
-              <div className="flex h-11 w-11 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+            <div
+              className="relative flex flex-col items-center justify-center gap-2 border border-white/20 bg-white/5 p-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))",
+              }}
+            >
+              <div
+                className="flex h-11 w-11 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]"
+                style={{
+                  clipPath:
+                    "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+                }}
+              >
                 <Shapes className="h-5 w-5" />
               </div>
               <div>
@@ -399,13 +448,25 @@ export function ProfileOverview() {
                   {t("profile.preferences.preferred_category")}
                 </div>
                 <div className="mt-0.5 text-sm font-bold text-text-primary">
-                  {preferences?.category_code ?? "—"}
+                  {preferredCategoryName}
                 </div>
               </div>
             </div>
 
-            <div className="relative flex flex-col items-center justify-center gap-2 border border-white/20 bg-white/5 p-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
-              <div className="flex h-11 w-11 items-center justify-center bg-tertiary-500/20 text-tertiary-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+            <div
+              className="relative flex flex-col items-center justify-center gap-2 border border-white/20 bg-white/5 p-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))",
+              }}
+            >
+              <div
+                className="flex h-11 w-11 items-center justify-center bg-tertiary-500/20 text-tertiary-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]"
+                style={{
+                  clipPath:
+                    "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+                }}
+              >
                 <CircleDollarSign className="h-5 w-5" />
               </div>
               <div>
@@ -421,8 +482,20 @@ export function ProfileOverview() {
             </div>
           </div>
 
-          <div className="relative flex flex-col items-center gap-2 border border-white/20 bg-white/5 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
-            <div className="flex h-11 w-11 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+          <div
+            className="relative flex flex-col items-center gap-2 border border-white/20 bg-white/5 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+            style={{
+              clipPath:
+                "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))",
+            }}
+          >
+            <div
+              className="flex h-11 w-11 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+              }}
+            >
               <Sparkles className="h-5 w-5" />
             </div>
             <div className="text-[11px] font-medium text-text-tertiary">
@@ -437,7 +510,10 @@ export function ProfileOverview() {
                     <span
                       key={amenityId}
                       className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
-                      style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
+                      style={{
+                        clipPath:
+                          "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
+                      }}
                     >
                       {tAmenity(name)}
                     </span>
@@ -454,10 +530,22 @@ export function ProfileOverview() {
       </section>
 
       {/* ─── DESKTOP: marsian glassy style ─── */}
-      <section className="hidden border border-white/20 bg-white/5 p-4 backdrop-blur-2xl sm:block sm:p-5" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }}>
+      <section
+        className="hidden border border-white/20 bg-white/5 p-4 backdrop-blur-2xl sm:block sm:p-5"
+        style={{
+          clipPath:
+            "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))",
+        }}
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-primary-400/40 bg-primary-500/10 shadow-[0_0_20px_rgba(99,102,241,0.3)]" style={{ clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))" }}>
+            <div
+              className="relative h-16 w-16 shrink-0 overflow-hidden border border-primary-400/40 bg-primary-500/10 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))",
+              }}
+            >
               {avatar ? (
                 <Image
                   src={avatar}
@@ -490,7 +578,10 @@ export function ProfileOverview() {
             onClick={openEdit}
             className="shrink-0 border border-white/20 bg-linear-to-r from-primary-500 to-tertiary-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
             size="sm"
-            style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
+            style={{
+              clipPath:
+                "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+            }}
           >
             <PencilLine className="mr-2 h-4 w-4" />
             {t("profile.menu.edit_profile")}
@@ -499,8 +590,20 @@ export function ProfileOverview() {
       </section>
 
       <section className="hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3">
-        <div className="relative flex flex-col items-center justify-center gap-3 border border-white/20 bg-white/5 p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
-          <div className="flex h-12 w-12 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}>
+        <div
+          className="relative flex flex-col items-center justify-center gap-3 border border-white/20 bg-white/5 p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+          style={{
+            clipPath:
+              "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+          }}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]"
+            style={{
+              clipPath:
+                "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+            }}
+          >
             <Shapes className="h-5 w-5" />
           </div>
           <div>
@@ -508,13 +611,25 @@ export function ProfileOverview() {
               {t("profile.preferences.preferred_category")}
             </div>
             <div className="mt-1 text-base font-bold text-text-primary">
-              {preferences?.category_code ?? "—"}
+              {preferredCategoryName}
             </div>
           </div>
         </div>
 
-        <div className="relative flex flex-col items-center justify-center gap-3 border border-white/20 bg-white/5 p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
-          <div className="flex h-12 w-12 items-center justify-center bg-tertiary-500/20 text-tertiary-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}>
+        <div
+          className="relative flex flex-col items-center justify-center gap-3 border border-white/20 bg-white/5 p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+          style={{
+            clipPath:
+              "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+          }}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center bg-tertiary-500/20 text-tertiary-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]"
+            style={{
+              clipPath:
+                "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+            }}
+          >
             <CircleDollarSign className="h-5 w-5" />
           </div>
           <div>
@@ -523,14 +638,25 @@ export function ProfileOverview() {
               {t("profile.preferences.max_price")}
             </div>
             <div className="mt-1 text-base font-bold text-text-primary">
-              {preferences?.min_price ?? "—"} -{" "}
-              {preferences?.max_price ?? "—"}
+              {preferences?.min_price ?? "—"} - {preferences?.max_price ?? "—"}
             </div>
           </div>
         </div>
 
-        <div className="relative flex flex-col items-center gap-3 border border-white/20 bg-white/5 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:col-span-2 lg:col-span-1" style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}>
-          <div className="flex h-12 w-12 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]" style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}>
+        <div
+          className="relative flex flex-col items-center gap-3 border border-white/20 bg-white/5 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:col-span-2 lg:col-span-1"
+          style={{
+            clipPath:
+              "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+          }}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center bg-primary-500/20 text-primary-400 shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]"
+            style={{
+              clipPath:
+                "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+            }}
+          >
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="text-xs font-medium text-text-tertiary">
@@ -545,7 +671,10 @@ export function ProfileOverview() {
                   <span
                     key={amenityId}
                     className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
-                    style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
+                    style={{
+                      clipPath:
+                        "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
+                    }}
                   >
                     {tAmenity(name)}
                   </span>
@@ -577,7 +706,10 @@ export function ProfileOverview() {
               className="h-11 flex-1 border border-white/20 bg-white/5 text-sm font-semibold backdrop-blur-sm"
               onClick={handleClose}
               disabled={busy}
-              style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+              }}
             >
               {t("common.cancel")}
             </Button>
@@ -585,7 +717,10 @@ export function ProfileOverview() {
               className="h-11 flex-1 border border-white/20 bg-linear-to-r from-primary-500 to-tertiary-500 text-sm font-semibold shadow-[0_0_20px_rgba(99,102,241,0.4)]"
               onClick={() => saveMutation.mutate()}
               disabled={busy}
-              style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+              }}
             >
               {busy ? (
                 <span className="inline-flex items-center gap-2">

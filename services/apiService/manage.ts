@@ -4,7 +4,9 @@ import { requestJson } from "@/services/apiService/http";
 
 export type ManagePropertyDetails = ExploreListing & {
   description: string;
+  /** @deprecated use property_category_name or property_category_id */
   property_category: string;
+  /** @deprecated use subcategory_name or subcategory_id */
   subcategory: string | null;
   is_negotiable?: boolean;
   show_exact_location?: boolean;
@@ -29,7 +31,9 @@ export type ListingViewer = {
 export type UpsertListingInput = {
   listingId?: string | null;
   property_category: string;
+  category_id: string;
   subcategory: string | null;
+  subcategory_id: string | null;
   property_title: string;
   description: string;
   price: number;

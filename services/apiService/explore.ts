@@ -1,6 +1,7 @@
 import { mapExploreListingRows } from "@/services/apiService/mappers";
 import { registerMasterAmenities, registerMasterPropertyCategories, registerMasterPropertySubcategories } from "@/i18n/masterData";
 import { requestJson } from "@/services/apiService/http";
+import { AnalyzedQuery } from "@/lib/ai/queryAnalyzer";
 
 export type HomeHeroListing = {
   id: string;
@@ -27,8 +28,10 @@ export type ExploreListing = {
   id: string;
   listed_by?: string | null;
   property_title: string;
-  property_category: string;
-  subcategory: string | null;
+  property_category_name: string;
+  property_category_id: string;
+  subcategory_name: string | null;
+  subcategory_id: string | null;
   location_text: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -80,8 +83,8 @@ export type ListingDetailsResponse = {
 };
 
 export type ExploreFilters = {
-  category?: string | null;
-  subcategory?: string | null;
+  categoryId?: string | null;
+  subcategoryId?: string | null;
   stateId?: string | null;
   districtId?: string | null;
   municipalityId?: string | null;
@@ -232,7 +235,7 @@ export const exploreService = {
     return mapExploreListingRows(rows ?? []);
   },
 
-  async searchLocationNodes(query: string, limit = 30): Promise<LocationSearchNode[]> {
+  async searchLocationNodes(query: string, limit = 30, level?: string): Promise<LocationSearchNode[]> {
     const trimmed = query.trim();
     if (trimmed.length < 1) return [];
 
@@ -242,7 +245,7 @@ export const exploreService = {
 
     const { rows } = await requestJson<{ rows: NepalSearchRow[] }>("/api/explore/location-search", {
       method: "POST",
-      body: JSON.stringify({ query: safeQuery, limit: safeLimit }),
+      body: JSON.stringify({ query: safeQuery, limit: safeLimit, level }),
     });
 
     return ((rows ?? []) as NepalSearchRow[]).map((row) => ({
@@ -286,10 +289,10 @@ export const exploreService = {
     return { listing, enrichedAmenities: enrichedAmenities ?? [] };
   },
 
-  async getSubcategoriesByCategoryCode(categoryCode: string): Promise<MasterSubcategory[]> {
+  async getSubcategoriesByCategoryId(categoryId: string): Promise<MasterSubcategory[]> {
     const { rows } = await requestJson<{ rows: any[] }>("/api/explore/subcategories", {
       method: "POST",
-      body: JSON.stringify({ categoryCode }),
+      body: JSON.stringify({ categoryId }),
     });
 
     registerMasterPropertySubcategories((rows ?? []) as any);
@@ -328,6 +331,21 @@ export const exploreService = {
       min_value: Number((row as any).min_value ?? 0),
       max_value: Number((row as any).max_value ?? 0),
       step_value: Number((row as any).step_value ?? 1),
+    };
+  },
+
+  async aiSearch(query: string, lat?: number | null, lng?: number | null): Promise<{
+    analysis: AnalyzedQuery;
+    listings: ExploreListing[];
+  }> {
+    const { analysis, listings } = await requestJson("/api/explore/ai-search", {
+      method: "POST",
+      body: JSON.stringify({ query, lat, lng }),
+    });
+    
+    return {
+      analysis,
+      listings: mapExploreListingRows(listings ?? []),
     };
   },
 };

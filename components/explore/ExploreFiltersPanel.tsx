@@ -77,7 +77,7 @@ function getActiveFilterCount(
   let count = 0;
 
   if (value.locationNode) count += 1;
-  if (value.categoryCode) count += 1;
+  if (value.categoryId) count += 1;
   if (value.subcategoryId) count += 1;
 
   if (priceConfig) {
@@ -137,9 +137,9 @@ export function ExploreFiltersPanel({
   });
 
   const subcategoriesQuery = useQuery({
-    queryKey: ["explore", "subcategories", value.categoryCode],
-    queryFn: () => exploreService.getSubcategoriesByCategoryCode(value.categoryCode!),
-    enabled: Boolean(value.categoryCode),
+    queryKey: ["explore", "subcategories", value.categoryId],
+    queryFn: () => exploreService.getSubcategoriesByCategoryId(value.categoryId!),
+    enabled: Boolean(value.categoryId),
   });
 
   const categories = categoriesQuery.data ?? [];
@@ -195,9 +195,9 @@ export function ExploreFiltersPanel({
       chips.push({ key: "location", label: value.locationNode.label });
     }
 
-    if (value.categoryCode) {
-      const category = categories.find((c) => c.code === value.categoryCode);
-      const raw = category?.code || category?.name || value.categoryCode;
+    if (value.categoryId) {
+      const category = categories.find((c) => c.id === value.categoryId);
+      const raw = category?.code || category?.name || value.categoryId;
       chips.push({ key: "category", label: tPropertyCategory(raw) });
     }
 
@@ -305,18 +305,18 @@ export function ExploreFiltersPanel({
                   <div className="relative">
                     <select
                       className="w-full appearance-none rounded-2xl border border-border bg-bg-input px-4 py-3 pr-10 text-text-primary outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15"
-                      value={value.categoryCode ?? ""}
+                      value={value.categoryId ?? ""}
                       onChange={(e) =>
                         onChange({
                           ...value,
-                          categoryCode: e.target.value || null,
+                          categoryId: e.target.value || null,
                           subcategoryId: null,
                         })
                       }
                     >
                       <option value="">{t("explore.all_categories", "All categories")}</option>
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.code}>
+                        <option key={cat.id} value={cat.id}>
                           {tPropertyCategory(cat.code || cat.name || t("explore.category", "Category"))}
                         </option>
                       ))}
@@ -333,13 +333,13 @@ export function ExploreFiltersPanel({
                     <select
                       className="w-full appearance-none rounded-2xl border border-border bg-bg-input px-4 py-3 pr-10 text-text-primary outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15 disabled:cursor-not-allowed disabled:opacity-60"
                       value={value.subcategoryId ?? ""}
-                      disabled={!value.categoryCode}
+                      disabled={!value.categoryId}
                       onChange={(e) =>
                         onChange({ ...value, subcategoryId: e.target.value || null })
                       }
                     >
                       <option value="">
-                        {value.categoryCode ? t("explore.all_subcategories", "All subcategories") : t("explore.select_category_first", "Select category first")}
+                        {value.categoryId ? t("explore.all_subcategories", "All subcategories") : t("explore.select_category_first", "Select category first")}
                       </option>
                       {subcategories.map((sub) => (
                         <option key={sub.id} value={sub.id}>
@@ -656,12 +656,14 @@ function PriceRangeField({
     priceConfig?.label ?? t("explore.price_range", "Price range")
   );
 
-  const minValue = Number.isFinite(Number(value.minPrice))
-    ? Number(value.minPrice)
-    : minLimit;
-  const maxValue = Number.isFinite(Number(value.maxPrice))
-    ? Number(value.maxPrice)
-    : maxLimit;
+  const minValue =
+    value.minPrice.trim() !== "" && Number.isFinite(Number(value.minPrice))
+      ? Number(value.minPrice)
+      : minLimit;
+  const maxValue =
+    value.maxPrice.trim() !== "" && Number.isFinite(Number(value.maxPrice))
+      ? Number(value.maxPrice)
+      : maxLimit;
 
   const safeMin = clampNumber(minValue, minLimit, maxLimit);
   const safeMax = clampNumber(maxValue, minLimit, maxLimit);

@@ -62,7 +62,7 @@ function normalizeNepalMobile(raw: string): string | null {
 }
 
 type FormValues = {
-  categoryCode: string;
+  categoryId: string;
   subcategoryId: string;
   propertyTitle: string;
   description: string;
@@ -89,8 +89,8 @@ export default function AddPropertyPage({ searchParams }: Props) {
 
   const listingId =
     (searchParams.listingId && searchParams.listingId.trim()) || "";
-  const initialCategoryCode = (searchParams.categoryCode ?? "").trim() || "";
-  const lockCategory = Boolean(initialCategoryCode);
+  const initialCategoryId = (searchParams.categoryId ?? "").trim() || "";
+  const lockCategory = Boolean(initialCategoryId);
   const { entries: addressEntries, defaultId: defaultAddressId } =
     useAddressBook();
 
@@ -126,7 +126,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
     mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: {
-      categoryCode: initialCategoryCode,
+      categoryId: initialCategoryId,
       subcategoryId: "",
       propertyTitle: "",
       description: "",
@@ -146,17 +146,17 @@ export default function AddPropertyPage({ searchParams }: Props) {
     queryFn: () => exploreService.getHomeCategories(50),
   });
 
-  const categoryCode = watch("categoryCode");
+  const categoryIdValue = watch("categoryId");
   const selectedCategory: HomeCategory | null = useMemo(() => {
     const rows = categoriesQuery.data ?? [];
-    if (!categoryCode) return null;
-    return rows.find((row) => row.code === categoryCode) ?? null;
-  }, [categoriesQuery.data, categoryCode]);
+    if (!categoryIdValue) return null;
+    return rows.find((row) => row.id === categoryIdValue) ?? null;
+  }, [categoriesQuery.data, categoryIdValue]);
 
   const subcategoriesQuery = useQuery({
-    queryKey: ["explore", "subcategories", categoryCode],
-    queryFn: () => exploreService.getSubcategoriesByCategoryCode(categoryCode),
-    enabled: Boolean(categoryCode),
+    queryKey: ["explore", "subcategories", categoryIdValue],
+    queryFn: () => exploreService.getSubcategoriesByCategoryId(categoryIdValue),
+    enabled: Boolean(categoryIdValue),
   });
 
   const subcategories: MasterSubcategory[] = subcategoriesQuery.data ?? [];
@@ -215,21 +215,21 @@ export default function AddPropertyPage({ searchParams }: Props) {
   const amenityCategories = amenityCategoriesQuery.data ?? [];
   const amenities = amenitiesQuery.data ?? [];
 
-  const amenityIds = watch("amenityIds");
+  const amenityIdsValue = watch("amenityIds");
   useEffect(() => {
-    if (!amenityIds.length) return;
+    if (!amenityIdsValue.length) return;
     if (!amenities.length) return;
     const ids = new Set(amenities.map((a) => a.id));
     const nameToId = new Map(amenities.map((a) => [a.name, a.id] as const));
-    const resolved = amenityIds
+    const resolved = amenityIdsValue
       .map((value) => (ids.has(value) ? value : (nameToId.get(value) ?? value)))
       .filter((v) => ids.has(v));
     const dedup = Array.from(new Set(resolved));
-    const sameLength = dedup.length === amenityIds.length;
+    const sameLength = dedup.length === amenityIdsValue.length;
     const sameValues =
-      sameLength && dedup.every((v, idx) => v === amenityIds[idx]);
+      sameLength && dedup.every((v, idx) => v === amenityIdsValue[idx]);
     if (!sameValues) setValue("amenityIds", dedup, { shouldDirty: true });
-  }, [amenities, amenityIds, setValue]);
+  }, [amenities, amenityIdsValue, setValue]);
 
   useEffect(() => {
     if (listingId) return;
@@ -269,8 +269,8 @@ export default function AddPropertyPage({ searchParams }: Props) {
         setPrefillDetails(cached);
         setExistingPhotoUrls((cached.photo_urls as string[]) ?? []);
         await reset({
-          categoryCode: "",
-          subcategoryId: "",
+          categoryId: (cached.property_category_id as string) ?? "",
+          subcategoryId: (cached.subcategory_id as string) ?? "",
           propertyTitle: (cached.property_title as string) ?? "",
           description: (cached.description as string) ?? "",
           price: String(cached.price ?? ""),
@@ -313,8 +313,8 @@ export default function AddPropertyPage({ searchParams }: Props) {
         setPrefillDetails(details);
         setExistingPhotoUrls(details.photo_urls ?? []);
         await reset({
-          categoryCode: "",
-          subcategoryId: "",
+          categoryId: details.property_category_id ?? "",
+          subcategoryId: details.subcategory_id ?? "",
           propertyTitle: details.property_title ?? "",
           description: details.description ?? "",
           price: String(details.price ?? ""),
@@ -374,14 +374,17 @@ export default function AddPropertyPage({ searchParams }: Props) {
     const rows = categoriesQuery.data ?? [];
     if (!rows.length) return;
 
-    const rawCategory = String(prefillDetails.property_category ?? "").trim();
-    if (rawCategory && !watch("categoryCode")) {
+    const rawCategoryId = String(prefillDetails.property_category_id ?? "").trim();
+    const rawCategoryName = String(prefillDetails.property_category ?? "").trim();
+    
+    if (rawCategoryId && !watch("categoryId")) {
+       setValue("categoryId", rawCategoryId, { shouldDirty: false });
+    } else if (rawCategoryName && !watch("categoryId")) {
       const matched =
-        rows.find((r) => r.code === rawCategory) ??
-        rows.find((r) => r.name === rawCategory) ??
-        null;
+        rows.find((r) => r.code === rawCategoryName) ||
+        rows.find((r) => r.name === rawCategoryName);
       if (matched)
-        setValue("categoryCode", matched.code, { shouldDirty: false });
+        setValue("categoryId", matched.id, { shouldDirty: false });
     }
   }, [categoriesQuery.data, listingId, prefillDetails, setValue, watch]);
 
@@ -392,7 +395,14 @@ export default function AddPropertyPage({ searchParams }: Props) {
     if (!subcategories.length) return;
     if (watch("subcategoryId")) return;
 
+    const subId = String(prefillDetails.subcategory_id ?? "").trim();
     const name = String(prefillDetails.subcategory ?? "").trim();
+
+    if (subId) {
+        setValue("subcategoryId", subId, { shouldDirty: false });
+        return;
+    }
+
     if (!name) return;
     if (lastPrefilledSubcategoryNameRef.current === name) return;
     lastPrefilledSubcategoryNameRef.current = name;
@@ -401,7 +411,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
   }, [listingId, prefillDetails, setValue, subcategories, watch]);
 
   const categoryLabel = tPropertyCategory(
-    selectedCategory?.code ?? categoryCode ?? "Room",
+    selectedCategory?.code ?? selectedCategory?.name ?? "Room",
   );
   const toggleAmenity = (amenityId: string) => {
     const next = new Set(watch("amenityIds"));
@@ -482,7 +492,9 @@ export default function AddPropertyPage({ searchParams }: Props) {
       await manageService.upsertListing({
         listingId,
         property_category: categoryLabel,
+        category_id: values.categoryId,
         subcategory: selectedSubcategory?.name ?? null,
+        subcategory_id: values.subcategoryId,
         property_title: values.propertyTitle.trim(),
         description: values.description.trim(),
         price: parsedPrice,
@@ -531,7 +543,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
   const handleNext = async () => {
     if (currentStep === 1) {
       const formOk = await trigger([
-        "categoryCode",
+        "categoryId",
         "subcategoryId",
         "propertyTitle",
         "description",
@@ -593,7 +605,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
                   {t("landlord.create.category")}
                 </label>
                 <Controller
-                  name="categoryCode"
+                  name="categoryId"
                   control={control}
                   rules={{
                     required: t("landlord.create.validation.category_required"),
@@ -624,7 +636,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
                           {t("explore.select_category", "Select category")}
                         </option>
                         {(categoriesQuery.data ?? []).map((cat) => (
-                          <option key={cat.id} value={cat.code}>
+                          <option key={cat.id} value={cat.id}>
                             {tPropertyCategory(cat.code ?? cat.name)}
                           </option>
                         ))}
@@ -643,37 +655,42 @@ export default function AddPropertyPage({ searchParams }: Props) {
                 <label className="mb-2 block text-sm font-semibold text-text-secondary">
                   {t("landlord.create.subcategory")}
                 </label>
-                <Select
-                  {...register("subcategoryId", {
-                    required: t(
-                      "landlord.create.validation.subcategory_required",
-                    ),
-                    onBlur: () => trigger("subcategoryId"),
-                  })}
-                  disabled={!subcategories.length}
-                  className={cn(
-                    touchedFields.subcategoryId && errors.subcategoryId
-                      ? "border-destructive"
-                      : "border-border",
+                <Controller
+                  name="subcategoryId"
+                  control={control}
+                  rules={{
+                    required: t("landlord.create.validation.subcategory_required"),
+                  }}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <Select
+                        {...field}
+                        disabled={!subcategories.length}
+                        className={cn(
+                          fieldState.error
+                            ? "border-destructive"
+                            : "border-border",
+                        )}
+                      >
+                        <option value="" disabled>
+                          {subcategories.length
+                            ? t("landlord.create.select_subcategory")
+                            : t("landlord.create.no_subcategories")}
+                        </option>
+                        {subcategories.map((sub) => (
+                          <option key={sub.id} value={sub.id}>
+                            {tPropertySubcategory(sub.code ?? sub.name)}
+                          </option>
+                        ))}
+                      </Select>
+                      {fieldState.error?.message ? (
+                        <div className="mt-2 text-xs text-destructive">
+                          {String(fieldState.error.message)}
+                        </div>
+                      ) : null}
+                    </>
                   )}
-                >
-                  <option value="" disabled>
-                    {subcategories.length
-                      ? t("landlord.create.select_subcategory")
-                      : t("landlord.create.no_subcategories")}
-                  </option>
-                  {subcategories.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {tPropertySubcategory(sub.code ?? sub.name)}
-                    </option>
-                  ))}
-                </Select>
-                {touchedFields.subcategoryId &&
-                errors.subcategoryId?.message ? (
-                  <div className="mt-2 text-xs text-destructive">
-                    {String(errors.subcategoryId.message)}
-                  </div>
-                ) : null}
+                />
               </div>
 
               <div>

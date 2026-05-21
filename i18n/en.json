@@ -177,6 +177,7 @@
   },
   "explore": {
     "title": "Explore Properties",
+    "ai_results_title": "AI Search Results",
     "subtitle": "Recommended listings based on your preferences",
     "for_landlords": "For Landlords",
     "list_property": "List your property here",

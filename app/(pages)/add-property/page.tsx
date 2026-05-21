@@ -3,6 +3,7 @@ import { AddPropertyPage } from "@/pageComponents";
 export interface SearchParamsProps {
   listingId?: string;
   categoryCode?: string;
+  categoryId?: string;
 }
 
 interface PageProps {

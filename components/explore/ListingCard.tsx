@@ -42,6 +42,9 @@ export function ListingCard({
   const shouldShowEditButton = isOwnAd && !isPublished;
   const shouldShowRentedToggle = isOwnAd && isPublished;
 
+  const categoryDisplayName = listing.property_category_name || (listing as any).property_category;
+  const subcategoryDisplayName = listing.subcategory_name || (listing as any).subcategory;
+
   const cardContent = (
     <article
       className={cn(
@@ -139,11 +142,11 @@ export function ListingCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="shrink-0 rounded-md bg-primary-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-400 border border-primary-500/20">
-                  {tPropertyCategory(listing.property_category)}
+                  {tPropertyCategory(categoryDisplayName)}
                 </span>
-                {listing.subcategory && (
+                {subcategoryDisplayName && (
                   <span className="shrink-0 rounded-md bg-tertiary-100  dark:bg-tertiary-400/20 px-2 py-0.5 text-[10px] font-medium dark:text-tertiary-400 text-tertiary-700 border border-tertiary-900/10 uppercase">
-                    {tPropertySubcategory(listing.subcategory)}
+                    {tPropertySubcategory(subcategoryDisplayName)}
                   </span>
                 )}
                 {isOwnAd && listing.status && (

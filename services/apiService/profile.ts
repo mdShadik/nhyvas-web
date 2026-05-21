@@ -13,6 +13,7 @@ export type UserPreferences = {
   user_id: string;
   min_price: number | null;
   max_price: number | null;
+  category_id: string | null;
   category_code: string | null;
   preferred_amenities: string[];
 };
@@ -46,6 +47,7 @@ export const profileService = {
       user_id: row.id,
       min_price: row.min_price ?? null,
       max_price: row.max_price ?? null,
+      category_id: row.category_id ?? null,
       category_code: row.category_code ?? null,
       preferred_amenities: row.preferred_amenities ?? [],
     };

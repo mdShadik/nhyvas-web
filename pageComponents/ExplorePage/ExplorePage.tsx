@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { exploreService } from "@/services/apiService/explore";
+import { ExploreListing, exploreService } from "@/services/apiService/explore";
 import { profileService } from "@/services/apiService/profile";
 import { SlidersHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { ListingCard } from "@/components/explore/ListingCard";
 import { SearchParamsProps } from "@/app/(pages)/explore/page";
 import { AiSearch } from "@/components/AiSearch/Aisearch";
+import { AnalyzedQuery } from "@/lib/ai/queryAnalyzer";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -36,7 +37,7 @@ export default function ExplorePage({ searchParams }: Props) {
 
     didInitFromUrlRef.current = true;
 
-    const categoryCode = searchParams.categoryCode || searchParams.category;
+    const categoryId = searchParams.categoryId || searchParams.category;
     const minPrice = searchParams.minPrice;
     const maxPrice = searchParams.maxPrice;
     const subcategoryId = searchParams.subcategoryId;
@@ -44,7 +45,7 @@ export default function ExplorePage({ searchParams }: Props) {
     const locationRaw = searchParams.location;
 
     const hasUrlFilters = Boolean(
-      categoryCode || minPrice || maxPrice || subcategoryId || amenityIdsRaw || locationRaw
+      categoryId || minPrice || maxPrice || subcategoryId || amenityIdsRaw || locationRaw
     );
 
     let locationNode: FilterState["locationNode"] = null;
@@ -61,7 +62,7 @@ export default function ExplorePage({ searchParams }: Props) {
 
     const next: FilterState = {
       ...EMPTY_FILTERS,
-      categoryCode: (categoryCode?.trim() || (!hasUrlFilters && prefs?.category_code)) ? (categoryCode?.trim() || prefs?.category_code || null) : null,
+      categoryId: (categoryId?.trim() || (!hasUrlFilters && prefs?.category_id)) ? (categoryId?.trim() || prefs?.category_id || null) : null,
       subcategoryId: subcategoryId?.trim() ? subcategoryId.trim() : null,
       locationNode,
       minPrice: (minPrice?.trim() || (!hasUrlFilters && prefs?.min_price !== null)) ? (minPrice?.trim() || String(prefs?.min_price ?? "")) : "",
@@ -100,13 +101,13 @@ export default function ExplorePage({ searchParams }: Props) {
   });
 
   const appliedSubcategoriesQuery = useQuery({
-    queryKey: ["explore", "subcategories-applied", filters.categoryCode],
-    queryFn: () => exploreService.getSubcategoriesByCategoryCode(filters.categoryCode!),
-    enabled: Boolean(filters.categoryCode),
+    queryKey: ["explore", "subcategories-applied", filters.categoryId],
+    queryFn: () => exploreService.getSubcategoriesByCategoryId(filters.categoryId!),
+    enabled: Boolean(filters.categoryId),
   });
 
   const selectedCategory =
-    (categoriesQuery.data ?? []).find((row) => row.code === filters.categoryCode) ?? null;
+    (categoriesQuery.data ?? []).find((row) => row.id === filters.categoryId) ?? null;
   const selectedSubcategory =
     (appliedSubcategoriesQuery.data ?? []).find((row) => row.id === filters.subcategoryId) ?? null;
 
@@ -119,7 +120,7 @@ export default function ExplorePage({ searchParams }: Props) {
       Number.isFinite(location?.latitude as number) && Number.isFinite(location?.longitude as number);
 
     const isFiltered = Boolean(
-      filters.categoryCode ||
+      filters.categoryId ||
       filters.subcategoryId ||
       (filters.minPrice && filters.minPrice.trim()) ||
       (filters.maxPrice && filters.maxPrice.trim()) ||
@@ -127,9 +128,11 @@ export default function ExplorePage({ searchParams }: Props) {
       filters.locationNode
     );
 
+    const useUserLocation = filters.nearMe || !isFiltered;
+
     return {
-      category: selectedCategory?.name ?? null,
-      subcategory: selectedSubcategory?.name ?? null,
+      categoryId: filters.categoryId,
+      subcategoryId: filters.subcategoryId,
       stateId: hasLocationPoint ? null : (location?.state_id ?? null),
       districtId: hasLocationPoint ? null : (location?.district_id ?? null),
       municipalityId: hasLocationPoint ? null : (location?.municipality_id ?? null),
@@ -140,16 +143,14 @@ export default function ExplorePage({ searchParams }: Props) {
       filterLat: hasLocationPoint ? (location?.latitude ?? null) : null,
       filterLng: hasLocationPoint ? (location?.longitude ?? null) : null,
       filterRadiusKm: hasLocationPoint ? 2 : null,
-      userLat: !isFiltered ? (userLocation?.latitude ?? null) : null,
-      userLng: !isFiltered ? (userLocation?.longitude ?? null) : null,
-      userRadiusKm: !isFiltered ? 5 : null,
+      userLat: useUserLocation ? (userLocation?.latitude ?? null) : null,
+      userLng: useUserLocation ? (userLocation?.longitude ?? null) : null,
+      userRadiusKm: useUserLocation ? 5 : null,
       limit: 120,
       offset: 0,
     };
   }, [
     filters,
-    selectedCategory?.name,
-    selectedSubcategory?.name,
     userLocation?.latitude,
     userLocation?.longitude,
   ]);
@@ -162,17 +163,100 @@ export default function ExplorePage({ searchParams }: Props) {
   const listings = listingsQuery.data ?? [];
   const loading = listingsQuery.isLoading || listingsQuery.isFetching;
 
+  const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [results, setResults] = useState<string[]>([]);
+  const [aiResponse, setAiResponse] = useState<AnalyzedQuery | null>(null);
+  const [aiListings, setAiListings] = useState<ExploreListing[] | null>(null);
 
   const handleSearch = async (query: string) => {
     setIsSearching(true);
-    // Your API call
-    const res = await fetch(`/api/ai-search?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    setResults(data.results);
-    setIsSearching(false);
+    try {
+      const { analysis, listings } = await exploreService.aiSearch(
+        query,
+        userLocation?.latitude,
+        userLocation?.longitude
+      );
+
+      setAiResponse(analysis);
+      setAiListings(listings);
+
+      if (analysis) {
+        let locationNode = null;
+        if (analysis.location) {
+          try {
+            if (analysis.isWardSearch && analysis.wardNumber) {
+              // Exact ward search: search for "Kathmandu ward 12" as a whole
+              const wardQuery = `${analysis.location} ward ${analysis.wardNumber}`;
+              const nodes = await exploreService.searchLocationNodes(wardQuery, 10, "ward");
+              
+              // Find the exact ward number in the results to be sure
+              locationNode = nodes.find(n => 
+                n.level === "ward" && 
+                n.label.toLowerCase().includes(`ward ${analysis.wardNumber}`)
+              ) || null;
+            }
+
+            // Fallback if ward not found or not a specific ward search
+            if (!locationNode) {
+              const level = analysis.isWardSearch ? "ward" : "municipality";
+              let nodes = await exploreService.searchLocationNodes(analysis.location, 10, level);
+              
+              if (nodes.length === 0) {
+                nodes = await exploreService.searchLocationNodes(analysis.location, 10);
+              }
+
+              if (nodes.length > 0) {
+                if (analysis.isWardSearch) {
+                  locationNode = nodes.find(n => n.level === "ward") || nodes[0];
+                } else {
+                  locationNode = nodes.find(n => n.level === "municipality") || 
+                                 nodes.find(n => n.level === "district") || 
+                                 nodes.find(n => n.level === "state") || 
+                                 nodes[0];
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Location resolution failed:", err);
+          }
+        }
+
+        // Map AI structured data to FilterState for visual feedback in filter panel
+        const nextFilters: FilterState = {
+          ...EMPTY_FILTERS,
+          categoryId: analysis.propertyType?.[0] || null,
+          subcategoryId: analysis.subcategories?.[0] || null,
+          minPrice: analysis.budget?.min ? String(analysis.budget.min) : "",
+          maxPrice: analysis.budget?.max ? String(analysis.budget.max) : "",
+          amenityIds: analysis.features || [],
+          nearMe: Boolean(analysis.nearMe),
+          locationNode,
+        };
+        setFilters(nextFilters);
+        setDraftFilters(nextFilters);
+      }
+      setAiSearchOpen(false);
+    } catch (err) {
+      console.error("AI Search failed:", err);
+    } finally {
+      setIsSearching(false);
+    }
   };
+
+  // Reset AI results when filters are manually changed
+  const handleFilterChange = (newFilters: FilterState) => {
+    setDraftFilters(newFilters);
+  };
+
+  const handleApplyFilters = () => {
+    setFilters(draftFilters);
+    setAiListings(null); // Clear AI results when manually refining
+    setAiResponse(null);
+    setFiltersOpen(false);
+  };
+
+  const displayedListings = (aiListings && aiListings.length > 0) ? aiListings : listings;
+  const isUsingAiResults = aiListings !== null && aiListings.length > 0;
 
 
   return (
@@ -183,9 +267,11 @@ export default function ExplorePage({ searchParams }: Props) {
         <div className="flex-1 flex flex-col">
           <div className="mb-6 flex items-center justify-end sm:justify-between">
             <div className="hidden sm:block">
-              <h1 className="text-3xl font-bold text-text-primary">{t("explore.title")}</h1>
+              <h1 className="text-3xl font-bold text-text-primary">
+                {isUsingAiResults ? t("explore.ai_results_title") : t("explore.title")}
+              </h1>
               <p className="mt-1 text-text-secondary">
-                {t("explore.subtitle", { count: listings.length })}
+                {t("explore.subtitle", { count: displayedListings.length })}
               </p>
             </div>
             <button
@@ -201,15 +287,15 @@ export default function ExplorePage({ searchParams }: Props) {
             </button>
           </div>
 
-          {loading ? (
+          {loading && !isUsingAiResults ? (
             <div className="flex flex-col gap-6">
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div key={n} className="h-85 md:h-75 lg:h-50 rounded-2xl bg-(--border)/50 animate-pulse" />
               ))}
             </div>
-          ) : listings.length > 0 ? (
+          ) : displayedListings.length > 0 ? (
             <div className="gap-6 flex flex-col">
-              {listings.map((listing) => (
+              {displayedListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
@@ -230,11 +316,13 @@ export default function ExplorePage({ searchParams }: Props) {
             {/* <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-3">{t("common.filters")}</h2> */}
             <ExploreFiltersPanel
               value={draftFilters}
-              onChange={setDraftFilters}
-              onApply={() => setFilters(draftFilters)}
+              onChange={handleFilterChange}
+              onApply={handleApplyFilters}
               onReset={(reset) => {
                 setDraftFilters(reset);
                 setFilters(reset);
+                setAiListings(null);
+                setAiResponse(null);
               }}
             />
           </div>
@@ -250,20 +338,21 @@ export default function ExplorePage({ searchParams }: Props) {
         >
           <ExploreFiltersPanel
             value={draftFilters}
-            onChange={setDraftFilters}
-            onApply={() => {
-              setFilters(draftFilters);
-              setFiltersOpen(false);
-            }}
+            onChange={handleFilterChange}
+            onApply={handleApplyFilters}
             onReset={(reset) => {
               setDraftFilters(reset);
               setFilters(reset);
+              setAiListings(null);
+              setAiResponse(null);
             }}
           />
         </MobileBottomSheet>
       </div>
 
       <AiSearch
+        open={aiSearchOpen}
+        onOpenChange={setAiSearchOpen}
         onSearch={handleSearch}
         isSearching={isSearching}
         buttonLabel="AI Search"
@@ -284,17 +373,26 @@ export default function ExplorePage({ searchParams }: Props) {
           { id: "4", label: "Luxury penthouses", icon: "suggestion" },
         ]}
       >
-        {/* Results render here */}
-        {results.length > 0 && (
-          <div className="flex flex-col gap-2 pt-2">
-            {results.map((r, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-border bg-bg-input p-3 text-sm text-text-primary"
-              >
-                {r}
-              </div>
-            ))}
+        {/* AI Interpretation feedback */}
+        {aiResponse && (
+          <div className="flex flex-col gap-3 pt-2">
+            <div className="flex flex-wrap gap-2">
+              {aiResponse.vibeTags?.map((vibe: string) => (
+                <span key={vibe} className="rounded-full bg-primary-500/10 px-3 py-1 text-xs font-semibold text-primary-600 dark:text-primary-400">
+                  ✨ {vibe}
+                </span>
+              ))}
+              {aiResponse.lifestyleTags?.map((tag: string) => (
+                <span key={tag} className="rounded-full bg-tertiary-500/10 px-3 py-1 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400">
+                  🏠 {tag}
+                </span>
+              ))}
+            </div>
+            {aiResponse.semanticQuery && (
+              <p className="text-sm text-text-secondary italic">
+                &ldquo;{aiResponse.semanticQuery}&rdquo;
+              </p>
+            )}
           </div>
         )}
       </AiSearch>
