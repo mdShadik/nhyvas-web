@@ -16,8 +16,11 @@ import {
   History,
   TrendingUp,
   Lightbulb,
+  BotMessageSquare,
+  Command,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -39,12 +42,12 @@ export interface AiSearchProps {
   query?: string;
   onQueryChange?: (query: string) => void;
   buttonPosition?: "bottom-right" | "bottom-left" | "bottom-center";
+  buttonLabel?: string;
   buttonClassName?: string;
   panelClassName?: string;
   minQueryLength?: number;
   showMic?: boolean;
   onMicPress?: () => void;
-  buttonLabel?: string;
   disabled?: boolean;
   children?: React.ReactNode;
 }
@@ -67,12 +70,6 @@ const itemVariants: Variants = {
     filter: "blur(4px)",
     transition: { duration: 0.1 },
   },
-};
-
-const fabVariants: Variants = {
-  idle: { scale: 1 },
-  tap: { scale: 0.88 },
-  hover: { scale: 1.06 },
 };
 
 const pulseRingVariants: Variants = {
@@ -136,7 +133,7 @@ function SuggestionIcon({ type }: { type?: AiSearchSuggestion["icon"] }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Trail Sparks — lightweight particles that trail behind panel       */
+/*  Trail Sparks                                                       */
 /* ------------------------------------------------------------------ */
 
 function TrailSparks({
@@ -166,9 +163,10 @@ function TrailSparks({
               height: size,
               left: originX,
               top: originY,
-              background: i % 2 === 0
-                ? "var(--color-primary-400)"
-                : "var(--color-tertiary-400)",
+              background:
+                i % 2 === 0
+                  ? "var(--color-primary-400)"
+                  : "var(--color-tertiary-400)",
             }}
             initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
             animate={{
@@ -186,7 +184,6 @@ function TrailSparks({
         );
       })}
 
-      {/* Expanding ring from origin */}
       <motion.div
         className="absolute rounded-full border border-primary-400/50"
         style={{
@@ -204,7 +201,7 @@ function TrailSparks({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Ghost Trail — follows behind panel with delay                      */
+/*  Ghost Trail                                                        */
 /* ------------------------------------------------------------------ */
 
 function GhostTrail({
@@ -218,117 +215,66 @@ function GhostTrail({
 }) {
   if (!active) return null;
 
-  const targetX = typeof window !== "undefined" ? window.innerWidth / 2 : 200;
-  const targetY = typeof window !== "undefined" ? window.innerHeight * 0.15 + 100 : 200;
-  const dx = originX - targetX;
-  const dy = originY - targetY;
+  const targetX =
+    typeof window !== "undefined" ? window.innerWidth / 2 : 200;
+  const targetY =
+    typeof window !== "undefined" ? window.innerHeight * 0.15 + 100 : 200;
+  const fdx = originX - targetX;
+  const fdy = originY - targetY;
+
+  const panelW = Math.min(
+    520,
+    typeof window !== "undefined" ? window.innerWidth - 32 : 520
+  );
+
+  const ghosts = [
+    { delay: 0.02, opacity: [0, 0.4, 0.2, 0], scale: [0.06, 0.5, 0.95, 1], rotate: [-15, -90, -180, -200], dur: 0.6, border: "border-primary-400/20", bg: "bg-primary-500/8" },
+    { delay: 0.06, opacity: [0, 0.3, 0.12, 0], scale: [0.04, 0.35, 0.85, 1], rotate: [-10, -60, -140, -170], dur: 0.65, border: "border-tertiary-400/15", bg: "bg-tertiary-500/5" },
+    { delay: 0.1, opacity: [0, 0.2, 0.08, 0], scale: [0.03, 0.25, 0.7, 1], rotate: [-5, -40, -100, -130], dur: 0.7, border: "border-primary-300/10", bg: "bg-primary-400/3" },
+  ];
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[69] overflow-hidden">
-      {/* Trail ghost 1 — closest behind */}
-      <motion.div
-        className="absolute rounded-[24px] border border-primary-400/20 bg-primary-500/8 backdrop-blur-[1px]"
-        style={{
-          width: Math.min(520, typeof window !== "undefined" ? window.innerWidth - 32 : 520),
-          height: 280,
-          left: "50%",
-          top: "12vh",
-          marginLeft: -(Math.min(520, typeof window !== "undefined" ? window.innerWidth - 32 : 520)) / 2,
-        }}
-        initial={{
-          x: dx,
-          y: dy,
-          scale: 0.06,
-          opacity: 0,
-          borderRadius: "50%",
-          rotate: -15,
-        }}
-        animate={{
-          x: 0,
-          y: 0,
-          scale: [0.06, 0.5, 0.95, 1],
-          opacity: [0, 0.4, 0.2, 0],
-          borderRadius: ["50%", "36%", "24px", "24px"],
-          rotate: [-15, -90, -180, -200],
-        }}
-        transition={{
-          duration: 0.6,
-          delay: 0.02,
-          ease: [0.23, 1, 0.32, 1],
-        }}
-      />
-
-      {/* Trail ghost 2 — further behind, more faded */}
-      <motion.div
-        className="absolute rounded-[24px] border border-tertiary-400/15 bg-tertiary-500/5"
-        style={{
-          width: Math.min(520, typeof window !== "undefined" ? window.innerWidth - 32 : 520),
-          height: 280,
-          left: "50%",
-          top: "12vh",
-          marginLeft: -(Math.min(520, typeof window !== "undefined" ? window.innerWidth - 32 : 520)) / 2,
-        }}
-        initial={{
-          x: dx,
-          y: dy,
-          scale: 0.04,
-          opacity: 0,
-          borderRadius: "50%",
-          rotate: -10,
-        }}
-        animate={{
-          x: 0,
-          y: 0,
-          scale: [0.04, 0.35, 0.85, 1],
-          opacity: [0, 0.3, 0.12, 0],
-          borderRadius: ["50%", "42%", "28px", "24px"],
-          rotate: [-10, -60, -140, -170],
-        }}
-        transition={{
-          duration: 0.65,
-          delay: 0.06,
-          ease: [0.23, 1, 0.32, 1],
-        }}
-      />
-
-      {/* Trail ghost 3 — most faded, most delayed */}
-      <motion.div
-        className="absolute rounded-[24px] border border-primary-300/10 bg-primary-400/3"
-        style={{
-          width: Math.min(520, typeof window !== "undefined" ? window.innerWidth - 32 : 520),
-          height: 280,
-          left: "50%",
-          top: "12vh",
-          marginLeft: -(Math.min(520, typeof window !== "undefined" ? window.innerWidth - 32 : 520)) / 2,
-        }}
-        initial={{
-          x: dx,
-          y: dy,
-          scale: 0.03,
-          opacity: 0,
-          borderRadius: "50%",
-          rotate: -5,
-        }}
-        animate={{
-          x: 0,
-          y: 0,
-          scale: [0.03, 0.25, 0.7, 1],
-          opacity: [0, 0.2, 0.08, 0],
-          borderRadius: ["50%", "46%", "30px", "24px"],
-          rotate: [-5, -40, -100, -130],
-        }}
-        transition={{
-          duration: 0.7,
-          delay: 0.1,
-          ease: [0.23, 1, 0.32, 1],
-        }}
-      />
+      {ghosts.map((g, i) => (
+        <motion.div
+          key={i}
+          className={cn("absolute rounded-[24px] border", g.border, g.bg)}
+          style={{
+            width: panelW,
+            height: 280,
+            left: "50%",
+            top: "12vh",
+            marginLeft: -panelW / 2,
+          }}
+          initial={{
+            x: fdx,
+            y: fdy,
+            scale: g.scale[0],
+            opacity: 0,
+            borderRadius: "50%",
+            rotate: g.rotate[0],
+          }}
+          animate={{
+            x: 0,
+            y: 0,
+            scale: g.scale,
+            opacity: g.opacity,
+            borderRadius: ["50%", "36%", "24px", "24px"],
+            rotate: g.rotate,
+          }}
+          transition={{
+            duration: g.dur,
+            delay: g.delay,
+            ease: [0.23, 1, 0.32, 1],
+          }}
+        />
+      ))}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Orbiting particles (idle state)                                    */
+/*  Orbiting particles                                                 */
 /* ------------------------------------------------------------------ */
 
 function OrbitingParticles() {
@@ -358,6 +304,29 @@ function OrbitingParticles() {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Detect OS                                                          */
+/* ------------------------------------------------------------------ */
+
+function useIsMac() {
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    setIsMac(
+      typeof navigator !== "undefined" &&
+        /Mac|iPod|iPhone|iPad/.test(navigator.platform)
+    );
+  }, []);
+  return isMac;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+const TAP_MOVE_THRESHOLD = 8;
+const TAP_TIME_THRESHOLD = 300;
+const DRAG_DELAY_MS = 300;
+
+/* ------------------------------------------------------------------ */
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -376,12 +345,12 @@ export function AiSearch({
   query: controlledQuery,
   onQueryChange,
   buttonPosition = "bottom-right",
+  buttonLabel = "AI Search",
   buttonClassName,
   panelClassName,
   minQueryLength = 2,
   showMic = false,
   onMicPress,
-  buttonLabel,
   disabled = false,
   children,
 }: AiSearchProps) {
@@ -390,9 +359,23 @@ export function AiSearch({
   const [isFocused, setIsFocused] = useState(false);
   const [fabOrigin, setFabOrigin] = useState({ x: 0, y: 0 });
   const [showTrail, setShowTrail] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Drag / tap tracking
+  const [wasDragged, setWasDragged] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+
+  // Touch-specific tracking
+  const touchStartPos = useRef({ x: 0, y: 0 });
+  const touchStartTime = useRef(0);
+  const isTouchDragging = useRef(false);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fabRef = useRef<HTMLButtonElement>(null);
+  const draggableNodeRef = useRef<HTMLDivElement>(null!);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isMac = useIsMac();
 
   const isOpen = controlledOpen ?? internalOpen;
   const query = controlledQuery ?? internalQuery;
@@ -415,6 +398,7 @@ export function AiSearch({
 
   const canSearch = query.trim().length >= minQueryLength && !isSearching;
 
+  /* ── Open / close ─────────────────────────────────────────────── */
   const handleOpen = useCallback(() => {
     if (disabled) return;
 
@@ -439,6 +423,7 @@ export function AiSearch({
     setTimeout(() => setShowTrail(false), 600);
   }, [setOpen, setQuery]);
 
+  /* ── Search ───────────────────────────────────────────────────── */
   const handleSubmit = useCallback(() => {
     if (!canSearch) return;
     onSearch(query.trim());
@@ -463,6 +448,7 @@ export function AiSearch({
     [setQuery, onSearch]
   );
 
+  /* ── ⌘K / Ctrl+K ──────────────────────────────────────────────── */
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -475,7 +461,91 @@ export function AiSearch({
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen, handleClose, handleOpen]);
 
-  /* Compute delta from FAB to panel center */
+  /* ── Desktop drag handlers (mouse) ───────────────────────────── */
+  const handleDragStart = useCallback(
+    (_e: DraggableEvent, data: DraggableData) => {
+      dragStartPos.current = { x: data.x, y: data.y };
+      setWasDragged(false);
+    },
+    []
+  );
+
+  const handleDragStop = useCallback(
+    (_e: DraggableEvent, data: DraggableData) => {
+      const movedX = Math.abs(data.x - dragStartPos.current.x);
+      const movedY = Math.abs(data.y - dragStartPos.current.y);
+
+      if (movedX + movedY > 5) {
+        setWasDragged(true);
+        setTimeout(() => setWasDragged(false), 200);
+      }
+    },
+    []
+  );
+
+  const handleFabClick = useCallback(() => {
+    if (wasDragged) return;
+    handleOpen();
+  }, [wasDragged, handleOpen]);
+
+  /* ── Mobile touch handlers ────────────────────────────────────── */
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    touchStartTime.current = Date.now();
+    isTouchDragging.current = false;
+
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+
+    holdTimer.current = setTimeout(() => {
+      isTouchDragging.current = true;
+    }, DRAG_DELAY_MS);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+
+    if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) {
+      isTouchDragging.current = true;
+      if (holdTimer.current) {
+        clearTimeout(holdTimer.current);
+        holdTimer.current = null;
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (holdTimer.current) {
+        clearTimeout(holdTimer.current);
+        holdTimer.current = null;
+      }
+
+      const elapsed = Date.now() - touchStartTime.current;
+
+      if (!isTouchDragging.current && elapsed < TAP_TIME_THRESHOLD) {
+        e.preventDefault();
+        handleOpen();
+      }
+
+      isTouchDragging.current = false;
+    },
+    [handleOpen]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) clearTimeout(holdTimer.current);
+    };
+  }, []);
+
+  /* ── Layout ────────────────────────────────────────────────────── */
   const panelCenterX =
     typeof window !== "undefined" ? window.innerWidth / 2 : 300;
   const panelCenterY =
@@ -492,54 +562,161 @@ export function AiSearch({
   return (
     <>
       {/* Trail effects */}
-      <TrailSparks originX={fabOrigin.x} originY={fabOrigin.y} active={showTrail && isOpen} />
-      <GhostTrail originX={fabOrigin.x} originY={fabOrigin.y} active={showTrail && isOpen} />
+      <TrailSparks
+        originX={fabOrigin.x}
+        originY={fabOrigin.y}
+        active={showTrail && isOpen}
+      />
+      <GhostTrail
+        originX={fabOrigin.x}
+        originY={fabOrigin.y}
+        active={showTrail && isOpen}
+      />
 
-      {/* ========== FAB ========== */}
-      <AnimatePresence>
-        {!isOpen && (
-          <motion.button
-            ref={fabRef}
-            key="fab"
-            type="button"
-            disabled={disabled}
-            onClick={handleOpen}
-            variants={fabVariants}
-            initial="idle"
-            whileHover="hover"
-            whileTap="tap"
-            exit={{
-              scale: 0,
-              opacity: 0,
-              transition: { duration: 0.15, ease: "easeIn" },
+      {/* ========== DRAGGABLE FAB — always mounted, hidden when open ========== */}
+      <Draggable
+        nodeRef={draggableNodeRef as React.RefObject<HTMLElement>}
+        onStart={handleDragStart}
+        onStop={handleDragStop}
+        handle=".drag-handle"
+        disabled={isOpen}
+      >
+        <div
+          ref={draggableNodeRef}
+          className={cn("fixed z-[60]", positionClass)}
+          style={{
+            touchAction: "none",
+            // Hide when modal is open but keep mounted to preserve position
+            pointerEvents: isOpen ? "none" : "auto",
+            visibility: isOpen ? "hidden" : "visible",
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{
+              scale: isOpen ? 0 : 1,
+              opacity: isOpen ? 0 : 1,
             }}
-            className={cn(
-              "fixed z-[60] flex items-center gap-2.5",
-              "rounded-2xl px-5 py-3.5",
-              "bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500",
-              "text-white font-semibold text-sm",
-              "shadow-xl shadow-tertiary-900",
-              "outline-none",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              positionClass,
-              buttonClassName
-            )}
-            aria-label="Open AI Search"
+            transition={
+              isOpen
+                ? { duration: 0.15, ease: "easeIn" }
+                : { type: "spring", stiffness: 300, damping: 20 }
+            }
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onPointerEnter={() => setIsHovered(true)}
+            onPointerLeave={() => setIsHovered(false)}
           >
-            <motion.span
-              className="absolute inset-0 rounded-2xl bg-primary-400/20"
-              variants={pulseRingVariants}
-              initial="initial"
-              animate="animate"
-            />
-            <Sparkles className="relative h-5 w-5" />
-            {buttonLabel && <span className="relative">{buttonLabel}</span>}
-            <span className="relative hidden sm:inline-flex items-center gap-0.5 rounded-lg bg-white/15 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm">
-              ⌘K
-            </span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+            <motion.button
+              ref={fabRef}
+              type="button"
+              disabled={disabled}
+              onClick={handleFabClick}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              whileTap={{ scale: 0.92 }}
+              className={cn(
+                "drag-handle relative flex items-center overflow-hidden",
+                "rounded-full shadow-xl shadow-tertiary-900/20",
+                "bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500",
+                "text-white outline-none",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "cursor-grab active:cursor-grabbing",
+                "select-none",
+                buttonClassName
+              )}
+              aria-label="Open AI Search"
+            >
+              {/* Pulse ring */}
+              <motion.span
+                className="absolute inset-0 rounded-full bg-primary-400/20"
+                variants={pulseRingVariants}
+                initial="initial"
+                animate="animate"
+              />
+
+              {/* Hover glow */}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-white/10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isHovered ? 1 : 0 }}
+                transition={{ duration: 0.2 }}
+              />
+
+              <motion.div
+                className="relative flex items-center gap-2 whitespace-nowrap"
+                animate={{
+                  paddingLeft: isHovered ? 20 : 16,
+                  paddingRight: isHovered ? 20 : 16,
+                  paddingTop: 16,
+                  paddingBottom: 16,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              >
+                {/* AI Icon */}
+                <motion.div
+                  animate={{ rotate: isHovered ? 360 : 0 }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <BotMessageSquare className="h-6 w-6 shrink-0" />
+                </motion.div>
+
+                {/* Expanded label + shortcut on hover */}
+                <AnimatePresence>
+                  {isHovered && (
+                    <motion.div
+                      className="flex items-center gap-2.5 overflow-hidden"
+                      initial={{ width: 0, opacity: 0 }}
+                      animate={{
+                        width: "auto",
+                        opacity: 1,
+                        transition: {
+                          width: {
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 28,
+                          },
+                          opacity: { duration: 0.15, delay: 0.08 },
+                        },
+                      }}
+                      exit={{
+                        width: 0,
+                        opacity: 0,
+                        transition: {
+                          width: { duration: 0.2, ease: "easeIn" },
+                          opacity: { duration: 0.1 },
+                        },
+                      }}
+                    >
+                      <span className="text-sm font-semibold">
+                        {buttonLabel}
+                      </span>
+
+                      <kbd
+                        className={cn(
+                          "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5",
+                          "bg-white/20 text-[11px] font-medium leading-none",
+                          "border border-white/25"
+                        )}
+                      >
+                        {isMac ? (
+                          <>
+                            <Command className="h-2.5 w-2.5" />
+                            <span>K</span>
+                          </>
+                        ) : (
+                          <span>Ctrl+K</span>
+                        )}
+                      </kbd>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </motion.button>
+          </motion.div>
+        </div>
+      </Draggable>
 
       {/* ========== OVERLAY ========== */}
       <AnimatePresence>
@@ -550,7 +727,10 @@ export function AiSearch({
               className="absolute inset-0 bg-secondary-900/50 backdrop-blur-sm dark:bg-black/65"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1, transition: { duration: 0.35 } }}
-              exit={{ opacity: 0, transition: { duration: 0.25, delay: 0.05 } }}
+              exit={{
+                opacity: 0,
+                transition: { duration: 0.25, delay: 0.05 },
+              }}
               onClick={handleClose}
             />
 
@@ -564,7 +744,6 @@ export function AiSearch({
                 panelClassName
               )}
               style={{ borderRadius: 24 }}
-              /* ===== ENTER: smooth arc from FAB ===== */
               initial={{
                 x: dx,
                 y: dy,
@@ -586,12 +765,15 @@ export function AiSearch({
                   scale: { duration: 0.55, ease: [0.34, 1.56, 0.64, 1] },
                   opacity: { duration: 0.25, ease: "easeOut" },
                   rotate: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
-                  borderRadius: { duration: 0.4, delay: 0.15, ease: "easeOut" },
+                  borderRadius: {
+                    duration: 0.4,
+                    delay: 0.15,
+                    ease: "easeOut",
+                  },
                   staggerChildren: 0.06,
                   delayChildren: 0.3,
                 },
               }}
-              /* ===== EXIT: swirl back to FAB ===== */
               exit={{
                 x: dx,
                 y: dy,
@@ -608,7 +790,7 @@ export function AiSearch({
                 },
               }}
             >
-              {/* Entrance glow flash */}
+              {/* Entrance glow */}
               <motion.div
                 className="pointer-events-none absolute inset-0 z-10 rounded-[24px] bg-gradient-to-br from-primary-400/20 via-tertiary-400/10 to-transparent"
                 initial={{ opacity: 1 }}
@@ -621,7 +803,10 @@ export function AiSearch({
               <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-primary-500/5 via-transparent to-transparent dark:from-primary-400/8" />
 
               {/* Header */}
-              <motion.div variants={itemVariants} className="relative px-5 pt-5 pb-1">
+              <motion.div
+                variants={itemVariants}
+                className="relative px-5 pt-5 pb-1"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <motion.div
@@ -635,11 +820,11 @@ export function AiSearch({
                         delay: 0.35,
                       }}
                     >
-                      <Sparkles className="h-[18px] w-[18px] text-white" />
+                      <BotMessageSquare className="h-[18px] w-[18px] text-white" />
                     </motion.div>
                     <div>
                       <h2 className="text-base font-extrabold text-text-primary leading-tight">
-                        AI Search
+                        {buttonLabel}
                       </h2>
                       <p className="text-[11px] font-medium text-text-tertiary">
                         Powered by intelligence
@@ -647,27 +832,52 @@ export function AiSearch({
                     </div>
                   </div>
 
-                  <motion.button
-                    type="button"
-                    onClick={handleClose}
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-xl",
-                      "border border-border bg-bg-input text-text-secondary",
-                      "transition-colors hover:bg-secondary-100 hover:text-text-primary",
-                      "dark:hover:bg-secondary-700"
-                    )}
-                    aria-label="Close search"
-                  >
-                    <X className="h-4 w-4" />
-                  </motion.button>
+                  <div className="flex items-center gap-2">
+                    <kbd
+                      className={cn(
+                        "hidden sm:inline-flex items-center gap-0.5 rounded-lg px-2 py-1",
+                        "border border-border bg-bg-input text-[11px] font-medium text-text-tertiary"
+                      )}
+                    >
+                      {isMac ? (
+                        <>
+                          <Command className="h-2.5 w-2.5" />
+                          <span>K</span>
+                        </>
+                      ) : (
+                        <span>Ctrl+K</span>
+                      )}
+                    </kbd>
+
+                    <motion.button
+                      type="button"
+                      onClick={handleClose}
+                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileTap={{ scale: 0.9 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 17,
+                      }}
+                      className={cn(
+                        "flex h-9 w-9 items-center justify-center rounded-xl",
+                        "border border-border bg-bg-input text-text-secondary",
+                        "transition-colors hover:bg-secondary-100 hover:text-text-primary",
+                        "dark:hover:bg-secondary-700"
+                      )}
+                      aria-label="Close search"
+                    >
+                      <X className="h-4 w-4" />
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
 
               {/* Input */}
-              <motion.div variants={itemVariants} className="relative px-5 pt-3 pb-1">
+              <motion.div
+                variants={itemVariants}
+                className="relative px-5 pt-3 pb-1"
+              >
                 <div
                   className={cn(
                     "group relative flex items-center gap-2 rounded-2xl border-2 transition-all duration-300",
@@ -701,7 +911,11 @@ export function AiSearch({
                       }
                       transition={
                         isSearching
-                          ? { duration: 0.8, repeat: Infinity, ease: "linear" }
+                          ? {
+                              duration: 0.8,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }
                           : { duration: 0.25 }
                       }
                     >
@@ -732,7 +946,9 @@ export function AiSearch({
                       className="w-full bg-transparent text-[15px] font-medium text-text-primary outline-none placeholder:text-transparent"
                       aria-label="Search query"
                     />
-                    {!query && <AnimatedPlaceholder placeholders={placeholders} />}
+                    {!query && (
+                      <AnimatedPlaceholder placeholders={placeholders} />
+                    )}
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1 pr-2">
@@ -761,7 +977,11 @@ export function AiSearch({
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 20,
+                          }}
                           onClick={() => {
                             setQuery("");
                             inputRef.current?.focus();
@@ -813,7 +1033,10 @@ export function AiSearch({
                         className="text-[11px] font-medium text-text-tertiary"
                       >
                         Type {minQueryLength - query.length} more
-                        {minQueryLength - query.length !== 1 ? " chars" : " char"}…
+                        {minQueryLength - query.length !== 1
+                          ? " chars"
+                          : " char"}
+                        …
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -828,7 +1051,10 @@ export function AiSearch({
 
               {/* Suggestions */}
               {suggestions.length > 0 && !query && (
-                <motion.div variants={itemVariants} className="relative px-5 pt-3 pb-1">
+                <motion.div
+                  variants={itemVariants}
+                  className="relative px-5 pt-3 pb-1"
+                >
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary/60">
                     Suggestions
                   </p>

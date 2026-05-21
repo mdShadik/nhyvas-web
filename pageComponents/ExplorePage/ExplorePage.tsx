@@ -362,8 +362,8 @@ export default function ExplorePage({ searchParams }: Props) {
         isSearching={isSearching}
         buttonLabel="AI Search"
         buttonPosition="bottom-right"
-        showMic
-        onMicPress={() => console.log("Start voice input")}
+        showMic={false}
+        // onMicPress={() => console.log("Start voice input")}
         minQueryLength={2}
         placeholders={[
           "Search properties with AI…",
