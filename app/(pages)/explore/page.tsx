@@ -4,9 +4,11 @@ export interface SearchParamsProps {
   categoryCode?: string;
   categoryId?: string;
   category?: string;
+  categories?: string;
   minPrice?: string;
   maxPrice?: string;
   subcategoryId?: string;
+  subcategories?: string;
   amenities?: string;
   location?: string;
 }

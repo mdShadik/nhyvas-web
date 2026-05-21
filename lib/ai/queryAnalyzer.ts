@@ -1,10 +1,15 @@
+export interface AnalyzedSubcategory {
+  category_id: string;
+  subCategory_id: string;
+}
+
 export interface AnalyzedQuery {
   originalQuery: string;
   semanticQuery: string;
   keywordQuery: string;
   intent: "rent" | "buy" | "sell" | string;
   propertyType: string[];
-  subcategories: string[];
+  subcategories: AnalyzedSubcategory[];
   budget: { min: number | null; max: number | null };
   features: string[];
   lifestyleTags: string[];
@@ -62,11 +67,19 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
           }
           break;
         case "subcategory":
-          if (m.mapped_id && !analyzed.subcategories.includes(m.mapped_id)) {
-            analyzed.subcategories.push(m.mapped_id);
-          }
-          if (m.mapped_parent_id && !analyzed.propertyType.includes(m.mapped_parent_id)) {
-            analyzed.propertyType.push(m.mapped_parent_id);
+          if (m.mapped_id && m.mapped_parent_id) {
+            const alreadyExists = analyzed.subcategories.some(
+              (s) => s.subCategory_id === m.mapped_id
+            );
+            if (!alreadyExists) {
+              analyzed.subcategories.push({
+                category_id: m.mapped_parent_id,
+                subCategory_id: m.mapped_id,
+              });
+            }
+            if (!analyzed.propertyType.includes(m.mapped_parent_id)) {
+              analyzed.propertyType.push(m.mapped_parent_id);
+            }
           }
           break;
         case "amenity":

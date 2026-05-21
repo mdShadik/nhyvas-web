@@ -77,8 +77,8 @@ function getActiveFilterCount(
   let count = 0;
 
   if (value.locationNode) count += 1;
-  if (value.categoryId) count += 1;
-  if (value.subcategoryId) count += 1;
+  count += value.categoryIds.length;
+  count += value.subcategoryIds.length;
 
   if (priceConfig) {
     if (value.minPrice && value.minPrice !== String(priceConfig.min_value)) count += 1;
@@ -137,9 +137,9 @@ export function ExploreFiltersPanel({
   });
 
   const subcategoriesQuery = useQuery({
-    queryKey: ["explore", "subcategories", value.categoryId],
-    queryFn: () => exploreService.getSubcategoriesByCategoryId(value.categoryId!),
-    enabled: Boolean(value.categoryId),
+    queryKey: ["explore", "subcategories", value.categoryIds],
+    queryFn: () => exploreService.getSubcategoriesByCategoryIds(value.categoryIds),
+    enabled: value.categoryIds.length > 0,
   });
 
   const categories = categoriesQuery.data ?? [];
@@ -184,7 +184,7 @@ export function ExploreFiltersPanel({
     }
 
     return groups;
-  }, [amenities, amenityCategories]);
+  }, [amenities, amenityCategories, t]);
 
   const activeCount = getActiveFilterCount(value, priceConfig);
 
@@ -195,19 +195,33 @@ export function ExploreFiltersPanel({
       chips.push({ key: "location", label: value.locationNode.label });
     }
 
-    if (value.categoryId) {
-      const category = categories.find((c) => c.id === value.categoryId);
-      const raw = category?.code || category?.name || value.categoryId;
-      chips.push({ key: "category", label: tPropertyCategory(raw) });
+    if (value.categoryIds.length > 0) {
+      if (value.categoryIds.length === 1) {
+        const category = categories.find((c) => c.id === value.categoryIds[0]);
+        const raw = category?.code || category?.name || value.categoryIds[0];
+        chips.push({ key: "category", label: tPropertyCategory(raw) });
+      } else {
+        chips.push({
+          key: "category",
+          label: `${value.categoryIds.length} ${t("explore.categories", "categories")}`,
+        });
+      }
     }
 
-    if (value.subcategoryId) {
-      const sub = subcategories.find((s) => s.id === value.subcategoryId);
-      const raw = sub?.code || sub?.name;
-      chips.push({
-        key: "subcategory",
-        label: raw ? tPropertySubcategory(raw) : t("explore.subcategory", "Subcategory"),
-      });
+    if (value.subcategoryIds.length > 0) {
+      if (value.subcategoryIds.length === 1) {
+        const sub = subcategories.find((s) => s.id === value.subcategoryIds[0]);
+        const raw = sub?.code || sub?.name;
+        chips.push({
+          key: "subcategory",
+          label: raw ? tPropertySubcategory(raw) : t("explore.subcategory", "Subcategory"),
+        });
+      } else {
+        chips.push({
+          key: "subcategory",
+          label: `${value.subcategoryIds.length} ${t("explore.subcategories", "subcategories")}`,
+        });
+      }
     }
 
     if (priceConfig) {
@@ -300,57 +314,94 @@ export function ExploreFiltersPanel({
               <div className="grid gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-secondary">
-                    {t("explore.category", "Category")}
+                    {t("explore.categories", "Categories")}
                   </label>
-                  <div className="relative">
-                    <select
-                      className="w-full appearance-none rounded-2xl border border-border bg-bg-input px-4 py-3 pr-10 text-text-primary outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15"
-                      value={value.categoryId ?? ""}
-                      onChange={(e) =>
-                        onChange({
-                          ...value,
-                          categoryId: e.target.value || null,
-                          subcategoryId: null,
-                        })
-                      }
-                    >
-                      <option value="">{t("explore.all_categories", "All categories")}</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {tPropertyCategory(cat.code || cat.name || t("explore.category", "Category"))}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+                  <div className="flex flex-wrap gap-2">
+                    {categories.length === 0 ? (
+                      <div className="w-full rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-secondary italic">
+                        {t("explore.loading_categories", "Loading categories…")}
+                      </div>
+                    ) : (
+                      categories.map((cat) => {
+                        const active = value.categoryIds.includes(cat.id);
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              const next = toggleInList(value.categoryIds, cat.id);
+                              // When category is removed, also remove its subcategories
+                              const nextSubIds = value.subcategoryIds.filter(sid => {
+                                const sub = subcategories.find(s => s.id === sid);
+                                return sub ? next.includes(sub.category_id) : true;
+                              });
+
+                              onChange({
+                                ...value,
+                                categoryIds: next,
+                                subcategoryIds: nextSubIds
+                              });
+                            }}
+                            className={`inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition ${
+                              active
+                                ? "border-primary-200 bg-primary-100 text-primary-800 dark:border-primary-800 dark:bg-primary-900/30 dark:text-primary-200"
+                                : "border-border bg-bg-input text-text-secondary hover:border-primary-200 hover:bg-primary-50 hover:text-text-primary dark:hover:bg-secondary-800/70"
+                            }`}
+                          >
+                            {tPropertyCategory(cat.code || cat.name || t("explore.category", "Category"))}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-secondary">
-                    {t("explore.subcategory", "Subcategory")}
+                    {t("explore.subcategories", "Subcategories")}
                   </label>
-                  <div className="relative">
-                    <select
-                      className="w-full appearance-none rounded-2xl border border-border bg-bg-input px-4 py-3 pr-10 text-text-primary outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-                      value={value.subcategoryId ?? ""}
-                      disabled={!value.categoryId}
-                      onChange={(e) =>
-                        onChange({ ...value, subcategoryId: e.target.value || null })
-                      }
-                    >
-                      <option value="">
-                        {value.categoryId ? t("explore.all_subcategories", "All subcategories") : t("explore.select_category_first", "Select category first")}
-                      </option>
-                      {subcategories.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.code || sub.name
-                            ? tPropertySubcategory(sub.code || sub.name)
-                            : t("explore.subcategory", "Subcategory")}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-                  </div>
+                  {value.categoryIds.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {subcategories.length === 0 && subcategoriesQuery.isLoading ? (
+                        <div className="w-full rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-secondary italic">
+                          {t("explore.loading_subcategories", "Loading subcategories…")}
+                        </div>
+                      ) : subcategories.length > 0 ? (
+                        subcategories.map((sub) => {
+                          const active = value.subcategoryIds.includes(sub.id);
+                          return (
+                            <button
+                              key={sub.id}
+                              type="button"
+                              onClick={() =>
+                                onChange({
+                                  ...value,
+                                  subcategoryIds: toggleInList(value.subcategoryIds, sub.id),
+                                })
+                              }
+                              className={`inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition ${
+                                active
+                                  ? "border-primary-200 bg-primary-100 text-primary-800 dark:border-primary-800 dark:bg-primary-900/30 dark:text-primary-200"
+                                  : "border-border bg-bg-input text-text-secondary hover:border-primary-200 hover:bg-primary-50 hover:text-text-primary dark:hover:bg-secondary-800/70"
+                              }`}
+                            >
+                              {sub.code || sub.name
+                                ? tPropertySubcategory(sub.code || sub.name)
+                                : t("explore.subcategory", "Subcategory")}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="w-full rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-secondary">
+                          {t("explore.no_subcategories", "No subcategories found for selected categories.")}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-secondary">
+                      {t("explore.select_category_first", "Select category first")}
+                    </div>
+                  )}
                 </div>
               </div>
 

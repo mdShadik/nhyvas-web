@@ -37,15 +37,15 @@ export default function ExplorePage({ searchParams }: Props) {
 
     didInitFromUrlRef.current = true;
 
-    const categoryId = searchParams.categoryId || searchParams.category;
+    const categoryIdsRaw = searchParams.categoryId || searchParams.category || searchParams.categories;
     const minPrice = searchParams.minPrice;
     const maxPrice = searchParams.maxPrice;
-    const subcategoryId = searchParams.subcategoryId;
+    const subcategoryIdsRaw = searchParams.subcategoryId || searchParams.subcategories;
     const amenityIdsRaw = searchParams.amenities;
     const locationRaw = searchParams.location;
 
     const hasUrlFilters = Boolean(
-      categoryId || minPrice || maxPrice || subcategoryId || amenityIdsRaw || locationRaw
+      categoryIdsRaw || minPrice || maxPrice || subcategoryIdsRaw || amenityIdsRaw || locationRaw
     );
 
     let locationNode: FilterState["locationNode"] = null;
@@ -60,10 +60,20 @@ export default function ExplorePage({ searchParams }: Props) {
 
     const prefs = bootstrapQuery.data?.preferences;
 
+    const categoryIds = categoryIdsRaw?.trim()
+      ? categoryIdsRaw.split(",").map((s:any) => s.trim()).filter(Boolean)
+      : (!hasUrlFilters && prefs?.category_id)
+        ? [prefs.category_id]
+        : [];
+
+    const subcategoryIds = subcategoryIdsRaw?.trim()
+      ? subcategoryIdsRaw.split(",").map((s:any) => s.trim()).filter(Boolean)
+      : [];
+
     const next: FilterState = {
       ...EMPTY_FILTERS,
-      categoryId: (categoryId?.trim() || (!hasUrlFilters && prefs?.category_id)) ? (categoryId?.trim() || prefs?.category_id || null) : null,
-      subcategoryId: subcategoryId?.trim() ? subcategoryId.trim() : null,
+      categoryIds,
+      subcategoryIds,
       locationNode,
       minPrice: (minPrice?.trim() || (!hasUrlFilters && prefs?.min_price !== null)) ? (minPrice?.trim() || String(prefs?.min_price ?? "")) : "",
       maxPrice: (maxPrice?.trim() || (!hasUrlFilters && prefs?.max_price !== null)) ? (maxPrice?.trim() || String(prefs?.max_price ?? "")) : "",
@@ -101,15 +111,10 @@ export default function ExplorePage({ searchParams }: Props) {
   });
 
   const appliedSubcategoriesQuery = useQuery({
-    queryKey: ["explore", "subcategories-applied", filters.categoryId],
-    queryFn: () => exploreService.getSubcategoriesByCategoryId(filters.categoryId!),
-    enabled: Boolean(filters.categoryId),
+    queryKey: ["explore", "subcategories-applied", filters.categoryIds],
+    queryFn: () => exploreService.getSubcategoriesByCategoryIds(filters.categoryIds),
+    enabled: filters.categoryIds.length > 0,
   });
-
-  const selectedCategory =
-    (categoriesQuery.data ?? []).find((row) => row.id === filters.categoryId) ?? null;
-  const selectedSubcategory =
-    (appliedSubcategoriesQuery.data ?? []).find((row) => row.id === filters.subcategoryId) ?? null;
 
   const listingFilters = useMemo(() => {
     const minPrice = filters.minPrice.trim() ? Number(filters.minPrice) : null;
@@ -120,8 +125,8 @@ export default function ExplorePage({ searchParams }: Props) {
       Number.isFinite(location?.latitude as number) && Number.isFinite(location?.longitude as number);
 
     const isFiltered = Boolean(
-      filters.categoryId ||
-      filters.subcategoryId ||
+      filters.categoryIds.length > 0 ||
+      filters.subcategoryIds.length > 0 ||
       (filters.minPrice && filters.minPrice.trim()) ||
       (filters.maxPrice && filters.maxPrice.trim()) ||
       (filters.amenityIds && filters.amenityIds.length > 0) ||
@@ -131,8 +136,8 @@ export default function ExplorePage({ searchParams }: Props) {
     const useUserLocation = filters.nearMe || !isFiltered;
 
     return {
-      categoryId: filters.categoryId,
-      subcategoryId: filters.subcategoryId,
+      categoryIds: filters.categoryIds,
+      subcategoryIds: filters.subcategoryIds,
       stateId: hasLocationPoint ? null : (location?.state_id ?? null),
       districtId: hasLocationPoint ? null : (location?.district_id ?? null),
       municipalityId: hasLocationPoint ? null : (location?.municipality_id ?? null),
@@ -224,8 +229,8 @@ export default function ExplorePage({ searchParams }: Props) {
         // Map AI structured data to FilterState for visual feedback in filter panel
         const nextFilters: FilterState = {
           ...EMPTY_FILTERS,
-          categoryId: analysis.propertyType?.[0] || null,
-          subcategoryId: analysis.subcategories?.[0] || null,
+          categoryIds: analysis.propertyType || [],
+          subcategoryIds: analysis.subcategories?.map(s => s.subCategory_id) || [],
           minPrice: analysis.budget?.min ? String(analysis.budget.min) : "",
           maxPrice: analysis.budget?.max ? String(analysis.budget.max) : "",
           amenityIds: analysis.features || [],

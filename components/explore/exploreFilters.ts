@@ -1,8 +1,8 @@
 import type { LocationSearchNode } from "@/services/apiService/explore";
 
 export type FilterState = {
-  categoryId: string | null;
-  subcategoryId: string | null;
+  categoryIds: string[];
+  subcategoryIds: string[];
   locationNode: LocationSearchNode | null;
   minPrice: string;
   maxPrice: string;
@@ -11,8 +11,8 @@ export type FilterState = {
 };
 
 export const EMPTY_FILTERS: FilterState = {
-  categoryId: null,
-  subcategoryId: null,
+  categoryIds: [],
+  subcategoryIds: [],
   locationNode: null,
   minPrice: "",
   maxPrice: "",

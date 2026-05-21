@@ -3,8 +3,8 @@ import { createSupabasePublicClient } from "@/app/api/_lib/supabaseClients";
 import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 
 type ExploreFilters = {
-  categoryId?: string | null;
-  subcategoryId?: string | null;
+  categoryIds?: string[] | null;
+  subcategoryIds?: string[] | null;
   stateId?: string | null;
   districtId?: string | null;
   municipalityId?: string | null;
@@ -43,8 +43,8 @@ export async function POST(req: Request) {
   const { data, error } = await supabase.rpc("get_app_recommended_listings", {
     p_limit: filters.limit ?? 60,
     p_offset: filters.offset ?? 0,
-    p_category: filters.categoryId ?? null,
-    p_subcategory: filters.subcategoryId ?? null,
+    p_categories: filters.categoryIds ?? null,
+    p_subcategories: filters.subcategoryIds ?? null,
     p_state_id: filters.stateId ?? null,
     p_district_id: filters.districtId ?? null,
     p_municipality_id: filters.municipalityId ?? null,

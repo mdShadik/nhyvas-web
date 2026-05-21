@@ -83,8 +83,8 @@ export type ListingDetailsResponse = {
 };
 
 export type ExploreFilters = {
-  categoryId?: string | null;
-  subcategoryId?: string | null;
+  categoryIds?: string[] | null;
+  subcategoryIds?: string[] | null;
   stateId?: string | null;
   districtId?: string | null;
   municipalityId?: string | null;
@@ -289,10 +289,10 @@ export const exploreService = {
     return { listing, enrichedAmenities: enrichedAmenities ?? [] };
   },
 
-  async getSubcategoriesByCategoryId(categoryId: string): Promise<MasterSubcategory[]> {
+  async getSubcategoriesByCategoryIds(categoryIds: string[]): Promise<MasterSubcategory[]> {
     const { rows } = await requestJson<{ rows: any[] }>("/api/explore/subcategories", {
       method: "POST",
-      body: JSON.stringify({ categoryId }),
+      body: JSON.stringify({ categoryIds }),
     });
 
     registerMasterPropertySubcategories((rows ?? []) as any);
