@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  CreditCard,
   Eye,
   Heart,
   Link as LinkIcon,
@@ -13,6 +15,7 @@ import {
   Map,
   MapPin,
   MessageCircle,
+  Pencil,
   Share2,
   Users,
 } from "lucide-react";
@@ -40,7 +43,6 @@ import { CoverageMap } from "@/components/map/CoverageMap";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { CameraCapture } from "@/components/ui/camera-capture";
 import { SearchParamsProps } from "@/app/(pages)/property/page";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getVideoDuration, MAX_VIDEO_DURATION, MAX_VIDEO_SIZE, MAX_VIDEO_UPLOAD_SIZE } from "@/lib/video/videoUtils";
 
@@ -115,6 +117,11 @@ export default function PropertyPage({searchParams}: Props) {
 
   const listing = listingQuery.data?.listing ?? null;
   const isOwner = Boolean(currentUserId && listing?.listed_by && listing.listed_by === currentUserId);
+  const listingStatus = listing?.status ?? "";
+  const isApprovedListing = listingStatus === "approved" || listingStatus === "published";
+  const canEditListing = isOwner && (listingStatus === "pending_review" || listingStatus === "changes_requested");
+  const canPayForListing = isOwner && listingStatus === "awaiting_payment";
+  const canUsePublicActions = !isOwner && isApprovedListing;
 
   useEffect(() => {
     if (id && listing && !isOwner) {
@@ -130,7 +137,7 @@ export default function PropertyPage({searchParams}: Props) {
   const favouriteIdsQuery = useQuery({
     queryKey: ["listing-details-favorite", id],
     queryFn: () => favouritesService.getMyFavouriteListingIdsForListings([id]),
-    enabled: Boolean(id) && !isOwner,
+    enabled: Boolean(id) && canUsePublicActions,
   });
   const isFavourite = (favouriteIdsQuery.data ?? []).includes(id);
 
@@ -141,14 +148,14 @@ export default function PropertyPage({searchParams}: Props) {
       const leads = await leadsService.getLeadsForListing(id);
       return leads.filter((lead) => lead.inquirer_id === currentUserId);
     },
-    enabled: Boolean(id && currentUserId) && !isOwner,
+    enabled: Boolean(id && currentUserId) && canUsePublicActions,
   });
   const hasInterested = (myLeadQuery.data ?? []).length > 0;
 
   const ownerLeadsQuery = useQuery({
     queryKey: ["owner-leads", id],
     queryFn: () => leadsService.getLeadsForListing(id ?? ""),
-    enabled: Boolean(id && isOwner),
+    enabled: Boolean(id && isOwner && isApprovedListing),
   });
   const ownerLeadCount = (ownerLeadsQuery.data ?? []).length;
 
@@ -247,6 +254,105 @@ export default function PropertyPage({searchParams}: Props) {
 
   const description = (listing?.description ?? "").trim();
   const displayDescription = showFullDescription ? description : description.slice(0, 420);
+  const paymentAmount =
+    listing?.approval_fee_amount == null
+      ? null
+      : `${tCurrency(listing.currency_code ?? "NPR")} ${formatPrice(
+          Number(listing.approval_fee_amount),
+          "",
+        )}`;
+  const formattedStatus = listingStatus
+    ? listingStatus
+        .split("_")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ")
+    : "";
+
+  const renderListingAction = (variant: "mobile" | "desktop") => {
+    const fullWidth = variant === "mobile";
+    const primaryClass = fullWidth
+      ? "flex w-full items-center justify-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] rounded-2xl"
+      : "inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 rounded-2xl";
+    const secondaryClass = fullWidth
+      ? "flex flex-1 items-center justify-center gap-2 border border-border bg-bg-input py-3.5 text-sm font-semibold text-text-primary transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
+      : "inline-flex items-center gap-2 border border-border bg-bg-input px-6 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800 rounded-2xl";
+    const chatClass = fullWidth
+      ? "flex flex-1 items-center justify-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
+      : "inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60 rounded-2xl";
+
+    if (canEditListing) {
+      return (
+        <Link href={`/add-property?listingId=${id}`} className={primaryClass}>
+          <Pencil className="h-4 w-4" />
+          {t("property.actions.edit_listing", "Edit Listing")}
+        </Link>
+      );
+    }
+
+    if (canPayForListing) {
+      return (
+        <Link href={`/profile/my-ads/payment?listingId=${id}`} className={primaryClass}>
+          <CreditCard className="h-4 w-4" />
+          {paymentAmount
+            ? t("property.actions.pay_amount", "Pay {{amount}}", { amount: paymentAmount })
+            : t("property.actions.pay", "Pay")}
+        </Link>
+      );
+    }
+
+    if (isOwner && isApprovedListing) {
+      return (
+        <Link href={`/profile/leads?listingId=${id}`} className={primaryClass}>
+          <Users className="h-4 w-4" />
+          {t("property.actions.my_interested", "My Interested")}
+          {ownerLeadCount > 0 ? ` (${ownerLeadCount})` : ""}
+        </Link>
+      );
+    }
+
+    if (!isOwner && isApprovedListing) {
+      return (
+        <div className={fullWidth ? "flex items-center gap-3" : "flex flex-wrap gap-3"}>
+          <button
+            type="button"
+            disabled={hasInterested || createLeadMutation.isPending}
+            onClick={() => requireAuth(() => createLeadMutation.mutate())}
+            className={secondaryClass}
+          >
+            {createLeadMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <LinkIcon className="h-4 w-4" />
+            )}
+            {hasInterested
+              ? t("property.actions.interested_done", "Interest sent")
+              : t("property.actions.interested", "I'm interested")}
+          </button>
+          <button
+            type="button"
+            disabled={createChatRoomMutation.isPending}
+            onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
+            className={chatClass}
+          >
+            {createChatRoomMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MessageCircle className="h-4 w-4" />
+            )}
+            {fullWidth ? t("property.actions.chat", "Chat") : t("property.actions.chat", "Chat with owner")}
+          </button>
+        </div>
+      );
+    }
+
+    if (!listingStatus) return null;
+
+    return (
+      <div className={fullWidth ? "w-full rounded-2xl border border-border bg-bg-input px-4 py-3 text-center text-sm font-semibold text-text-secondary" : "rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm font-semibold text-text-secondary"}>
+        {t("property.actions.status_message", "Status: {{status}}", { status: formattedStatus })}
+      </div>
+    );
+  };
 
   if (!id) {
     return (
@@ -343,7 +449,7 @@ export default function PropertyPage({searchParams}: Props) {
               >
                 <Share2 className="h-4.5 w-4.5" />
               </button>
-              {!isOwner ? (
+              {canUsePublicActions ? (
                 <button
                   type="button"
                   disabled={toggleFavouriteMutation.isPending}
@@ -549,47 +655,7 @@ export default function PropertyPage({searchParams}: Props) {
         {/* Fixed bottom bar */}
         {listing && !listingQuery.isLoading ? (
           <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-page/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] backdrop-blur-xl">
-            {isOwner ? (
-              <a
-                href={`/profile/leads?listingId=${id}`}
-                className="flex w-full items-center justify-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] rounded-2xl"
-              >
-                <Users className="h-4 w-4" />
-                {t("property.actions.my_interested", "My Interested")}
-                {ownerLeadCount > 0 ? ` (${ownerLeadCount})` : ""}
-              </a>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled={hasInterested || createLeadMutation.isPending}
-                  onClick={() => requireAuth(() => createLeadMutation.mutate())}
-                  className="flex flex-1 items-center justify-center gap-2 border border-border bg-bg-input py-3.5 text-sm font-semibold text-text-primary transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
-                >
-                  {createLeadMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <LinkIcon className="h-4 w-4" />
-                  )}
-                  {hasInterested
-                    ? t("property.actions.interested_done", "Interest sent")
-                    : t("property.actions.interested", "I'm interested")}
-                </button>
-                <Button
-                  type="button"
-                  disabled={createChatRoomMutation.isPending}
-                  onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                  className="flex flex-1 items-center justify-center gap-2 bg-linear-to-br via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 rounded-2xl"
-                >
-                  {createChatRoomMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <MessageCircle className="h-4 w-4" />
-                  )}
-                  {t("property.actions.chat", "Chat")}
-                </Button>
-              </div>
-            )}
+            {renderListingAction("mobile")}
           </div>
         ) : null}
 
@@ -656,7 +722,7 @@ export default function PropertyPage({searchParams}: Props) {
                 <Share2 className="h-4 w-4" />
                 {t("common.share", "Share")}
               </button>
-              {!isOwner ? (
+              {canUsePublicActions ? (
                 <button
                   type="button"
                   disabled={toggleFavouriteMutation.isPending}
@@ -921,47 +987,7 @@ export default function PropertyPage({searchParams}: Props) {
                       {t("property.actions.title", "Actions")}
                     </div>
                     <div className="mt-4 flex flex-wrap gap-3">
-                      {isOwner ? (
-                        <a
-                          href={`/profile/leads?listingId=${id}`}
-                          className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 rounded-2xl"
-                        >
-                          <Users className="h-4 w-4" />
-                          {t("property.actions.my_interested", "My Interested")}
-                          {ownerLeadCount > 0 ? ` (${ownerLeadCount})` : ""}
-                        </a>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            disabled={hasInterested || createLeadMutation.isPending}
-                            onClick={() => requireAuth(() => createLeadMutation.mutate())}
-                            className="inline-flex items-center gap-2 border border-border bg-bg-input px-6 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 disabled:opacity-60 dark:hover:bg-secondary-800 rounded-2xl"
-                          >
-                            {createLeadMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <LinkIcon className="h-4 w-4" />
-                            )}
-                            {hasInterested
-                              ? t("property.actions.interested_done", "Interest sent")
-                              : t("property.actions.interested", "I'm interested")}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={createChatRoomMutation.isPending}
-                            onClick={() => requireAuth(() => createChatRoomMutation.mutate())}
-                            className="inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60 rounded-2xl"
-                          >
-                            {createChatRoomMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <MessageCircle className="h-4 w-4" />
-                            )}
-                            {t("property.actions.chat", "Chat with owner")}
-                          </button>
-                        </>
-                      )}
+                      {renderListingAction("desktop")}
                       <button
                         type="button"
                         onClick={() =>

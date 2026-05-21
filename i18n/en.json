@@ -388,8 +388,8 @@
     "status": "Status: {{status}}"
   },
   "my_ads": {
-    "filters": { "all": "All", "approved": "Approved", "pending": "Pending", "changes": "Changes", "rejected": "Rejected" },
-    "status": { "approved": "Approved", "pending": "Pending Review", "changes_requested": "Changes Requested", "rejected": "Rejected", "unknown": "Unknown" },
+    "filters": { "all": "All", "approved": "Approved", "pending_review": "Pending Review", "awaiting_payment": "Awaiting Payment", "payment_verification": "Payment Verification", "changes": "Changes", "rejected": "Rejected", "expired": "Expired" },
+    "status": { "approved": "Approved", "pending_review": "Pending Review", "awaiting_payment": "Awaiting Payment", "payment_verification": "Payment Verification", "changes_requested": "Changes Requested", "rejected": "Rejected", "expired": "Expired", "unknown": "Unknown" },
     "empty_title": "No listings found",
     "empty_hint_all": "Ready to rent out your place? Return to the Landlord hub.",
     "empty_hint_filtered": "You have no {{status}} listings.",

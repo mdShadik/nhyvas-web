@@ -321,8 +321,8 @@
     "status": "स्थिति: {{status}}"
   },
   "my_ads": {
-    "filters": { "all": "सबै", "approved": "स्वीकृत", "pending": "पेन्डिङ", "changes": "परिवर्तन", "rejected": "अस्वीकृत" },
-    "status": { "approved": "स्वीकृत", "pending": "समीक्षा पेन्डिङ", "changes_requested": "परिवर्तन आवश्यक", "rejected": "अस्वीकृत", "unknown": "अज्ञात" },
+    "filters": { "all": "सबै", "approved": "स्वीकृत", "pending_review": "समीक्षा पेन्डिङ", "awaiting_payment": "भुक्तानी पर्खाइ", "payment_verification": "भुक्तानी प्रमाणीकरण", "changes": "परिवर्तन", "rejected": "अस्वीकृत", "expired": "म्याद सकिएको" },
+    "status": { "approved": "स्वीकृत", "pending_review": "समीक्षा पेन्डिङ", "awaiting_payment": "भुक्तानी पर्खाइ", "payment_verification": "भुक्तानी प्रमाणीकरण", "changes_requested": "परिवर्तन आवश्यक", "rejected": "अस्वीकृत", "expired": "म्याद सकिएको", "unknown": "अज्ञात" },
     "empty_title": "सूची फेला परेन",
     "empty_hint_all": "भाडामा दिन तयार हुनुहुन्छ? Landlord hub मा फर्कनुहोस्।",
     "empty_hint_filtered": "तपाईंको {{status}} सूची छैन।",

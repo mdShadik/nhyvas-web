@@ -155,7 +155,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
 
   const subcategoriesQuery = useQuery({
     queryKey: ["explore", "subcategories", categoryIdValue],
-    queryFn: () => exploreService.getSubcategoriesByCategoryId(categoryIdValue),
+    queryFn: () => exploreService.getSubcategoriesByCategoryIds([categoryIdValue]),
     enabled: Boolean(categoryIdValue),
   });
 

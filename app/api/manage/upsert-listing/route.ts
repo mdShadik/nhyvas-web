@@ -1,5 +1,4 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
-import { getUserIdOrThrow } from "@/app/api/_lib/auth";
 import { getAuthenticatedClientAndUserIdOrRespond } from "@/app/api/_lib/supabase";
 import { buildSearchablePropertyText, generateEmbedding } from "@/lib/ai/embedding";
 
@@ -151,13 +150,19 @@ export async function POST(req: Request) {
     if (existingError) return jsonError(existingError.message, 400);
     if (!existing) return jsonError("Listing not found.", 404);
 
-    if (existing.status !== "pending" && existing.status !== "changes_requested") {
-      return jsonError("Edit not allowed. Only pending and changes requested listings can be edited.", 403);
+    if (existing.status !== "pending_review" && existing.status !== "changes_requested") {
+      return jsonError("Edit not allowed. Only pending review and changes requested listings can be edited.", 403);
     }
 
     const { error } = await supabase
       .from("listing_moderation_queue")
-      .update(basePayload)
+      .update({
+        ...basePayload,
+        status: "pending_review",
+        moderator_note: null,
+        moderated_at: null,
+        moderated_by: null,
+      })
       .eq("id", listingId)
       .eq("listed_by", userId);
     if (error) return jsonError(error.message, 400);
@@ -168,7 +173,7 @@ export async function POST(req: Request) {
     .from("listing_moderation_queue")
     .insert({
       ...insertPayload,
-      status: "pending",
+      status: "pending_review",
     })
     .select("id")
     .maybeSingle();

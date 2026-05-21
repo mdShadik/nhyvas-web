@@ -42,8 +42,8 @@ export function ListingCard({
   const shouldShowEditButton = isOwnAd && !isPublished;
   const shouldShowRentedToggle = isOwnAd && isPublished;
 
-  const categoryDisplayName = listing.property_category_name || (listing as any).property_category;
-  const subcategoryDisplayName = listing.subcategory_name || (listing as any).subcategory;
+  const categoryDisplayName = listing.property_category_name || listing.property_category;
+  const subcategoryDisplayName = listing.subcategory_name || listing.subcategory;
 
   const cardContent = (
     <article
@@ -155,12 +155,14 @@ export function ListingCard({
                       "shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
                       listing.status === "approved" || listing.status === "published"
                         ? "border-emerald-500/20 bg-emerald-500/20 text-emerald-500 dark:text-emerald-400"
-                        : listing.status === "pending"
+                        : listing.status === "pending_review" ||
+                            listing.status === "awaiting_payment" ||
+                            listing.status === "payment_verification"
                           ? "border-amber-500/20 bg-amber-500/20 text-amber-500 dark:text-amber-400"
                           : "border-red-500/20 bg-red-500/20 text-red-500 dark:text-red-400",
                     )}
                   >
-                    {t(`status.${listing.status}`, listing.status.replace("_", " "))}
+                    {t(`my_ads.status.${listing.status}`, listing.status.replace("_", " "))}
                   </span>
                 )}
               </div>

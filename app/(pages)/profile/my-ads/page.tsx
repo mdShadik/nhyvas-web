@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil } from "lucide-react";
 import { manageService } from "@/services/apiService/manage";
@@ -21,7 +21,7 @@ export default function ProfileMyAdsPage() {
     queryFn: () => manageService.getMyAds(),
   });
 
-  const rows = adsQuery.data ?? [];
+  const rows = useMemo(() => adsQuery.data ?? [], [adsQuery.data]);
 
   const filteredRows = rows.filter((row) => {
     if (statusFilter === "all") return true;
@@ -59,9 +59,11 @@ export default function ProfileMyAdsPage() {
       <div className="mb-6 flex flex-wrap gap-2">
         {[
           { id: "all", label: t("common.all", "All") },
-          { id: "approved", label: t("status.approved", "Approved") },
-          { id: "pending", label: t("status.pending", "Pending") },
-          { id: "changes_requested", label: t("status.request_change", "Request Change") },
+          { id: "approved", label: t("my_ads.status.approved", "Approved") },
+          { id: "pending_review", label: t("my_ads.status.pending_review", "Pending Review") },
+          { id: "awaiting_payment", label: t("my_ads.status.awaiting_payment", "Awaiting Payment") },
+          { id: "payment_verification", label: t("my_ads.status.payment_verification", "Payment Verification") },
+          { id: "changes_requested", label: t("my_ads.status.changes_requested", "Request Change") },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -95,12 +97,14 @@ export default function ProfileMyAdsPage() {
               isOwnAd
               onToggleRented={handleToggleRented}
               action={
-                <Link href={{ pathname: "/add-property", query: { listingId: item.id } }}>
-                  <Button variant="outline" size="sm" className="h-9 px-3">
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                </Link>
+                item.status === "pending_review" || item.status === "changes_requested" ? (
+                  <Link href={{ pathname: "/add-property", query: { listingId: item.id } }}>
+                    <Button variant="outline" size="sm" className="h-9 px-3">
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  </Link>
+                ) : null
               }
             />
           ))}

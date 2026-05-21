@@ -28,8 +28,10 @@ export type ExploreListing = {
   id: string;
   listed_by?: string | null;
   property_title: string;
+  property_category: string;
   property_category_name: string;
   property_category_id: string;
+  subcategory: string | null;
   subcategory_name: string | null;
   subcategory_id: string | null;
   location_text: string;
@@ -58,6 +60,8 @@ export type ExploreListing = {
   story_image_limit?: number;
   story_video_limit?: number;
   status?: string;
+  approval_fee_percentage?: number | null;
+  approval_fee_amount?: number | null;
   moderator_note?: string | null;
   submitted_at: string;
   view_count?: number | null;
@@ -284,6 +288,8 @@ export const exploreService = {
       is_story: row.is_story ?? false,
       story_image_limit: row.story_image_limit != null ? Number(row.story_image_limit) : 5,
       story_video_limit: row.story_video_limit != null ? Number(row.story_video_limit) : 5,
+      approval_fee_percentage: row.approval_fee_percentage != null ? Number(row.approval_fee_percentage) : null,
+      approval_fee_amount: row.approval_fee_amount != null ? Number(row.approval_fee_amount) : null,
     } as ListingDetails : null;
 
     return { listing, enrichedAmenities: enrichedAmenities ?? [] };
