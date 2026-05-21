@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  Eye,
   Heart,
   Link as LinkIcon,
   Loader2,
@@ -25,6 +26,7 @@ import {
   favouritesService,
   leadsService,
   storiesService,
+  activityService,
 } from "@/services/apiService";
 import { uploadToR2 } from "@/services/apiService/media";
 import type { ExploreListing } from "@/services/apiService/explore";
@@ -113,6 +115,13 @@ export default function PropertyPage({searchParams}: Props) {
 
   const listing = listingQuery.data?.listing ?? null;
   const isOwner = Boolean(currentUserId && listing?.listed_by && listing.listed_by === currentUserId);
+
+  useEffect(() => {
+    if (id && listing && !isOwner) {
+      void activityService.recordPropertyView(id);
+    }
+  }, [id, listing, isOwner]);
+
   const hasMap = Boolean(listing?.latitude != null && listing?.longitude != null);
   const lat = listing?.latitude != null ? Number(listing.latitude) : NaN;
   const lng = listing?.longitude != null ? Number(listing.longitude) : NaN;
@@ -406,6 +415,13 @@ export default function PropertyPage({searchParams}: Props) {
                     {tPropertySubcategory(listing.subcategory)}
                   </span>
                 ) : null}
+
+                {listing?.view_count !== undefined && (
+                  <div className="flex items-center gap-1 ml-auto text-xs font-medium text-text-tertiary">
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{listing.view_count} {t("property.views", "views")}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -838,6 +854,13 @@ export default function PropertyPage({searchParams}: Props) {
                               {tPropertySubcategory(listing.subcategory)}
                             </span>
                           ) : null}
+
+                          {listing?.view_count !== undefined && (
+                            <div className="flex items-center gap-1.5 ml-auto text-sm font-medium text-text-tertiary">
+                              <Eye className="h-4 w-4" />
+                              <span>{listing.view_count} {t("property.views", "views")}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="shrink-0 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-5 py-3 text-white shadow-sm rounded-2xl">

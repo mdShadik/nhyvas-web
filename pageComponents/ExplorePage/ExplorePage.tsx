@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { exploreService } from "@/services/apiService/explore";
+import { profileService } from "@/services/apiService/profile";
 import { SlidersHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
@@ -10,6 +11,7 @@ import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { useTranslation } from "react-i18next";
 import { ListingCard } from "@/components/explore/ListingCard";
 import { SearchParamsProps } from "@/app/(pages)/explore/page";
+import { AiSearch } from "@/components/AiSearch/Aisearch";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -23,16 +25,27 @@ export default function ExplorePage({ searchParams }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
+  const bootstrapQuery = useQuery({
+    queryKey: ["auth", "bootstrap"],
+    queryFn: () => profileService.getBootstrap(),
+  });
+
   useEffect(() => {
     if (didInitFromUrlRef.current) return;
+    if (bootstrapQuery.isLoading) return;
+
     didInitFromUrlRef.current = true;
 
     const categoryCode = searchParams.categoryCode || searchParams.category;
     const minPrice = searchParams.minPrice;
     const maxPrice = searchParams.maxPrice;
     const subcategoryId = searchParams.subcategoryId;
-    const amenityNames = searchParams.amenities;
+    const amenityIdsRaw = searchParams.amenities;
     const locationRaw = searchParams.location;
+
+    const hasUrlFilters = Boolean(
+      categoryCode || minPrice || maxPrice || subcategoryId || amenityIdsRaw || locationRaw
+    );
 
     let locationNode: FilterState["locationNode"] = null;
     if (locationRaw) {
@@ -44,24 +57,28 @@ export default function ExplorePage({ searchParams }: Props) {
       } catch {}
     }
 
+    const prefs = bootstrapQuery.data?.preferences;
+
     const next: FilterState = {
       ...EMPTY_FILTERS,
-      categoryCode: categoryCode?.trim() ? categoryCode.trim() : null,
+      categoryCode: (categoryCode?.trim() || (!hasUrlFilters && prefs?.category_code)) ? (categoryCode?.trim() || prefs?.category_code || null) : null,
       subcategoryId: subcategoryId?.trim() ? subcategoryId.trim() : null,
       locationNode,
-      minPrice: minPrice?.trim() ? minPrice.trim() : "",
-      maxPrice: maxPrice?.trim() ? maxPrice.trim() : "",
-      amenityNames: amenityNames?.trim()
-        ? amenityNames
+      minPrice: (minPrice?.trim() || (!hasUrlFilters && prefs?.min_price !== null)) ? (minPrice?.trim() || String(prefs?.min_price ?? "")) : "",
+      maxPrice: (maxPrice?.trim() || (!hasUrlFilters && prefs?.max_price !== null)) ? (maxPrice?.trim() || String(prefs?.max_price ?? "")) : "",
+      amenityIds: amenityIdsRaw?.trim()
+        ? amenityIdsRaw
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean)
-        : [],
+        : (!hasUrlFilters && prefs?.preferred_amenities?.length)
+          ? prefs.preferred_amenities
+          : [],
     };
 
     setFilters(next);
     setDraftFilters(next);
-  }, [searchParams]);
+  }, [searchParams, bootstrapQuery.isLoading, bootstrapQuery.data]);
 
   useEffect(() => {
     if (!("geolocation" in navigator)) return;
@@ -101,6 +118,15 @@ export default function ExplorePage({ searchParams }: Props) {
     const hasLocationPoint =
       Number.isFinite(location?.latitude as number) && Number.isFinite(location?.longitude as number);
 
+    const isFiltered = Boolean(
+      filters.categoryCode ||
+      filters.subcategoryId ||
+      (filters.minPrice && filters.minPrice.trim()) ||
+      (filters.maxPrice && filters.maxPrice.trim()) ||
+      (filters.amenityIds && filters.amenityIds.length > 0) ||
+      filters.locationNode
+    );
+
     return {
       category: selectedCategory?.name ?? null,
       subcategory: selectedSubcategory?.name ?? null,
@@ -110,13 +136,13 @@ export default function ExplorePage({ searchParams }: Props) {
       wardId: hasLocationPoint ? null : (location?.ward_id ?? null),
       minPrice: Number.isFinite(minPrice as number) ? minPrice : null,
       maxPrice: Number.isFinite(maxPrice as number) ? maxPrice : null,
-      amenityTags: filters.amenityNames,
+      amenityTags: filters.amenityIds,
       filterLat: hasLocationPoint ? (location?.latitude ?? null) : null,
       filterLng: hasLocationPoint ? (location?.longitude ?? null) : null,
       filterRadiusKm: hasLocationPoint ? 2 : null,
-      userLat: userLocation?.latitude ?? null,
-      userLng: userLocation?.longitude ?? null,
-      userRadiusKm: 15,
+      userLat: !isFiltered ? (userLocation?.latitude ?? null) : null,
+      userLng: !isFiltered ? (userLocation?.longitude ?? null) : null,
+      userRadiusKm: !isFiltered ? 5 : null,
       limit: 120,
       offset: 0,
     };
@@ -135,6 +161,19 @@ export default function ExplorePage({ searchParams }: Props) {
 
   const listings = listingsQuery.data ?? [];
   const loading = listingsQuery.isLoading || listingsQuery.isFetching;
+
+  const [isSearching, setIsSearching] = useState(false);
+  const [results, setResults] = useState<string[]>([]);
+
+  const handleSearch = async (query: string) => {
+    setIsSearching(true);
+    // Your API call
+    const res = await fetch(`/api/ai-search?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    setResults(data.results);
+    setIsSearching(false);
+  };
+
 
   return (
     <div className={`flex min-h-screen flex-col`}>
@@ -223,6 +262,42 @@ export default function ExplorePage({ searchParams }: Props) {
           />
         </MobileBottomSheet>
       </div>
+
+      <AiSearch
+        onSearch={handleSearch}
+        isSearching={isSearching}
+        buttonLabel="AI Search"
+        buttonPosition="bottom-right"
+        showMic
+        onMicPress={() => console.log("Start voice input")}
+        minQueryLength={2}
+        placeholders={[
+          "Search properties with AI…",
+          "Try: 3 bedroom apartment downtown",
+          "Ask: best neighborhoods for families",
+          "Find: villas under $500k with pool",
+        ]}
+        suggestions={[
+          { id: "1", label: "Apartments near me", icon: "trending" },
+          { id: "2", label: "Pet-friendly rentals", icon: "suggestion" },
+          { id: "3", label: "New listings this week", icon: "trending" },
+          { id: "4", label: "Luxury penthouses", icon: "suggestion" },
+        ]}
+      >
+        {/* Results render here */}
+        {results.length > 0 && (
+          <div className="flex flex-col gap-2 pt-2">
+            {results.map((r, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border bg-bg-input p-3 text-sm text-text-primary"
+              >
+                {r}
+              </div>
+            ))}
+          </div>
+        )}
+      </AiSearch>
     </div>
   );
 }

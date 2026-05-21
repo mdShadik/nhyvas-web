@@ -23,8 +23,19 @@ type ExploreFilters = {
 };
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => null)) as null | { filters?: ExploreFilters };
+  const body = (await req.json().catch(() => null)) as null | { 
+    filters?: ExploreFilters;
+    userLat?: number;
+    userLng?: number;
+    userRadiusKm?: number;
+  };
+  
   const filters = body?.filters ?? {};
+  
+  // Use top-level params if available, otherwise fallback to filters
+  const userLat = body?.userLat ?? filters.userLat;
+  const userLng = body?.userLng ?? filters.userLng;
+  const userRadiusKm = body?.userRadiusKm ?? filters.userRadiusKm;
 
   // If the user is logged in, use an authenticated Supabase client so the RPC can
   // exclude the caller's own listings (see get_app_recommended_listings: auth.uid()).
@@ -44,9 +55,9 @@ export async function POST(req: Request) {
     p_filter_lat: Number.isFinite(filters.filterLat as number) ? filters.filterLat : null,
     p_filter_lng: Number.isFinite(filters.filterLng as number) ? filters.filterLng : null,
     p_filter_radius_km: Number.isFinite(filters.filterRadiusKm as number) ? filters.filterRadiusKm : 2,
-    p_user_lat: Number.isFinite(filters.userLat as number) ? filters.userLat : null,
-    p_user_lng: Number.isFinite(filters.userLng as number) ? filters.userLng : null,
-    p_user_radius_km: Number.isFinite(filters.userRadiusKm as number) ? filters.userRadiusKm : 15,
+    p_user_lat: Number.isFinite(userLat as number) ? userLat : null,
+    p_user_lng: Number.isFinite(userLng as number) ? userLng : null,
+    p_user_radius_km: typeof userRadiusKm === "number" ? userRadiusKm : 5,
   });
 
   if (error) return jsonError(error.message, 400);

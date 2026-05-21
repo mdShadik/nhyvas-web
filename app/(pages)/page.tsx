@@ -169,8 +169,16 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
           <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
           <div className="relative z-10 flex h-full flex-col justify-between p-3 sm:p-10 pointer-events-none">
-            <div className="rounded-full w-fit bg-linear-to-r from-primary-500 to-tertiary-500 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
-              {t("home.badge_featured")}
+            <div className="relative overflow-hidden rounded-full w-fit bg-gradient-to-r from-primary-500 to-tertiary-500 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
+  
+              {/* Shimmer */}
+              <div className="absolute inset-0 overflow-hidden rounded-full">
+                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              </div>
+
+              <span className="relative z-10">
+                {t("home.badge_featured")}
+              </span>
             </div>
 
             <div className="max-w-2xl mt-auto">
@@ -266,7 +274,7 @@ export default function HomePage() {
 
   const categories = categoriesQuery.data ?? [];
   const heroListings = heroQuery.data ?? [];
-  const featuredListing = heroListings[0];
+  // const featuredListing = heroListings[0];
 
   const filteredCategories = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -425,7 +433,7 @@ export default function HomePage() {
               if (draftFilters.subcategoryId) query.subcategoryId = draftFilters.subcategoryId;
               if (draftFilters.minPrice.trim()) query.minPrice = draftFilters.minPrice.trim();
               if (draftFilters.maxPrice.trim()) query.maxPrice = draftFilters.maxPrice.trim();
-              if (draftFilters.amenityNames.length) query.amenities = draftFilters.amenityNames.join(",");
+              if (draftFilters.amenityIds.length) query.amenities = draftFilters.amenityIds.join(",");
               if (draftFilters.locationNode) query.location = JSON.stringify(draftFilters.locationNode);
               const params = new URLSearchParams(query).toString();
               router.push(params ? `/explore?${params}` : "/explore");

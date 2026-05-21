@@ -57,16 +57,12 @@ export type ExploreListing = {
   status?: string;
   moderator_note?: string | null;
   submitted_at: string;
+  view_count?: number | null;
 };
 
 export type ListingDetails = ExploreListing & {
   description: string;
   updated_at: string | null;
-  total_area_sqft?: number | null;
-  carpet_area_sqft?: number | null;
-  total_floor?: number | null;
-  property_floor_no?: number | null;
-  view_count?: number | null;
 };
 
 export type ListingAmenity = {
@@ -223,9 +219,15 @@ export const exploreService = {
   },
 
   async getRecommendedListings(filters: ExploreFilters = {}): Promise<ExploreListing[]> {
+    const { userLat, userLng, userRadiusKm, ...restFilters } = filters;
     const { rows } = await requestJson<{ rows: any[] }>("/api/explore/recommended", {
       method: "POST",
-      body: JSON.stringify({ filters }),
+      body: JSON.stringify({ 
+        filters: restFilters,
+        userLat,
+        userLng,
+        userRadiusKm
+      }),
     });
     return mapExploreListingRows(rows ?? []);
   },

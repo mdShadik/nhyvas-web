@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { MapPin, Heart, ArrowRight } from "lucide-react";
+import { MapPin, Heart, ArrowRight, Eye } from "lucide-react";
 import { formatPrice } from "@/lib/formatPrice";
 import { logoSingleN, noImagePlaceholder } from "@/assets";
 import { useTranslation } from "react-i18next";
@@ -146,6 +146,20 @@ export function ListingCard({
                     {tPropertySubcategory(listing.subcategory)}
                   </span>
                 )}
+                {isOwnAd && listing.status && (
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                      listing.status === "approved" || listing.status === "published"
+                        ? "border-emerald-500/20 bg-emerald-500/20 text-emerald-500 dark:text-emerald-400"
+                        : listing.status === "pending"
+                          ? "border-amber-500/20 bg-amber-500/20 text-amber-500 dark:text-amber-400"
+                          : "border-red-500/20 bg-red-500/20 text-red-500 dark:text-red-400",
+                    )}
+                  >
+                    {t(`status.${listing.status}`, listing.status.replace("_", " "))}
+                  </span>
+                )}
               </div>
               <h3 className="line-clamp-1 text-base font-bold text-text-primary group-hover:text-primary-500 transition-colors sm:text-lg">
                 {listing.property_title}
@@ -155,6 +169,13 @@ export function ListingCard({
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-primary-500" />
                 <span className="truncate">{listing.location_text}</span>
               </div>
+
+              {listing.view_count !== undefined && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-text-tertiary font-medium">
+                  <Eye className="h-3 w-3" />
+                  <span>{listing.view_count} {t("property.views", "views")}</span>
+                </div>
+              )}
             </div>
 
             {isCompact && !shouldShowRentedToggle && action}

@@ -48,7 +48,7 @@ function EditProfileForm({
     minPrice: string;
     maxPrice: string;
     categoryCode: string;
-    amenityNames: string[];
+    amenityIds: string[];
   };
   setForm: React.Dispatch<React.SetStateAction<typeof form>>;
   categoriesData: { code: string; name: string }[];
@@ -58,7 +58,6 @@ function EditProfileForm({
 }) {
   return (
     <div className="space-y-4">
-
       <div className="space-y-1.5 flex flex-col gap-2 justify-center items-center">
         <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
           <Camera className="h-4 w-4 text-text-tertiary" />
@@ -163,7 +162,7 @@ function EditProfileForm({
 
         <div className="flex flex-wrap gap-2">
           {amenitiesData.slice(0, 24).map((amenity) => {
-            const selected = form.amenityNames.includes(amenity.name);
+            const selected = form.amenityIds.includes(amenity.id);
 
             return (
               <button
@@ -172,9 +171,9 @@ function EditProfileForm({
                 onClick={() =>
                   setForm((p) => ({
                     ...p,
-                    amenityNames: selected
-                      ? p.amenityNames.filter((a) => a !== amenity.name)
-                      : [...p.amenityNames, amenity.name],
+                    amenityIds: selected
+                      ? p.amenityIds.filter((id) => id !== amenity.id)
+                      : [...p.amenityIds, amenity.id],
                   }))
                 }
                 className={cn(
@@ -229,7 +228,7 @@ export function ProfileOverview() {
     minPrice: "",
     maxPrice: "",
     categoryCode: "",
-    amenityNames: [] as string[],
+    amenityIds: [] as string[],
   });
 
   const selectedCategory = useMemo(() => {
@@ -254,7 +253,7 @@ export function ProfileOverview() {
           ? String(preferences.max_price)
           : "",
       categoryCode: preferences?.category_code ?? "",
-      amenityNames: preferences?.preferred_amenities ?? [],
+      amenityIds: preferences?.preferred_amenities ?? [],
     });
 
     setEditOpen(true);
@@ -283,7 +282,7 @@ export function ProfileOverview() {
         min_price: minPrice,
         max_price: maxPrice,
         category_code: form.categoryCode.trim() || null,
-        preferred_amenities: form.amenityNames,
+        preferred_amenities: form.amenityIds,
       });
     },
     onMutate: () => setBusy(true),
@@ -431,15 +430,19 @@ export function ProfileOverview() {
             </div>
             <div className="flex flex-wrap justify-center gap-1.5">
               {preferredAmenities.length ? (
-                preferredAmenities.slice(0, 12).map((amenityName) => (
-                  <span
-                    key={amenityName}
-                    className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
-                    style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
-                  >
-                    {tAmenity(amenityName)}
-                  </span>
-                ))
+                preferredAmenities.slice(0, 12).map((amenityId) => {
+                  const amenity = amenitiesData.find((a) => a.id === amenityId);
+                  const name = amenity ? amenity.name : amenityId;
+                  return (
+                    <span
+                      key={amenityId}
+                      className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
+                      style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
+                    >
+                      {tAmenity(name)}
+                    </span>
+                  );
+                })
               ) : (
                 <div className="text-sm text-text-tertiary">
                   {t("property.no_amenities")}
@@ -535,15 +538,19 @@ export function ProfileOverview() {
           </div>
           <div className="flex flex-wrap justify-center gap-1.5">
             {preferredAmenities.length ? (
-              preferredAmenities.slice(0, 12).map((amenityName) => (
-                <span
-                  key={amenityName}
-                  className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
-                  style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
-                >
-                  {tAmenity(amenityName)}
-                </span>
-              ))
+              preferredAmenities.slice(0, 12).map((amenityId) => {
+                const amenity = amenitiesData.find((a) => a.id === amenityId);
+                const name = amenity ? amenity.name : amenityId;
+                return (
+                  <span
+                    key={amenityId}
+                    className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
+                    style={{ clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))" }}
+                  >
+                    {tAmenity(name)}
+                  </span>
+                );
+              })
             ) : (
               <div className="text-sm text-text-tertiary">
                 {t("property.no_amenities")}

@@ -6,7 +6,7 @@ export type FilterState = {
   locationNode: LocationSearchNode | null;
   minPrice: string;
   maxPrice: string;
-  amenityNames: string[];
+  amenityIds: string[];
 };
 
 export const EMPTY_FILTERS: FilterState = {
@@ -15,6 +15,6 @@ export const EMPTY_FILTERS: FilterState = {
   locationNode: null,
   minPrice: "",
   maxPrice: "",
-  amenityNames: [],
+  amenityIds: [],
 };
 

@@ -364,3 +364,16 @@ body {
     display: none;
   }
 }
+
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+  width: 50%;
+  transform: skewX(-20deg);
+}

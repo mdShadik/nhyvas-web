@@ -1,20 +1,17 @@
 "use client";
 
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 export default function LogoutPage() {
   const { t } = useTranslation();
 
   useEffect(() => {
     const performLogout = async () => {
-      // Clear client-side Supabase session (localStorage) first.
-      await supabaseBrowser.auth.signOut().catch(() => null);
-
-      // Clear secure HttpOnly cookies (used by server/middleware auth checks).
+      // Clear secure HttpOnly cookies (source of truth for web auth).
       await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-
+       await supabaseBrowser.auth.signOut().catch(() => null);
       // Redirect to login
       window.location.href = "/login";
     };

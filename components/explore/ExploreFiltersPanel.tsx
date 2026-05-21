@@ -88,7 +88,7 @@ function getActiveFilterCount(
     if (value.maxPrice) count += 1;
   }
 
-  count += value.amenityNames.length;
+  count += value.amenityIds.length;
   return count;
 }
 
@@ -226,10 +226,10 @@ export function ExploreFiltersPanel({
       }
     }
 
-    if (value.amenityNames.length) {
+    if (value.amenityIds.length) {
       chips.push({
         key: "amenities",
-        label: `${value.amenityNames.length} ${value.amenityNames.length === 1 ? t("explore.amenity", "amenity") : t("explore.amenities", "amenities").toLowerCase()}`,
+        label: `${value.amenityIds.length} ${value.amenityIds.length === 1 ? t("explore.amenity", "amenity") : t("explore.amenities", "amenities").toLowerCase()}`,
       });
     }
 
@@ -362,11 +362,11 @@ export function ExploreFiltersPanel({
 
               <AmenitiesField
                 groupedAmenities={groupedAmenities}
-                selected={value.amenityNames}
-                onToggle={(name) =>
+                selected={value.amenityIds}
+                onToggle={(id) =>
                   onChange({
                     ...value,
-                    amenityNames: toggleInList(value.amenityNames, name),
+                    amenityIds: toggleInList(value.amenityIds, id),
                   })
                 }
               />
@@ -748,7 +748,7 @@ function AmenitiesField({
 }: {
   groupedAmenities: Array<MasterAmenityCategory & { amenities: MasterAmenity[] }>;
   selected: string[];
-  onToggle: (name: string) => void;
+  onToggle: (id: string) => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -794,13 +794,13 @@ function AmenitiesField({
               {group.amenities.length ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {group.amenities.map((amenity) => {
-                    const active = selected.includes(amenity.name);
+                    const active = selected.includes(amenity.id);
 
                     return (
                       <button
                         key={amenity.id}
                         type="button"
-                        onClick={() => onToggle(amenity.name)}
+                        onClick={() => onToggle(amenity.id)}
                         aria-pressed={active}
                         className={`inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition ${
                           active
