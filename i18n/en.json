@@ -227,6 +227,29 @@
     "reset": "Reset",
     "apply_filters": "Apply Filters"
   },
+  "ai_search": {
+    "button_label": "AI Search",
+    "powered_by": "Powered by Kimsha",
+    "suggestions": "Suggestions",
+    "disclaimer": "AI-powered results may vary",
+    "type_more": "Type {{count}} more {{unit}}…",
+    "unit_char": "char",
+    "unit_chars": "chars",
+    "esc_to_close": "to close",
+    "search": "Search",
+    "placeholders": {
+      "default": "Search properties with AI…",
+      "try_apartment": "Try: 3 bedroom apartment downtown",
+      "ask_neighborhoods": "Ask: best neighborhoods for families",
+      "find_villas": "Find: villas under $500k with pool"
+    },
+    "suggestion_labels": {
+      "near_me": "Apartments near me",
+      "pet_friendly": "Pet-friendly rentals",
+      "new_listings": "New listings this week",
+      "luxury": "Luxury penthouses"
+    }
+  },
   "landlord": {
     "category": {
       "title": "What are you listing?",
@@ -666,5 +689,20 @@
     "disclaimer": "By submitting, you confirm that the payment has been completed. False submissions may lead to account suspension.",
     "unavailable_title": "Payment Unavailable",
     "unavailable_desc": "No active payment gateway is configured. Please contact support."
+  },
+  "landlord_verify": {
+    "title": "Landlord Verification",
+    "subtitle": "Please verify yourself as a landlord to start listing properties.",
+    "legal_name": "Legal Name",
+    "legal_name_placeholder": "Your full legal name",
+    "phone_number": "Phone Number",
+    "phone_number_placeholder": "98XXXXXXXX",
+    "house_image": "Property Image",
+    "house_image_hint": "Upload a clear photo of the property you're listing.",
+    "upload_image": "Upload Image",
+    "continue": "Verify and Continue",
+    "verifying": "Verifying...",
+    "success_message": "Verification completed successfully!",
+    "error_message": "Verification failed. Please try again."
   }
 }

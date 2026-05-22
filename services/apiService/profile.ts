@@ -7,6 +7,7 @@ export type AppProfile = {
   avatar_url: string | null;
   role: string | null;
   phone?: string | null;
+  landlord_verified?: boolean;
 };
 
 export type UserPreferences = {
@@ -16,6 +17,12 @@ export type UserPreferences = {
   category_id: string | null;
   category_code: string | null;
   preferred_amenities: string[];
+};
+
+export type LandlordVerificationInput = {
+  legalName: string;
+  phoneNumber: string;
+  houseImageUrl: string;
 };
 
 export type CompleteOnboardingInput = {
@@ -41,6 +48,7 @@ export const profileService = {
       avatar_url: row.avatar_url ?? null,
       role: row.role ?? null,
       phone: row.phone ?? null,
+      landlord_verified: row.landlord_verified ?? false,
     };
 
     const preferences: UserPreferences = {
@@ -58,6 +66,13 @@ export const profileService = {
   async getCurrentProfile(): Promise<AppProfile | null> {
     const { profile } = await requestJson<{ profile: AppProfile | null }>("/api/profile/current", { method: "POST" });
     return profile ?? null;
+  },
+
+  async submitLandlordVerification(input: LandlordVerificationInput): Promise<void> {
+    await requestJson("/api/profile/landlord-verify", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
   },
 
   async completeOnboarding(input: CompleteOnboardingInput): Promise<void> {

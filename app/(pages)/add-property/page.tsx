@@ -1,4 +1,5 @@
 import { AddPropertyPage } from "@/pageComponents";
+import { RequireAuth } from "@/components/profile/RequireAuth";
 
 export interface SearchParamsProps {
   listingId?: string;
@@ -15,5 +16,9 @@ export default async function Page({
 }: PageProps) {
   const params = await searchParams;
 
-  return <AddPropertyPage searchParams={params} />;
+  return (
+    <RequireAuth>
+      <AddPropertyPage searchParams={params} />
+    </RequireAuth>
+  );
 }

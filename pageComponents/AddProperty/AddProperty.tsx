@@ -146,6 +146,20 @@ export default function AddPropertyPage({ searchParams }: Props) {
     queryFn: () => exploreService.getHomeCategories(50),
   });
 
+  const bootstrapQuery = useQuery({
+    queryKey: ["profile", "bootstrap"],
+    queryFn: () => profileService.getBootstrap(),
+  });
+
+  useEffect(() => {
+    if (bootstrapQuery.isLoading) return;
+    const profile = bootstrapQuery.data?.profile;
+    // Redirect to verification if not verified and not editing an existing listing
+    if (profile && !profile.landlord_verified && !listingId) {
+      router.replace("/profile/landlord-verify");
+    }
+  }, [bootstrapQuery.isLoading, bootstrapQuery.data, listingId, router]);
+
   const categoryIdValue = watch("categoryId");
   const selectedCategory: HomeCategory | null = useMemo(() => {
     const rows = categoriesQuery.data ?? [];

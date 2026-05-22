@@ -12,6 +12,8 @@ import { cacheListings } from "@/stores/myAdsStore";
 import { ListingCard } from "@/components/explore/ListingCard";
 import { cn } from "@/lib/utils";
 
+import { ListPropertyButton } from "@/components/common/ListPropertyButton";
+
 export default function ProfileMyAdsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -93,9 +95,9 @@ export default function ProfileMyAdsPage() {
           <p className="text-sm text-text-tertiary mt-1">{t("my_ads.manage_subtitle")}</p>
         </div>
         
-        <Link href="/add-property" className="group relative w-full sm:w-auto">
+        <ListPropertyButton className="group relative w-full sm:w-auto">
           <div className="absolute inset-0 bg-primary-500 blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
-          <button className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-3.5 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] sm:w-auto">
+          <div className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-3.5 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] sm:w-auto">
              {/* Shimmer Effect */}
              <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                 <motion.div 
@@ -107,8 +109,8 @@ export default function ProfileMyAdsPage() {
              
              <Plus className="h-4.5 w-4.5" strokeWidth={3} />
              <span className="relative z-10">{t("explore.list_property")}</span>
-          </button>
-        </Link>
+          </div>
+        </ListPropertyButton>
       </div>
 
       <div className="mb-8 -mx-4 max-w-[100vw] overflow-hidden sm:mx-0 sm:max-w-full">

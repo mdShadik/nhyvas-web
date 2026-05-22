@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Plus, Eye, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { noImagePlaceholder } from "@/assets";
+import { ListPropertyButton } from "../common/ListPropertyButton";
 
 export function StoryFeed() {
   const { t } = useTranslation();
@@ -237,12 +238,11 @@ export function StoryFeed() {
             <div className="py-10 text-center">
               <ImageIcon className="mx-auto h-12 w-12 text-text-tertiary opacity-20" />
               <div className="mt-2 text-sm font-medium text-text-secondary">No properties found</div>
-              <button 
-                onClick={() => router.push('/add-property')}
+              <ListPropertyButton 
                 className="mt-4 text-sm font-bold text-primary-600"
               >
                 List a property first
-              </button>
+              </ListPropertyButton>
             </div>
           ) : (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
