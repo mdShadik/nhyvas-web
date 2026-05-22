@@ -170,19 +170,9 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [playTrigger, setPlayTrigger] = useState(0);
   const unreadCount = useNotificationsStore((s) => s.unreadCount);
-  const setUnreadCount = useNotificationsStore((s) => s.setUnreadCount);
   const [notifOpen, setNotifOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
-
-  const initialLoadRef = useRef(false);
-  useEffect(() => {
-    if (!isAuthenticated || initialLoadRef.current) return;
-    initialLoadRef.current = true;
-    void getUnreadCount()
-      .then(setUnreadCount)
-      .catch(() => {});
-  }, [isAuthenticated, setUnreadCount]);
 
   useEffect(() => {
     if (!notifOpen) return;

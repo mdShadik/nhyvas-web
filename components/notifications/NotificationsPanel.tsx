@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Bell, CheckCheck, Loader2, MessageCircle, Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNotificationsStore } from "@/stores/notificationsStore";
 import {
   listNotifications,
@@ -19,36 +19,51 @@ import {
 export function NotificationsPanel({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const setUnreadCount = useNotificationsStore((s) => s.setUnreadCount);
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const loadedRef = useRef(false);
 
-  const load = useCallback(async () => {
-    try {
-      const [rows, unread] = await Promise.all([listNotifications(50), getUnreadCount()]);
-      setItems(rows);
-      setUnreadCount(unread);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, [setUnreadCount]);
+  // 1. Data Fetching
+  const notificationsQuery = useQuery({
+    queryKey: ["notifications", "list"],
+    queryFn: () => listNotifications(50),
+  });
 
-  useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
-    void load();
-  }, [load]);
+  useQuery({
+    queryKey: ["notifications", "unread-count"],
+    queryFn: async () => {
+      const count = await getUnreadCount();
+      setUnreadCount(count);
+      return count;
+    },
+  });
 
-  const handleMarkAllRead = async () => {
-    await markAllAsRead();
-    await load();
+  // 2. Mutations
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => markAsRead(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => markAllAsRead(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  const items = notificationsQuery.data ?? [];
+  const loading = notificationsQuery.isLoading;
+
+  const handleMarkAllRead = () => {
+    markAllReadMutation.mutate();
   };
 
   const handleOpen = async (item: NotificationItem) => {
-    await markAsRead(item.id);
+    if (!item.is_read) {
+      markReadMutation.mutate(item.id);
+    }
+    
     const data = parseData(item.data);
     const roomId = typeof data.roomId === "string" ? data.roomId : null;
     const listingId = typeof data.listingId === "string" ? data.listingId : null;
@@ -86,9 +101,14 @@ export function NotificationsPanel({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={handleMarkAllRead}
-            className="flex items-center gap-1 text-xs font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400"
+            disabled={markAllReadMutation.isPending}
+            className="flex items-center gap-1 text-xs font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 disabled:opacity-50"
           >
-            <CheckCheck className="h-3.5 w-3.5" />
+            {markAllReadMutation.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <CheckCheck className="h-3.5 w-3.5" />
+            )}
             {t("notifications.mark_all_read", "Mark all read")}
           </button>
         ) : null}

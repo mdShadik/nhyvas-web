@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,10 +12,13 @@ import {
   Shapes,
   Sparkles,
   UserRound,
+  Bell,
+  BellOff,
 } from "lucide-react";
 
 import { profileService } from "@/services/apiService/profile";
 import { exploreService } from "@/services/apiService/explore";
+import { pushRegistrationService } from "@/services/pushRegistration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
@@ -310,6 +313,27 @@ export function ProfileOverview() {
     onSettled: () => setBusy(false),
   });
 
+  const togglePushMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      await profileService.togglePushOptIn(enabled);
+
+      // If enabling, also try to register browser push if supported
+      if (enabled && pushRegistrationService.isSupported()) {
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (vapidKey) {
+           await pushRegistrationService.register(vapidKey);
+        }
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["profile", "bootstrap"] });
+      showToast({ variant: "success", message: "Push settings updated." });
+    },
+    onError: (err: any) => {
+      showToast({ variant: "error", message: err.message || "Failed to update push settings." });
+    }
+  });
+
   const handleClose = () => {
     if (!busy) setEditOpen(false);
   };
@@ -349,6 +373,7 @@ export function ProfileOverview() {
   const name = profile.full_name?.trim() || "User";
   const email = profile.email?.trim() || "";
   const preferredAmenities = preferences?.preferred_amenities ?? [];
+  const pushEnabled = profile.push_opt_in ?? true;
 
   const sharedFormProps = {
     form,
@@ -496,34 +521,24 @@ export function ProfileOverview() {
                   "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
               }}
             >
-              <Sparkles className="h-5 w-5" />
+              <Bell className="h-5 w-5" />
             </div>
-            <div className="text-[11px] font-medium text-text-tertiary">
-              {t("explore.amenities")}
-            </div>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {preferredAmenities.length ? (
-                preferredAmenities.slice(0, 12).map((amenityId) => {
-                  const amenity = amenitiesData.find((a) => a.id === amenityId);
-                  const name = amenity ? amenity.name : amenityId;
-                  return (
-                    <span
-                      key={amenityId}
-                      className="border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-sm backdrop-blur-sm"
-                      style={{
-                        clipPath:
-                          "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
-                      }}
-                    >
-                      {tAmenity(name)}
-                    </span>
-                  );
-                })
-              ) : (
-                <div className="text-sm text-text-tertiary">
-                  {t("property.no_amenities")}
-                </div>
-              )}
+            <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-wider">Push Notifications</div>
+            <div className="flex items-center gap-4">
+               <span className="text-sm font-semibold text-text-primary">{pushEnabled ? "Enabled" : "Disabled"}</span>
+               <button 
+                 onClick={() => togglePushMutation.mutate(!pushEnabled)}
+                 disabled={togglePushMutation.isPending}
+                 className={cn(
+                   "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                   pushEnabled ? "bg-primary-500" : "bg-secondary-200 dark:bg-secondary-700"
+                 )}
+               >
+                 <span className={cn(
+                   "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                   pushEnabled ? "translate-x-5" : "translate-x-0"
+                 )} />
+               </button>
             </div>
           </div>
         </div>
@@ -574,18 +589,40 @@ export function ProfileOverview() {
             </div>
           </div>
 
-          <Button
-            onClick={openEdit}
-            className="shrink-0 border border-white/20 bg-linear-to-r from-primary-500 to-tertiary-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
-            size="sm"
-            style={{
-              clipPath:
-                "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
-            }}
-          >
-            <PencilLine className="mr-2 h-4 w-4" />
-            {t("profile.menu.edit_profile")}
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mr-4">
+               <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Push Alerts</div>
+                  <div className="text-xs font-semibold text-text-primary">{pushEnabled ? "Enabled" : "Disabled"}</div>
+               </div>
+               <button 
+                 onClick={() => togglePushMutation.mutate(!pushEnabled)}
+                 disabled={togglePushMutation.isPending}
+                 className={cn(
+                   "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                   pushEnabled ? "bg-primary-500" : "bg-secondary-200 dark:bg-secondary-700"
+                 )}
+               >
+                 <span className={cn(
+                   "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                   pushEnabled ? "translate-x-5" : "translate-x-0"
+                 )} />
+               </button>
+            </div>
+
+            <Button
+              onClick={openEdit}
+              className="shrink-0 border border-white/20 bg-linear-to-r from-primary-500 to-tertiary-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
+              size="sm"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+              }}
+            >
+              <PencilLine className="mr-2 h-4 w-4" />
+              {t("profile.menu.edit_profile")}
+            </Button>
+          </div>
         </div>
       </section>
 

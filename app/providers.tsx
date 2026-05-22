@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { Toaster } from "@/components/ui/toaster";
+import { NotificationManager } from "@/components/notifications/NotificationManager";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => sharedQueryClient);
@@ -18,6 +19,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <ToastProvider>
         <AuthProvider>
           <QueryClientProvider client={queryClient}>
+            <NotificationManager />
             {children}
             <Toaster />
           </QueryClientProvider>

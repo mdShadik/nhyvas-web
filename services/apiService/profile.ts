@@ -8,6 +8,7 @@ export type AppProfile = {
   role: string | null;
   phone?: string | null;
   landlord_verified?: boolean;
+  push_opt_in?: boolean;
 };
 
 export type UserPreferences = {
@@ -31,6 +32,14 @@ export type CompleteOnboardingInput = {
   avatarUri?: string | null;
 };
 
+export type RegisterPushDeviceInput = {
+  expoPushToken: string;
+  deviceId?: string;
+  platform: "ios" | "android" | "web";
+  appVersion?: string;
+  appBuild?: string;
+};
+
 export const profileService = {
   async getBootstrap(): Promise<{
     profile: AppProfile | null;
@@ -49,6 +58,7 @@ export const profileService = {
       role: row.role ?? null,
       phone: row.phone ?? null,
       landlord_verified: row.landlord_verified ?? false,
+      push_opt_in: row.push_opt_in ?? true,
     };
 
     const preferences: UserPreferences = {
@@ -105,6 +115,20 @@ export const profileService = {
     await requestJson("/api/profile/preferences/update", {
       method: "POST",
       body: JSON.stringify(input),
+    });
+  },
+
+  async registerPushDevice(input: RegisterPushDeviceInput): Promise<void> {
+    await requestJson("/api/profile/push-device/register", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async togglePushOptIn(enabled: boolean): Promise<void> {
+    await requestJson("/api/profile/push-opt-in/toggle", {
+      method: "POST",
+      body: JSON.stringify({ enabled }),
     });
   },
 };

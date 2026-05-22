@@ -91,20 +91,10 @@ export function MobileTopBar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const unreadCount = useNotificationsStore((s) => s.unreadCount);
-  const setUnreadCount = useNotificationsStore((s) => s.setUnreadCount);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const initialLoadRef = useRef(false);
-  useEffect(() => {
-    if (!isAuthenticated || initialLoadRef.current) return;
-    initialLoadRef.current = true;
-    void getUnreadCount()
-      .then(setUnreadCount)
-      .catch(() => {});
-  }, [isAuthenticated, setUnreadCount]);
 
   const logoUrl = !mounted
     ? lightLogo
