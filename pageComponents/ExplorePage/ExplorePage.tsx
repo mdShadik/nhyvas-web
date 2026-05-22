@@ -13,6 +13,7 @@ import { ListingCard } from "@/components/explore/ListingCard";
 import { SearchParamsProps } from "@/app/(pages)/explore/page";
 import { AiSearch } from "@/components/AiSearch/Aisearch";
 import { AnalyzedQuery } from "@/lib/ai/queryAnalyzer";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -30,6 +31,8 @@ export default function ExplorePage({ searchParams }: Props) {
     queryKey: ["auth", "bootstrap"],
     queryFn: () => profileService.getBootstrap(),
   });
+
+  const isLoggedIn = !!bootstrapQuery.data?.profile;
 
   useEffect(() => {
     if (didInitFromUrlRef.current) return;
@@ -169,6 +172,7 @@ export default function ExplorePage({ searchParams }: Props) {
   const loading = listingsQuery.isLoading || listingsQuery.isFetching;
 
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [aiResponse, setAiResponse] = useState<AnalyzedQuery | null>(null);
   const [aiListings, setAiListings] = useState<ExploreListing[] | null>(null);
@@ -355,9 +359,22 @@ export default function ExplorePage({ searchParams }: Props) {
         </MobileBottomSheet>
       </div>
 
+      <LoginModal
+        open={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        title={t("auth.ai_search_login_title", "Login to search with AI")}
+        description={t("auth.ai_search_login_desc", "Experience the power of AI search by logging in to your account.")}
+      />
+
       <AiSearch
         open={aiSearchOpen}
-        onOpenChange={setAiSearchOpen}
+        onOpenChange={(open) => {
+          if (open && !isLoggedIn) {
+            setLoginModalOpen(true);
+          } else {
+            setAiSearchOpen(open);
+          }
+        }}
         onSearch={handleSearch}
         isSearching={isSearching}
         buttonLabel="AI Search"
