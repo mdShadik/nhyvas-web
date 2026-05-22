@@ -156,7 +156,8 @@
     "loading": "Loading terms...",
     "load_failed": "Could not load Terms & Conditions",
     "retry": "Retry",
-    "last_updated": "Last updated: {{date}}"
+    "last_updated": "Last updated: {{date}}",
+    "legal": "Nhyvas Legal Department | © 2023 Kimsha. All rights reserved."
   },
   "addresses": {
     "add_address": "Add address",
@@ -213,6 +214,7 @@
     "other": "Other",
     "featured": "FEATURED",
     "price_label": "Price",
+    "per_month": "Per Month",
     "view_details": "View details",
     "category": "Category",
     "select_category": "Select category",
@@ -394,6 +396,8 @@
     "empty_title": "No listings found",
     "empty_hint_all": "Ready to rent out your place? Return to the Landlord hub.",
     "empty_hint_filtered": "You have no {{status}} listings.",
+    "no_ads_for_status": "No ads found for this status.",
+    "manage_subtitle": "Manage and track your property listings",
     "boost_title": "Boost Listing",
     "boost_message": "Boosting will push your property to the top of search results. Coming soon!",
     "boost": "Boost",

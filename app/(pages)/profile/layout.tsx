@@ -105,12 +105,12 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                       </div>
                     )}
 
-                    <div className={cn("flex-1", (isSupportTicket || isPayment) && "overflow-hidden")}>
+                    <div className={cn("flex-1 min-w-0", (isSupportTicket || isPayment) && "overflow-hidden")}>
                       {isSupportTicket || isPayment ? (
                         <div className="h-full">{children}</div>
                       ) : (
-                        <div className="px-4 pb-24 pt-4">
-                          <div className="shadow-sm">
+                        <div className="min-w-0 px-4 pb-24 pt-4">
+                          <div className="min-w-0 shadow-sm">
                             {children}
                           </div>
                         </div>

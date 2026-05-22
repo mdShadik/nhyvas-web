@@ -49,7 +49,7 @@ export function ListingCard({
     <article
       className={cn(
         "group relative overflow-hidden border border-white/20 bg-white/5 shadow-sm transition-all duration-500 backdrop-blur-md hover:border-primary-500/40 hover:shadow-2xl hover:shadow-primary-500/10 dark:shadow-none",
-        isCompact ? "p-3" : "flex flex-col md:flex-row",
+        isCompact ? "flex flex-col p-3 sm:flex-row" : "flex flex-col sm:flex-row sm:min-h-[260px]",
         className,
       )}
       style={{
@@ -62,8 +62,8 @@ export function ListingCard({
         className={cn(
           "relative shrink-0 overflow-hidden bg-secondary-900/10",
           isCompact
-            ? "h-32 w-full rounded-2xl sm:w-32"
-            : "h-64 w-full md:h-auto md:w-[320px] lg:w-[380px] md:min-h-64",
+            ? "h-44 w-full rounded-2xl sm:h-auto sm:min-h-[180px] sm:w-44 lg:w-52"
+            : "h-56 w-full sm:h-auto sm:min-h-full sm:w-[300px] lg:w-[360px] xl:w-[400px]",
         )}
         style={
           !isCompact
@@ -80,7 +80,7 @@ export function ListingCard({
           fill
           unoptimized
           className="object-cover transition duration-700 group-hover:scale-105 bg-linear-to-br from-primary-500/20 via-primary-200/10 to-tertiary-500/20"
-          sizes={isCompact ? "132px" : "(max-width: 768px) 100vw, 380px"}
+          sizes={isCompact ? "(max-width: 640px) 100vw, 208px" : "(max-width: 640px) 100vw, 400px"}
         />
 
         {/* Floating Watermark */}
@@ -132,11 +132,16 @@ export function ListingCard({
       <div
         className={cn(
           "flex min-w-0 flex-1",
-          isCompact ? "flex-col mt-3 sm:mt-0 sm:ml-5" : "flex-col md:flex-row",
+          isCompact ? "flex-col" : "flex-col lg:flex-row",
         )}
       >
         {/* Main Info Section (Left/Center) */}
-        <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between space-y-4">
+        <div
+          className={cn(
+            "flex flex-1 flex-col justify-between space-y-4",
+            isCompact ? "p-4" : "p-5 sm:p-6 lg:p-8",
+          )}
+        >
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="shrink-0 rounded-lg bg-primary-500/10 border border-primary-500/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-600 dark:text-primary-400">
@@ -164,7 +169,12 @@ export function ListingCard({
             </div>
 
             <div className="flex flex-col gap-2">
-              <h3 className="line-clamp-2 text-xl font-black text-text-primary group-hover:text-primary-500 transition-colors duration-300 lg:text-3xl leading-tight tracking-tight">
+              <h3
+                className={cn(
+                  "line-clamp-2 font-black leading-tight tracking-tight text-text-primary transition-colors duration-300 group-hover:text-primary-500",
+                  isCompact ? "text-lg sm:text-xl" : "text-xl lg:text-3xl",
+                )}
+              >
                 {listing.property_title}
               </h3>
 
@@ -177,46 +187,39 @@ export function ListingCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {!isCompact && listing.view_count !== undefined && (
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary opacity-70">
-                <Eye className="h-4 w-4" />
-                <span>{listing.view_count} {t("property.views", "views")}</span>
-              </div>
-            )}
-            
-            {/* Mobile-only Price (hidden on md+) */}
-            <div className="md:hidden font-black text-2xl text-primary-500">
-              {formatPrice(listing.price, listing.currency_code)}
+          {!isCompact && listing.view_count !== undefined && (
+            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary opacity-70">
+              <Eye className="h-4 w-4" />
+              <span>{listing.view_count} {t("property.views", "views")}</span>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Side Section: Price & Action (Right side on desktop, stacked on mobile) */}
+        {/* Side Section: Price & Action (Right side on desktop, footer on mobile) */}
         {!isCompact && (
-          <div className="md:w-[260px] lg:w-[300px] border-t md:border-t-0 md:border-l border-border/50 p-6 lg:p-8 flex flex-row md:flex-col justify-between md:justify-center items-center md:items-end gap-6 bg-secondary-50/30 dark:bg-secondary-900/10">
-            <div className="flex flex-col md:items-end">
-              <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary mb-1">
+          <div className="flex flex-col gap-5 border-t border-border/50 bg-secondary-50/30 p-5 dark:bg-secondary-900/10 sm:flex-row sm:items-center sm:justify-between sm:p-6 lg:w-[280px] lg:flex-col lg:items-end lg:justify-center lg:border-l lg:border-t-0 lg:p-8">
+            <div className="flex flex-col sm:min-w-0 lg:items-end">
+              <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
                 {t("explore.price_label")}
               </p>
-              <div className="font-black tracking-tighter text-3xl lg:text-4xl text-primary-500 dark:text-primary-400">
+              <div className="text-3xl font-black tracking-tighter text-primary-500 dark:text-primary-400 lg:text-4xl">
                 {formatPrice(listing.price, listing.currency_code)}
               </div>
-              <p className="hidden md:block text-[10px] font-medium text-text-tertiary mt-1">
-                Per Month
+              <p className="mt-1 hidden text-[10px] font-medium text-text-tertiary md:block">
+                {t("explore.per_month")}
               </p>
             </div>
 
-            <div className="flex gap-2 w-full md:w-auto">
+            <div className="flex w-full gap-2 sm:w-auto lg:w-full">
               {!action && !shouldShowEditButton && !shouldShowRentedToggle && (
-                <div className="group/btn flex items-center justify-center gap-2 w-full rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-4 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-95 group-hover:shadow-primary-500/30">
+                <div className="group/btn flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-4 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-95 group-hover:shadow-primary-500/30">
                   {t("explore.view_details")}
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
                 </div>
               )}
 
               {(action || shouldShowEditButton) && !shouldShowRentedToggle && (
-                <div className="flex items-center gap-2 w-full justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                <div className="flex w-full items-center justify-start gap-2 sm:justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                   {action}
                 </div>
               )}
@@ -230,7 +233,7 @@ export function ListingCard({
                     onToggleRented(listing.id, !listing.is_rented);
                   }}
                   className={cn(
-                    "flex items-center justify-center gap-2 w-full rounded-2xl px-6 py-4 text-sm font-black text-white shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-95",
+                    "flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black text-white shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-95",
                     listing.is_rented
                       ? "bg-linear-to-br from-green-500 to-emerald-600 shadow-green-500/20"
                       : "bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 shadow-primary-500/20",
@@ -243,15 +246,36 @@ export function ListingCard({
           </div>
         )}
         
-        {/* Compact variant action placement */}
+        {/* Compact variant footer */}
         {isCompact && (
-          <div className="px-4 pb-4 flex justify-end items-center gap-4">
-             <div className="font-black text-xl text-primary-500">
+          <div className="flex flex-col gap-3 border-t border-border/40 px-4 pb-4 pt-3 sm:flex-row sm:items-center sm:justify-between">
+             <div className="font-black text-xl text-primary-500 dark:text-primary-400">
                 {formatPrice(listing.price, listing.currency_code)}
              </div>
-             <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-               {action}
-             </div>
+             {(action || shouldShowRentedToggle) && (
+               <div className="flex w-full justify-start sm:w-auto sm:justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                 {shouldShowRentedToggle && onToggleRented ? (
+                   <button
+                     type="button"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       e.preventDefault();
+                       onToggleRented(listing.id, !listing.is_rented);
+                     }}
+                     className={cn(
+                       "flex h-9 w-full items-center justify-center rounded-xl px-4 text-sm font-black text-white shadow-lg transition-all active:scale-95 sm:w-auto",
+                       listing.is_rented
+                         ? "bg-linear-to-br from-green-500 to-emerald-600 shadow-green-500/20"
+                         : "bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 shadow-primary-500/20",
+                     )}
+                   >
+                     {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
+                   </button>
+                 ) : (
+                   action
+                 )}
+               </div>
+             )}
           </div>
         )}
       </div>

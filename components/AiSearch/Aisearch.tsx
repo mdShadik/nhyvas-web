@@ -827,7 +827,7 @@ export function AiSearch({
                         {buttonLabel}
                       </h2>
                       <p className="text-[11px] font-medium text-text-tertiary">
-                        Powered by intelligence
+                        Powered by Kimsha
                       </p>
                     </div>
                   </div>

@@ -170,7 +170,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
 
           <div className="relative z-10 flex h-full flex-col justify-between p-3 sm:p-10 pointer-events-none">
             <div className="relative overflow-hidden rounded-full w-fit bg-gradient-to-r from-primary-500 to-tertiary-500 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
-  
+
               {/* Shimmer */}
               <div className="absolute inset-0 overflow-hidden rounded-full">
                 <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />
@@ -287,22 +287,23 @@ export default function HomePage() {
 
   return (
     <main className={`flex-1`}>
-      <div className="mx-auto w-full max-w-6xl px-4 py-2 sm:px-6 sm:py-12">
-        <section className="mt-8 sm:mt-0">
-          <StoryFeed />
-        </section>
+      <div className="mx-auto flex min-h-[calc(100vh-90px)] w-full max-w-6xl flex-col px-4 py-2 sm:px-6 sm:py-12">
+        <div className="flex-1">
+          <section className="mt-8 sm:mt-0">
+            <StoryFeed />
+          </section>
 
-        <section className="mt-10">
-          {heroQuery.isLoading ? (
-            <HeroBannerSkeleton />
-          ) : heroListings.length > 0 ? (
-            <HeroBanner listings={heroListings} />
-          ) : (
-            null
-          )}
-        </section>
+          <section className="mt-10">
+            {heroQuery.isLoading ? (
+              <HeroBannerSkeleton />
+            ) : heroListings.length > 0 ? (
+              <HeroBanner listings={heroListings} />
+            ) : (
+              null
+            )}
+          </section>
 
-        {/* <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          {/* <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
               {t("home.find_next_place")}
@@ -367,48 +368,50 @@ export default function HomePage() {
           </div>
         </section> */}
 
-        <section className={`${heroListings.length > 0 ? "mt-12" : ""}`}>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight text-text-primary">
-                {t("home.browse_categories")}
-              </h2>
-              <p className="mt-1 text-sm text-text-secondary">
-                {t("home.start_with_what_you_need")}
-              </p>
+          <section className={`${heroListings.length > 0 ? "mt-12" : ""}`}>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight text-text-primary">
+                  {t("home.browse_categories")}
+                </h2>
+                <p className="mt-1 text-sm text-text-secondary">
+                  {t("home.start_with_what_you_need")}
+                </p>
+              </div>
+
+              <Link
+                href="/explore"
+                className="text-sm font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+              >
+                {t("common.view_all")}
+              </Link>
             </div>
 
-            <Link
-              href="/explore"
-              className="text-sm font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              {t("common.view_all")}
-            </Link>
-          </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {categoriesQuery.isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => <CategorySkeleton key={i} />)
+              ) : filteredCategories.length ? (
+                filteredCategories.map((c) => (
+                  <CategoryCard key={c.id} category={c} />
+                ))
+              ) : (
+                <div className="text-sm text-text-secondary">
+                  No categories match your search.
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categoriesQuery.isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => <CategorySkeleton key={i} />)
-            ) : filteredCategories.length ? (
-              filteredCategories.map((c) => (
-                <CategoryCard key={c.id} category={c} />
-              ))
-            ) : (
-              <div className="text-sm text-text-secondary">
-                No categories match your search.
-              </div>
-            )}
-          </div>
-        </section>
-
-        <footer className="mt-14 mb-18 sm:mb-0 border-t border-border pt-8 text-sm text-text-tertiary">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="hidden md:block border-t mt-5 border-border pt-8 mb-20 sm:mb-0 text-sm text-text-tertiary">
+          <div className="flex gap-2 items-center justify-between">
             <div>© {new Date().getFullYear()} Nhyvas</div>
 
             <div className="flex gap-4">
-              <Link href="/help" className="transition hover:text-text-primary">
+              {/* <Link href="/help" className="transition hover:text-text-primary">
                 {t("common.help")}
-              </Link>
+              </Link> */}
+
               <Link href="/terms" className="transition hover:text-text-primary">
                 {t("common.terms")}
               </Link>
