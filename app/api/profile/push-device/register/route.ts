@@ -16,6 +16,8 @@ export async function POST(req: Request) {
 
     const { expoPushToken, deviceId, platform, appVersion, appBuild } = body;
 
+    console.log(`[push-register] User ${userId} registering device:`, { platform, deviceId, tokenSnippet: expoPushToken?.slice(0, 30) });
+
     if (!expoPushToken) {
       return jsonError("expoPushToken is required.", 400);
     }
@@ -35,6 +37,7 @@ export async function POST(req: Request) {
     });
 
     if (error) {
+      console.warn(`[push-register] RPC failed for user ${userId}, falling back to manual upsert:`, error.message);
       // Fallback to manual upsert if RPC fails for some reason (e.g. not yet deployed)
       const { error: upsertError } = await supabase.from("push_devices").upsert(
         {
@@ -50,9 +53,13 @@ export async function POST(req: Request) {
         { onConflict: "expo_push_token" }
       );
 
-      if (upsertError) return jsonError(upsertError.message, 400);
+      if (upsertError) {
+        console.error(`[push-register] Manual upsert failed for user ${userId}:`, upsertError.message);
+        return jsonError(upsertError.message, 400);
+      }
     }
 
+    console.log(`[push-register] Successfully registered device for user ${userId}`);
     return jsonOk({ ok: true, id: data });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed.";

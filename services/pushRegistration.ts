@@ -37,30 +37,40 @@ export const pushRegistrationService = {
    * @param vapidPublicKey The public VAPID key from the push provider.
    */
   async register(vapidPublicKey: string): Promise<boolean> {
-    if (!this.isSupported()) return false;
+    console.log("[pushRegistration] register() called with VAPID key snippet:", vapidPublicKey.slice(0, 10));
+    if (!this.isSupported()) {
+      console.warn("[pushRegistration] Push not supported");
+      return false;
+    }
 
     try {
       // 1. Request permission
+      console.log("[pushRegistration] Requesting permission...");
       const permission = await Notification.requestPermission();
+      console.log("[pushRegistration] Permission status:", permission);
       if (permission !== "granted") return false;
 
       // 2. Get service worker registration
+      console.log("[pushRegistration] Waiting for service worker ready...");
       const registration = await navigator.serviceWorker.ready;
+      console.log("[pushRegistration] Service worker ready");
 
       // 3. Subscribe to push
+      console.log("[pushRegistration] Subscribing to push manager...");
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
+      console.log("[pushRegistration] Subscription successful:", !!subscription);
 
       // 4. Send subscription to our backend
-      // We stringify the entire subscription object as the "token" for now.
-      // This is a common pattern for standard Web Push.
+      console.log("[pushRegistration] Registering with backend...");
       await profileService.registerPushDevice({
         expoPushToken: JSON.stringify(subscription),
         platform: "web",
         deviceId: navigator.userAgent,
       });
+      console.log("[pushRegistration] Backend registration successful");
 
       return true;
     } catch (err) {

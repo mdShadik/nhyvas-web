@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -218,6 +218,7 @@ export function ProfileOverview() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
 
   const [form, setForm] = useState({
     fullName: "",
@@ -244,6 +245,41 @@ export function ProfileOverview() {
       categoriesData.find((c) => c.id === preferences.category_id)?.name ?? "—"
     );
   }, [categoriesData, preferences?.category_id]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setBrowserPermission(Notification.permission);
+    }
+  }, []);
+
+  const hasRegisteredRef = useRef(false);
+
+  useEffect(() => {
+    const profile = bootstrapQuery.data?.profile;
+    if (!profile) return;
+
+    // If opted in (or default) and permission is NOT denied, ensure we are registered.
+    const pushOptIn = profile.push_opt_in ?? true;
+    const canRegister = browserPermission === "default" || browserPermission === "granted";
+    
+    console.log("[ProfileOverview] Push check:", { pushOptIn, browserPermission, canRegister, supported: pushRegistrationService.isSupported() });
+    
+    if (pushOptIn && canRegister && pushRegistrationService.isSupported() && !hasRegisteredRef.current) {
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      console.log("[ProfileOverview] Attempting registration, VAPID key present:", !!vapidKey);
+      if (vapidKey) {
+        hasRegisteredRef.current = true; // Mark as attempted
+        void pushRegistrationService.register(vapidKey).then((success) => {
+          console.log("[ProfileOverview] Registration result:", success);
+          if (success) setBrowserPermission("granted");
+          else {
+            setBrowserPermission(Notification.permission);
+            hasRegisteredRef.current = false; // Allow retry if it failed (e.g. network error)
+          }
+        });
+      }
+    }
+  }, [bootstrapQuery.data?.profile, browserPermission]);
 
   const openEdit = () => {
     if (!profile) return;
@@ -315,19 +351,34 @@ export function ProfileOverview() {
 
   const togglePushMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
-      await profileService.togglePushOptIn(enabled);
+      if (enabled) {
+        if (!pushRegistrationService.isSupported()) {
+          throw new Error("Push notifications are not supported on this browser.");
+        }
+        
+        const currentStatus = Notification.permission;
+        if (currentStatus === "denied") {
+          throw new Error("Notifications are blocked by your browser. Please enable them in your browser settings to receive alerts.");
+        }
 
-      // If enabling, also try to register browser push if supported
-      if (enabled && pushRegistrationService.isSupported()) {
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (vapidKey) {
-           await pushRegistrationService.register(vapidKey);
+        if (!vapidKey) throw new Error("Push configuration missing.");
+        
+        const success = await pushRegistrationService.register(vapidKey);
+        if (!success) {
+          throw new Error("Failed to register for push notifications. Please check your browser settings.");
         }
       }
+
+      await profileService.togglePushOptIn(enabled);
     },
-    onSuccess: () => {
+    onSuccess: (_, enabled) => {
       void queryClient.invalidateQueries({ queryKey: ["profile", "bootstrap"] });
-      showToast({ variant: "success", message: "Push settings updated." });
+      setBrowserPermission(Notification.permission);
+      showToast({ 
+        variant: "success", 
+        message: enabled ? "Push notifications enabled." : "Push notifications disabled." 
+      });
     },
     onError: (err: any) => {
       showToast({ variant: "error", message: err.message || "Failed to update push settings." });
@@ -373,7 +424,7 @@ export function ProfileOverview() {
   const name = profile.full_name?.trim() || "User";
   const email = profile.email?.trim() || "";
   const preferredAmenities = preferences?.preferred_amenities ?? [];
-  const pushEnabled = profile.push_opt_in ?? true;
+  const pushEnabled = (profile.push_opt_in ?? true) && browserPermission === "granted";
 
   const sharedFormProps = {
     form,
