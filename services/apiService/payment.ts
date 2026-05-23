@@ -5,6 +5,22 @@ export type PaymentGateway = {
   qr_code_url: string;
 };
 
+export type ListingPayment = {
+  id: string;
+  transaction_id: string | null;
+  remarks: string | null;
+  screenshot_url: string;
+  status: "pending" | "verified" | "rejected";
+  created_at: string;
+  listing?: {
+    id: string;
+    property_title: string;
+    price: number;
+    currency_code: string;
+    approval_fee_amount: number | null;
+  };
+};
+
 export type SubmitPaymentInput = {
   listingId: string;
   transactionId?: string;
@@ -14,9 +30,12 @@ export type SubmitPaymentInput = {
 
 export const paymentService = {
   async getActiveGateway(): Promise<PaymentGateway | null> {
-    const { row } = await requestJson<{ row: PaymentGateway | null }>("/api/payment/gateways", {
-      method: "POST",
-    });
+    const { row } = await requestJson<{ row: PaymentGateway | null }>(
+      "/api/payment/gateways",
+      {
+        method: "POST",
+      }
+    );
     return row;
   },
 
@@ -25,5 +44,12 @@ export const paymentService = {
       method: "POST",
       body: JSON.stringify(input),
     });
+  },
+
+  async getPaymentHistory(): Promise<ListingPayment[]> {
+    const { items } = await requestJson<{ items: ListingPayment[] }>(
+      "/api/payment/history"
+    );
+    return items || [];
   },
 };

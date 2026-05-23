@@ -511,14 +511,14 @@ export default function PropertyPage({searchParams}: Props) {
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                {listing?.property_category_name ? (
+                {listing?.property_category || listing?.property_category_name ? (
                   <span className="bg-primary-400/10 px-3 py-1 text-xs font-semibold text-primary-500 rounded-full">
-                    {tPropertyCategory(listing.property_category_name)}
+                    {tPropertyCategory(listing.property_category_name || listing.property_category)}
                   </span>
                 ) : null}
-                {listing?.subcategory_name ? (
+                {listing?.subcategory || listing?.subcategory_name ? (
                   <span className="bg-tertiary-400/10 px-3 py-1 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400 rounded-full">
-                    {tPropertySubcategory(listing.subcategory_name)}
+                    {tPropertySubcategory(listing?.subcategory || listing.subcategory_name || "")}
                   </span>
                 ) : null}
 
@@ -913,11 +913,11 @@ export default function PropertyPage({searchParams}: Props) {
                         ) : null}
                         <div className="mt-4 flex flex-wrap gap-2">
                           <span className="bg-primary-400/10 px-3.5 py-1 text-xs font-semibold text-primary-500 rounded-full">
-                            {tPropertyCategory(listing.property_category_name)}
+                            {tPropertyCategory(listing?.property_category || listing.property_category_name)}
                           </span>
-                          {listing.property_category_name ? (
+                          {listing.subcategory || listing.subcategory_name ? (
                             <span className="bg-tertiary-400/10 px-3.5 py-1 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400 rounded-full">
-                              {tPropertySubcategory(listing.subcategory_name || "")}
+                              {tPropertySubcategory(listing.subcategory || listing.subcategory_name || "")}
                             </span>
                           ) : null}
 

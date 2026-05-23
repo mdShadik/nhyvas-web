@@ -85,6 +85,12 @@ export function ProfileNav() {
       group: "main",
     },
     {
+      href: "/profile/payment-history",
+      label: t("profile.menu.payment_history"),
+      icon: <Clock className="h-[18px] w-[18px]" />,
+      group: "main",
+    },
+    {
       href: "/addresses",
       label: t("navigation.addresses"),
       icon: <MapPin className="h-[18px] w-[18px]" />,

@@ -225,22 +225,46 @@ export function ListingCard({
               )}
 
               {shouldShowRentedToggle && onToggleRented && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    onToggleRented(listing.id, !listing.is_rented);
-                  }}
-                  className={cn(
-                    "flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black text-white shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-95",
-                    listing.is_rented
-                      ? "bg-linear-to-br from-green-500 to-emerald-600 shadow-green-500/20"
-                      : "bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 shadow-primary-500/20",
+                <div className="flex flex-col gap-3 w-full" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  <div className="flex items-center justify-between rounded-2xl bg-secondary-900/10 dark:bg-white/5 border border-white/10 px-6 py-4 transition-all duration-300">
+                    <span className={cn(
+                      "text-sm font-bold tracking-tight",
+                      listing.is_rented ? "text-amber-500" : "text-text-primary"
+                    )}>
+                      {listing.is_rented ? t("my_ads.currently_rented") : t("my_ads.mark_as_rented")}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={listing.is_rented}
+                      onClick={() => onToggleRented(listing.id, !listing.is_rented)}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
+                        listing.is_rented ? "bg-primary-500" : "bg-secondary-200 dark:bg-secondary-800"
+                      )}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                          listing.is_rented ? "translate-x-5" : "translate-x-0"
+                        )}
+                      />
+                    </button>
+                  </div>
+                  {listing.is_rented && (
+                    <div className="flex items-start gap-2 rounded-xl bg-amber-500/5 border border-amber-500/10 p-3">
+                      <div className="mt-0.5 shrink-0">
+                        <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-text-tertiary">
+                        {t("my_ads.unrent_process_hint")}
+                      </p>
+                    </div>
                   )}
-                >
-                  {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
-                </button>
+                </div>
               )}
             </div>
           </div>
@@ -248,32 +272,58 @@ export function ListingCard({
         
         {/* Compact variant footer */}
         {isCompact && (
-          <div className="flex flex-col gap-3 border-t border-border/40 px-4 pb-4 pt-3 sm:flex-row sm:items-center sm:justify-between">
-             <div className="font-black text-xl text-primary-500 dark:text-primary-400">
-                {formatPrice(listing.price, listing.currency_code)}
+          <div className="flex flex-col gap-3 border-t border-border/40 px-4 pb-4 pt-3">
+             <div className="flex items-center justify-between">
+               <div className="font-black text-xl text-primary-500 dark:text-primary-400">
+                  {formatPrice(listing.price, listing.currency_code)}
+               </div>
+               {action && (
+                 <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                   {action}
+                 </div>
+               )}
              </div>
-             {(action || shouldShowRentedToggle) && (
-               <div className="flex w-full justify-start sm:w-auto sm:justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                 {shouldShowRentedToggle && onToggleRented ? (
-                   <button
-                     type="button"
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       e.preventDefault();
-                       onToggleRented(listing.id, !listing.is_rented);
-                     }}
-                     className={cn(
-                       "flex h-9 w-full items-center justify-center rounded-xl px-4 text-sm font-black text-white shadow-lg transition-all active:scale-95 sm:w-auto",
-                       listing.is_rented
-                         ? "bg-linear-to-br from-green-500 to-emerald-600 shadow-green-500/20"
-                         : "bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 shadow-primary-500/20",
-                     )}
-                   >
-                     {listing.is_rented ? t("my_ads.marked_rented") : t("my_ads.mark_rented")}
-                   </button>
-                 ) : (
-                   action
-                 )}
+
+             {shouldShowRentedToggle && onToggleRented && (
+               <div className="flex flex-col gap-2 w-full pt-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  <div className="flex items-center justify-between rounded-xl bg-secondary-900/10 dark:bg-white/5 border border-white/10 px-4 py-3">
+                    <span className={cn(
+                      "text-xs font-bold tracking-tight",
+                      listing.is_rented ? "text-amber-500" : "text-text-primary"
+                    )}>
+                      {listing.is_rented ? t("my_ads.currently_rented") : t("my_ads.mark_as_rented")}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={listing.is_rented}
+                      onClick={() => onToggleRented(listing.id, !listing.is_rented)}
+                      className={cn(
+                        "relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                        listing.is_rented ? "bg-primary-500" : "bg-secondary-200 dark:bg-secondary-800"
+                      )}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                          listing.is_rented ? "translate-x-5" : "translate-x-0"
+                        )}
+                      />
+                    </button>
+                  </div>
+                  {listing.is_rented && (
+                    <div className="flex items-start gap-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10 p-2">
+                      <div className="mt-0.5 shrink-0">
+                        <svg className="h-3 w-3 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-[10px] leading-snug text-text-tertiary">
+                        {t("my_ads.unrent_process_hint")}
+                      </p>
+                    </div>
+                  )}
                </div>
              )}
           </div>

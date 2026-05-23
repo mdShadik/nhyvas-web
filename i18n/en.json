@@ -342,6 +342,7 @@
       "my_leads": "My Interested Leads",
       "shortlisted": "Shortlisted Properties",
       "recently_viewed": "Recently Viewed",
+      "payment_history": "Payment History",
       "edit_profile": "Edit Profile & Preferences",
       "terms": "Terms & Conditions"
     },
@@ -428,7 +429,10 @@
     "currently_rented": "Currently Rented (Hidden)",
     "mark_as_rented": "Mark as Rented",
     "mark_rented": "Mark as Rented",
-    "marked_rented": "Marked as Rented"
+    "marked_rented": "Marked Rented",
+    "unrented_title": "Property Unrented",
+    "unrented_message": "Your property listing has been moved back to Pending Review.",
+    "unrent_process_hint": "Marking as unrented will move this listing back to 'Pending Review' status for moderation before it becomes public again."
   },
   "recently_viewed": {
     "empty_title": "No recently viewed properties",
