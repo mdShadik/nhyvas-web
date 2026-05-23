@@ -19,12 +19,15 @@ import {
   ChevronRight,
   Shield,
   X,
+  ReceiptText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useCallback, Fragment } from "react";
+import { useState, useCallback, Fragment, useMemo } from "react";
 import { Button } from "../ui/button";
 import { Dialog } from "../ui/dialog";
 import { PWAInstallPrompt } from "../ui/pwa-install-prompt";
+import { useQuery } from "@tanstack/react-query";
+import { paymentService } from "@/services/apiService/payment";
 
 type NavItem = {
   href: string;
@@ -48,79 +51,96 @@ export function ProfileNav() {
   const [openInstall, setOpenInstall] = useState(false);
   const [openLogout, setOpenLogout] = useState(false);
 
+  const { data: payments = [] } = useQuery({
+    queryKey: ["profile", "payment-history"],
+    queryFn: () => paymentService.getPaymentHistory(),
+  });
+
+  const hasPayments = payments && payments.length > 0;
+
   const handleLogout = useCallback(() => {
     setOpenLogout(false);
     router.push("/logout");
   }, [router]);
 
-  const items: NavItem[] = [
-    {
-      href: "/profile/overview",
-      label: t("profile.menu.edit_profile"),
-      icon: <User className="h-[18px] w-[18px]" />,
-      group: "main",
-    },
-    {
-      href: "/profile/saved",
-      label: t("profile.menu.shortlisted"),
-      icon: <Heart className="h-[18px] w-[18px]" />,
-      group: "main",
-    },
-    {
-      href: "/profile/my-ads",
-      label: t("profile.menu.my_ads"),
-      icon: <Building2 className="h-[18px] w-[18px]" />,
-      group: "main",
-    },
-    {
-      href: "/profile/leads",
-      label: t("profile.menu.my_leads"),
-      icon: <Users className="h-[18px] w-[18px]" />,
-      group: "main",
-    },
-    {
-      href: "/profile/recently-viewed",
-      label: t("profile.menu.recently_viewed"),
-      icon: <Clock className="h-[18px] w-[18px]" />,
-      group: "main",
-    },
-    {
-      href: "/profile/payment-history",
-      label: t("profile.menu.payment_history"),
-      icon: <Clock className="h-[18px] w-[18px]" />,
-      group: "main",
-    },
-    {
-      href: "/addresses",
-      label: t("navigation.addresses"),
-      icon: <MapPin className="h-[18px] w-[18px]" />,
-      group: "main",
-    },
-    {
-      href: "/profile/help-center",
-      label: t("help_center.title"),
-      icon: <HelpCircle className="h-[18px] w-[18px]" />,
-      group: "support",
-    },
-    {
-      href: "/profile/support-chats",
-      label: t("navigation.support_chats"),
-      icon: <MessageCircle className="h-[18px] w-[18px]" />,
-      group: "support",
-    },
-    {
-      href: "/profile/terms-and-conditions",
-      label: t("profile.menu.terms"),
-      icon: <FileText className="h-[18px] w-[18px]" />,
-      group: "legal",
-    },
-  ];
+  const items = useMemo(() => {
+    const navItems: NavItem[] = [
+      {
+        href: "/profile/overview",
+        label: t("profile.menu.edit_profile"),
+        icon: <User className="h-[18px] w-[18px]" />,
+        group: "main",
+      },
+      {
+        href: "/profile/saved",
+        label: t("profile.menu.shortlisted"),
+        icon: <Heart className="h-[18px] w-[18px]" />,
+        group: "main",
+      },
+      {
+        href: "/profile/my-ads",
+        label: t("profile.menu.my_ads"),
+        icon: <Building2 className="h-[18px] w-[18px]" />,
+        group: "main",
+      },
+      {
+        href: "/profile/leads",
+        label: t("profile.menu.my_leads"),
+        icon: <Users className="h-[18px] w-[18px]" />,
+        group: "main",
+      },
+      {
+        href: "/profile/recently-viewed",
+        label: t("profile.menu.recently_viewed"),
+        icon: <Clock className="h-[18px] w-[18px]" />,
+        group: "main",
+      },
+    ];
 
-  const groups = {
+    if (hasPayments) {
+      navItems.push({
+        href: "/profile/payment-history",
+        label: t("profile.menu.payment_history"),
+        icon: <ReceiptText className="h-[18px] w-[18px]" />,
+        group: "main",
+      });
+    }
+
+    navItems.push(
+      {
+        href: "/addresses",
+        label: t("navigation.addresses"),
+        icon: <MapPin className="h-[18px] w-[18px]" />,
+        group: "main",
+      },
+      {
+        href: "/profile/help-center",
+        label: t("help_center.title"),
+        icon: <HelpCircle className="h-[18px] w-[18px]" />,
+        group: "support",
+      },
+      {
+        href: "/profile/support-chats",
+        label: t("navigation.support_chats"),
+        icon: <MessageCircle className="h-[18px] w-[18px]" />,
+        group: "support",
+      },
+      {
+        href: "/profile/terms-and-conditions",
+        label: t("profile.menu.terms"),
+        icon: <FileText className="h-[18px] w-[18px]" />,
+        group: "legal",
+      }
+    );
+
+    return navItems;
+  }, [hasPayments, t]);
+
+  const groups = useMemo(() => ({
     main: items.filter((i) => i.group === "main"),
     support: items.filter((i) => i.group === "support"),
     legal: items.filter((i) => i.group === "legal"),
-  };
+  }), [items]);
 
   const groupLabels: Record<string, string> = {
     main: t("profile.menu.group_account", "Account"),

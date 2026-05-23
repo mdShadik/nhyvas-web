@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Camera, Loader2, UploadCloud, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Image from "next/image";
+import Link from "next/link";
 
 import { profileService } from "@/services/apiService/profile";
 import { uploadToR2 } from "@/services/apiService/media";
@@ -99,18 +100,40 @@ export default function LandlordVerifyPage() {
 
   return (
     <RequireAuth>
-      <main className="min-h-screen bg-bg-page px-4 pb-20 pt-8">
+      <main className="min-h-screen bg-bg-page pb-20 md:px-4 md:pt-8">
         <div className="mx-auto max-w-xl">
+          {/* Mobile-only header */}
+          <div className="sticky top-0 z-10 border-b border-border bg-bg-page/40 backdrop-blur md:hidden">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <Link
+                href="/profile"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-card text-text-primary transition active:scale-[0.98]"
+                aria-label={t("common.back", "Back")}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-text-primary uppercase tracking-wider">
+                  {t("landlord_verify.title")}
+                </div>
+                <div className="text-[10px] leading-tight text-text-tertiary">
+                  {t("landlord_verify.subtitle")}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button
             onClick={() => router.back()}
-            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-text-secondary hover:text-text-primary transition"
+            className="mb-6 hidden items-center gap-2 text-sm font-semibold text-text-secondary hover:text-text-primary transition md:inline-flex"
           >
             <ArrowLeft className="h-4 w-4" />
             {t("common.back")}
           </button>
 
-          <div className="overflow-hidden rounded-[32px] border border-border bg-bg-card shadow-xl">
-            <div className="border-b border-border bg-primary-50/50 dark:bg-primary-900/10 px-8 py-8">
+          <div className="overflow-hidden md:rounded-[32px] md:border md:border-border md:bg-bg-card md:shadow-xl">
+            <div className="border-b border-border bg-primary-50/50 dark:bg-primary-900/10 px-8 py-8 hidden md:block">
               <h1 className="text-2xl font-black text-text-primary tracking-tight">
                 {t("landlord_verify.title")}
               </h1>
@@ -233,7 +256,7 @@ export default function LandlordVerifyPage() {
                 </div>
               </div>
 
-              <div className="pt-4">
+              <div className="pt-4 pb-12 md:pb-0">
                 <Button
                   type="submit"
                   disabled={submitting}

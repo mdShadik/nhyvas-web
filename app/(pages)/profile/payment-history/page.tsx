@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { paymentService, type ListingPayment } from "@/services/apiService/payment";
-import { Loader2, ReceiptText, ExternalLink, XCircle, CheckCircle, Clock, X } from "lucide-react";
+import { Loader2, ReceiptText, ExternalLink, XCircle, CheckCircle, Clock, X, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function PaymentHistoryPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [payments, setPayments] = useState<ListingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -44,7 +47,29 @@ export default function PaymentHistoryPage() {
 
   return (
     <div className="relative space-y-6">
-      <header>
+      {/* Mobile-only header */}
+      <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-4 border-b border-border bg-bg-page/40 backdrop-blur md:hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Link
+            href="/profile"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-card text-text-primary transition active:scale-[0.98]"
+            aria-label={t("common.back", "Back")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-text-primary uppercase tracking-wider">
+              {t("profile.menu.payment_history")}
+            </div>
+            <div className="text-[10px] leading-tight text-text-tertiary">
+              Track your verification payments
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <header className="hidden md:block">
         <h1 className="text-2xl font-black text-text-primary tracking-tight">
           {t("profile.menu.payment_history")}
         </h1>
@@ -53,28 +78,30 @@ export default function PaymentHistoryPage() {
         </p>
       </header>
 
-      {payments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center border border-border rounded-3xl bg-bg-card">
-          <div className="mb-6 rounded-full bg-secondary-100 p-6 dark:bg-secondary-800">
-            <ReceiptText className="h-10 w-10 text-text-tertiary opacity-40" />
+      <div className="px-4 md:px-0">
+        {payments.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center border border-border rounded-3xl bg-bg-card">
+            <div className="mb-6 rounded-full bg-secondary-100 p-6 dark:bg-secondary-800">
+              <ReceiptText className="h-10 w-10 text-text-tertiary opacity-40" />
+            </div>
+            <h3 className="text-xl font-bold text-text-primary">No payments found</h3>
+            <p className="mt-2 text-sm text-text-tertiary max-w-[280px] mx-auto">
+              When you pay for listing verification, your history will appear here.
+            </p>
           </div>
-          <h3 className="text-xl font-bold text-text-primary">No payments found</h3>
-          <p className="mt-2 text-sm text-text-tertiary max-w-[280px] mx-auto">
-            When you pay for listing verification, your history will appear here.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-5">
-          {payments.map((payment) => (
-            <PaymentCard 
-              key={payment.id} 
-              payment={payment} 
-              formatDate={formatDate} 
-              onViewProof={setLightboxUrl}
-            />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="grid gap-5">
+            {payments.map((payment) => (
+              <PaymentCard 
+                key={payment.id} 
+                payment={payment} 
+                formatDate={formatDate} 
+                onViewProof={setLightboxUrl}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Lightbox Modal */}
       {lightboxUrl && (

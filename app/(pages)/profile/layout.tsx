@@ -21,9 +21,11 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 
   const isSupportTicket = pathname.startsWith("/profile/support-ticket/");
   const isPayment = pathname.includes("/payment");
+  const isLandlordVerify = pathname.includes("/landlord-verify");
+  const isPaymentHistory = pathname.includes("/payment-history");
 
   React.useEffect(() => {
-    if (isRoot || isSupportTicket || isPayment) {
+    if (isRoot || isSupportTicket || isPayment || isLandlordVerify || isPaymentHistory) {
       document.body.style.overflow = "";
       return;
     }
@@ -33,7 +35,7 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isRoot, isSupportTicket]);
+  }, [isRoot, isSupportTicket, isLandlordVerify, isPaymentHistory]);
 
   return (
     <RequireAuth>
@@ -77,12 +79,12 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                   transition={{ type: "spring", stiffness: 320, damping: 34, mass: 0.9 }}
                   className={cn(
                     "fixed inset-0 z-50 bg-bg-page",
-                    !(isSupportTicket || isPayment) && "overflow-y-auto"
+                    !(isSupportTicket || isPayment || isLandlordVerify || isPaymentHistory) && "overflow-y-auto"
                   )}
                   style={{ willChange: "transform" }}
                 >
                   <div className={cn("flex h-full flex-col")}>
-                    {!isSupportTicket && !isPayment && (
+                    {!isSupportTicket && !isPayment && !isLandlordVerify && !isPaymentHistory && (
                       <div className="sticky top-0 z-10 border-b border-border bg-bg-page/40 backdrop-blur">
                         <div className="flex items-center gap-3 px-4 py-3">
                           <Link
@@ -105,9 +107,9 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                       </div>
                     )}
 
-                    <div className={cn("flex-1 min-w-0", (isSupportTicket || isPayment) && "overflow-hidden")}>
-                      {isSupportTicket || isPayment ? (
-                        <div className="h-full">{children}</div>
+                    <div className={cn("flex-1 min-w-0", (isSupportTicket || isPayment || isLandlordVerify || isPaymentHistory) && "overflow-hidden")}>
+                      {isSupportTicket || isPayment || isLandlordVerify || isPaymentHistory ? (
+                        <div className="h-full overflow-y-auto">{children}</div>
                       ) : (
                         <div className="min-w-0 px-4 pb-24 pt-4">
                           <div className="min-w-0 shadow-sm">
@@ -125,4 +127,4 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
       </div>
     </RequireAuth>
   );
-}
+  }

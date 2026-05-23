@@ -343,6 +343,7 @@
       "shortlisted": "Shortlisted Properties",
       "recently_viewed": "Recently Viewed",
       "payment_history": "Payment History",
+      "payment_history_subtitle": "Track your listing verification payments and their statuses.",
       "edit_profile": "Edit Profile & Preferences",
       "terms": "Terms & Conditions"
     },
