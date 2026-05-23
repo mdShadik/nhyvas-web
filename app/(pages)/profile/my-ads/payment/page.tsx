@@ -270,6 +270,7 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           setScreenshotFile(null);
                           setPreviewUrl(null);
                         }}
@@ -293,7 +294,7 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
                     id="screenshot-upload"
                     type="file"
                     accept="image/*"
-                    className="hidden"
+                    className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
                     onChange={handleFileChange}
                     disabled={submitting}
                   />

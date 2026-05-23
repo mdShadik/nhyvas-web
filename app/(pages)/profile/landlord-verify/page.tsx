@@ -247,7 +247,7 @@ export default function LandlordVerifyPage() {
                         id="house-image-upload"
                         type="file"
                         accept="image/*"
-                        className="hidden"
+                        className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
                         onChange={handleFileChange}
                         disabled={submitting}
                       />

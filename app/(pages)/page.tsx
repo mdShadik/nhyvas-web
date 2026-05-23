@@ -6,7 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, TrendingUp, MapPin, ArrowRight } from "lucide-react";
 import { exploreService } from "@/services/apiService";
 import { noImagePlaceholder } from "../../assets";
 import { formatPrice } from "@/lib/formatPrice";
@@ -32,36 +32,106 @@ function CategoryCard({ category }: { category: Category }) {
         pathname: "/explore",
         query: category.code ? { category: category.code } : undefined,
       }}
-      className="group relative overflow-hidden rounded-2xl border border-border dark:bg-linear-to-tl bg-linear-to-br from-white via-white dark:from-bg-page dark:via-primary-900/10 dark:to-tertiary-900/40 to-tertiary-50 px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group relative isolate overflow-hidden rounded-2xl border border-border bg-bg-card/40 p-5 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:border-primary-400/50 hover:shadow-xl hover:shadow-primary-500/20 dark:hover:border-primary-500/40 dark:hover:shadow-primary-500/10"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-base font-semibold text-text-primary">{name}</div>
-          <div className="mt-1 max-h-10 overflow-hidden text-sm text-text-secondary">
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-60 transition-opacity duration-500 group-hover:opacity-100">
+        <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-primary-400/80 via-primary-500/20 to-transparent blur-3xl transition-transform duration-700 group-hover:scale-125 dark:from-primary-500/25 dark:via-primary-600/15" />
+        <div className="absolute -bottom-20 -right-10 h-52 w-52 rounded-full bg-gradient-to-tl from-tertiary-400/30 via-tertiary-500/20 to-transparent blur-3xl transition-transform duration-700 group-hover:scale-125 dark:from-tertiary-500/25 dark:via-tertiary-600/15" />
+      </div>
+
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.03] transition-opacity duration-500 group-hover:opacity-[0.06] dark:opacity-[0.05] dark:group-hover:opacity-[0.08]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+          backgroundSize: '16px 16px',
+        }}
+      />
+
+      <div className="pointer-events-none absolute right-4 top-4 h-2 w-2 rounded-full bg-tertiary-400 opacity-0 shadow-lg shadow-tertiary-400/50 transition-all duration-500 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute right-8 top-8 h-1 w-1 rounded-full bg-primary-400 opacity-0 shadow-lg shadow-primary-400/50 transition-all delay-100 duration-500 group-hover:opacity-100" />
+
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-primary-200/60 bg-primary-50/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700 backdrop-blur-sm dark:border-primary-500/20 dark:bg-primary-900/30 dark:text-primary-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-tertiary-500 shadow-sm shadow-tertiary-500/50" />
+            {t("common.category") || "Category"}
+          </div>
+
+          <h3 className="bg-gradient-to-br from-text-primary to-text-primary bg-clip-text text-lg font-bold leading-tight text-transparent transition-all duration-500 group-hover:from-primary-600 group-hover:to-tertiary-600 dark:group-hover:from-primary-400 dark:group-hover:to-tertiary-400">
+            {name}
+          </h3>
+
+          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-text-secondary">
             {desc}
+          </p>
+
+          <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-primary-600 dark:text-primary-400">
+            <span className="transition-transform duration-300 group-hover:translate-x-0.5">
+              {t("common.view")}
+            </span>
+            <svg
+              className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
           </div>
         </div>
 
-        <div className="shrink-0 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 transition group-hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-300 dark:group-hover:bg-primary-900/60">
-          {t("common.view")}
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-500 to-tertiary-500 opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-60" />
+
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 shadow-lg shadow-primary-500/30 transition-all duration-500 group-hover:rotate-6 group-hover:scale-110 dark:from-primary-500 dark:via-primary-600 dark:to-primary-800 dark:shadow-primary-500/20">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/0 via-white/20 to-white/0" />
+
+            <svg
+              className="relative h-7 w-7 text-white drop-shadow-md"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
+
+          <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-bg-card bg-tertiary-500 shadow-md transition-transform duration-500 group-hover:scale-125" />
         </div>
       </div>
 
-      <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-primary-400/10 blur-2xl dark:bg-primary-400/15" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
     </Link>
   );
 }
 
 function CategorySkeleton() {
   return (
-    <div className="h-23 animate-pulse rounded-2xl border border-border bg-secondary-100 dark:bg-secondary-800" />
+    <div className="relative h-[160px] overflow-hidden rounded-2xl border border-border bg-bg-card p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-3">
+          <div className="h-4 w-20 rounded-full bg-secondary-200 dark:bg-secondary-700" />
+          <div className="h-5 w-32 rounded-md bg-secondary-200 dark:bg-secondary-700" />
+          <div className="space-y-1.5">
+            <div className="h-3 w-full rounded-md bg-secondary-100 dark:bg-secondary-800" />
+            <div className="h-3 w-3/4 rounded-md bg-secondary-100 dark:bg-secondary-800" />
+          </div>
+          <div className="h-3 w-16 rounded-md bg-secondary-200 dark:bg-secondary-700" />
+        </div>
+        <div className="h-14 w-14 shrink-0 rounded-2xl bg-secondary-200 dark:bg-secondary-700" />
+      </div>
+      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/5" />
+    </div>
   );
 }
 
 function HeroBannerSkeleton() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-[28px] border border-border bg-secondary-100 dark:bg-secondary-800">
+    <div className="relative animate-pulse overflow-hidden rounded-[28px] border border-border bg-secondary-100 dark:bg-secondary-800">
       <div className="h-95 w-full bg-secondary-200/70 dark:bg-secondary-700/50 sm:h-110" />
+      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
     </div>
   );
 }
@@ -93,11 +163,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
       x: direction > 0 ? "100%" : "-100%",
       opacity: 0,
     }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
-    },
+    center: { zIndex: 1, x: 0, opacity: 1 },
     exit: (direction: number) => ({
       zIndex: 0,
       x: direction < 0 ? "100%" : "-100%",
@@ -106,9 +172,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
   };
 
   const swipeConfidenceThreshold = 10000;
-  const swipePower = (offset: number, velocity: number) => {
-    return Math.abs(offset) * velocity;
-  };
+  const swipePower = (offset: number, velocity: number) => Math.abs(offset) * velocity;
 
   const paginate = (newDirection: number) => {
     if (newDirection === 1 && currentIndex === listings.length - 1) return;
@@ -123,10 +187,9 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
 
   return (
     <div
-      className="group relative min-h-95 overflow-hidden rounded-[28px] border border-border shadow-sm sm:min-h-110 bg-secondary-100 dark:bg-secondary-800"
+      className="group relative min-h-95 overflow-hidden rounded-[28px] border border-border shadow-xl shadow-primary-500/5 sm:min-h-110 bg-secondary-100 dark:bg-secondary-800 dark:shadow-primary-500/10"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      // Add touch handlers for mobile to pause slider
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
@@ -145,14 +208,10 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={1}
-          onDragEnd={(e, { offset, velocity }) => {
+          onDragEnd={(_e, { offset, velocity }) => {
             const swipe = swipePower(offset.x, velocity.x);
-
-            if (swipe < -swipeConfidenceThreshold) {
-              paginate(1);
-            } else if (swipe > swipeConfidenceThreshold) {
-              paginate(-1);
-            }
+            if (swipe < -swipeConfidenceThreshold) paginate(1);
+            else if (swipe > swipeConfidenceThreshold) paginate(-1);
           }}
           className="absolute inset-0"
         >
@@ -161,54 +220,78 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
             alt={listing.property_title}
             fill
             priority
-            className="object-cover pointer-events-none"
+            className="object-cover pointer-events-none scale-105 transition-transform duration-[8000ms] ease-out group-hover:scale-110"
             sizes="100vw"
           />
 
-          <div className="absolute inset-0 bg-linear-to-r from-black/75 via-black/50 to-black/20 pointer-events-none" />
-          <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+          {/* Multi-layered overlays for depth */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/10 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-900/30 via-transparent to-tertiary-900/20 pointer-events-none mix-blend-overlay" />
 
-          <div className="relative z-10 flex h-full flex-col justify-between p-3 sm:p-10 pointer-events-none">
-            <div className="relative overflow-hidden rounded-full w-fit bg-gradient-to-r from-primary-500 to-tertiary-500 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
+          {/* Decorative grid pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{
+              backgroundImage:
+                "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+          />
 
-              {/* Shimmer */}
-              <div className="absolute inset-0 overflow-hidden rounded-full">
-                <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+          <div className="relative z-10 flex h-full flex-col justify-between p-5 sm:p-10 pointer-events-none">
+            {/* Top badges row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative overflow-hidden rounded-full w-fit bg-gradient-to-r from-primary-500 to-tertiary-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-primary-500/30 backdrop-blur-md">
+                <div className="absolute inset-0 overflow-hidden rounded-full">
+                  <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                </div>
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3" />
+                  {t("home.badge_featured")}
+                </span>
               </div>
 
-              <span className="relative z-10">
-                {t("home.badge_featured")}
-              </span>
+              <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md flex items-center gap-1.5">
+                <TrendingUp className="h-3 w-3" />
+                <span>Trending</span>
+              </div>
             </div>
 
             <div className="max-w-2xl mt-auto">
-              <p className="mb-3 text-sm font-medium text-white/80">
+              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-md border border-white/10">
+                <span className="h-1.5 w-1.5 rounded-full bg-tertiary-400 animate-pulse" />
                 {t("home.prime_listing")}
               </p>
 
-              <h1 className="text-3xl font-semibold leading-tight text-white sm:text-5xl">
+              <h1 className="text-3xl font-bold leading-tight text-white sm:text-5xl drop-shadow-lg">
                 {listing.property_title}
               </h1>
 
-              <p className="mt-3 text-sm text-white/80 sm:text-base">
+              <p className="mt-3 flex items-center gap-1.5 text-sm text-white/85 sm:text-base">
+                <MapPin className="h-4 w-4 shrink-0" />
                 {listing.location_text}
               </p>
 
-              <div className="mt-5 text-2xl font-bold text-white sm:text-3xl">
-                {formatPrice(listing.price, listing.currency_code)}
+              <div className="mt-5 flex items-baseline gap-2">
+                <div className="text-2xl font-bold text-white sm:text-4xl bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                  {formatPrice(listing.price, listing.currency_code)}
+                </div>
               </div>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href={{ pathname: "/property", query: { id: listing.id } }}
-                  className="inline-flex items-center justify-center rounded-2xl hover:bg-linear-to-tl bg-linear-to-br from-primary-600 via-primary-500 to-tertiary-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-500 active:bg-primary-700 pointer-events-auto cursor-pointer"
+                  className="group/btn relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-500/40 transition-all hover:shadow-xl hover:shadow-primary-500/50 hover:-translate-y-0.5 active:translate-y-0 pointer-events-auto cursor-pointer"
                 >
-                  {t("home.view_property")}
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                  <span className="relative">{t("home.view_property")}</span>
+                  <ArrowRight className="relative h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                 </Link>
 
                 <Link
                   href="/explore"
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15 pointer-events-auto cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition-all hover:bg-white/20 hover:border-white/40 pointer-events-auto cursor-pointer"
                 >
                   {t("home.browse_all_listings")}
                 </Link>
@@ -220,24 +303,24 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
 
       {currentIndex > 0 && (
         <button
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition hover:bg-black/50 opacity-0 group-hover:opacity-100"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-110 opacity-0 group-hover:opacity-100"
           onClick={() => paginate(-1)}
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronLeft className="h-5 w-5" />
         </button>
       )}
 
       {currentIndex < listings.length - 1 && (
         <button
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition hover:bg-black/50 opacity-0 group-hover:opacity-100"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-110 opacity-0 group-hover:opacity-100"
           onClick={() => paginate(1)}
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronRight className="h-5 w-5" />
         </button>
       )}
 
       {listings.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-2 backdrop-blur-md">
           {listings.map((_, idx) => (
             <button
               key={idx}
@@ -245,8 +328,11 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
                 setDirection(idx > currentIndex ? 1 : -1);
                 setCurrentIndex(idx);
               }}
-              className={`h-2 rounded-full transition-all ${idx === currentIndex ? "w-6 bg-primary-500" : "w-2 bg-white/50 hover:bg-white/80"
-                }`}
+              className={`h-1.5 rounded-full transition-all ${
+                idx === currentIndex
+                  ? "w-8 bg-gradient-to-r from-primary-400 to-tertiary-400"
+                  : "w-1.5 bg-white/50 hover:bg-white/80"
+              }`}
             />
           ))}
         </div>
@@ -258,7 +344,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
 export default function HomePage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [search, setSearch] = useState("");
+  const [search] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
 
@@ -274,152 +360,122 @@ export default function HomePage() {
 
   const categories = categoriesQuery.data ?? [];
   const heroListings = heroQuery.data ?? [];
-  // const featuredListing = heroListings[0];
 
   const filteredCategories = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return categories;
-
     return categories.filter((c) =>
       `${c.code ?? ""} ${c.name ?? ""}`.toLowerCase().includes(q)
     );
   }, [categories, search]);
 
   return (
-    <main className={`flex-1`}>
+    <main className="relative flex-1 overflow-hidden">
+      {/* Ambient background decorations */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-primary-400/10 blur-3xl dark:bg-primary-500/10" />
+        <div className="absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-tertiary-400/10 blur-3xl dark:bg-tertiary-500/10" />
+        <div className="absolute bottom-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary-300/5 blur-3xl dark:bg-primary-600/10" />
+      </div>
+
       <div className="mx-auto flex min-h-[calc(100vh-90px)] w-full max-w-6xl flex-col px-4 py-2 sm:px-6 sm:py-12">
         <div className="flex-1">
+          {/* Story Feed Section */}
           <section className="mt-8 sm:mt-0">
             <StoryFeed />
           </section>
 
+          {/* Hero Banner Section */}
           <section className="mt-10">
             {heroQuery.isLoading ? (
               <HeroBannerSkeleton />
             ) : heroListings.length > 0 ? (
               <HeroBanner listings={heroListings} />
-            ) : (
-              null
-            )}
+            ) : null}
           </section>
 
-          {/* <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
-              {t("home.find_next_place")}
-            </h2>
+          {/* Categories Section */}
+          <section className={`${heroListings.length > 0 ? "mt-14" : "mt-10"} mb-25 md:mb-5`}>
+            {/* Section header with decorative elements */}
+            <div className="relative">
+              <div className="flex items-end justify-between gap-4">
+                <div className="relative">
+                  {/* Decorative line accent */}
+                  <div className="absolute -left-4 top-2 hidden h-8 w-1 rounded-full bg-gradient-to-b from-primary-500 to-tertiary-500 sm:block" />
 
-            <p className="mt-3 max-w-prose text-base text-text-secondary">
-              {t("home.browse_verified")}
-            </p>
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-200/60 bg-primary-50/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700 backdrop-blur-sm dark:border-primary-500/20 dark:bg-primary-900/30 dark:text-primary-300">
+                      <Sparkles className="h-3 w-3" />
+                      {t("home.browse_categories")}
+                    </div>
+                  </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex-1">
-                <label className="sr-only" htmlFor="search">
-                  {t("common.search")}
-                </label>
-                <input
-                  id="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={t("home.search_categories")}
-                  className="w-full rounded-2xl border border-border bg-bg-input px-4 py-3 text-sm text-text-primary placeholder:text-placeholder outline-none ring-primary-500/20 transition focus:border-primary-400 focus:ring-4"
-                />
-              </div>
+                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+                    {t("home.browse_categories")}
+                  </h2>
 
-              <Link
-                href={{
-                  pathname: "/explore",
-                  query: search.trim() ? { q: search.trim() } : undefined,
-                }}
-                className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-500 active:bg-primary-700"
-              >
-                {t("common.search")}
-              </Link>
+                  <p className="mt-1.5 text-sm text-text-secondary">
+                    {t("home.start_with_what_you_need")}
+                  </p>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(true)}
-                className="inline-flex items-center justify-center rounded-2xl border border-border bg-bg-card px-5 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-secondary-100 dark:hover:bg-secondary-800 md:hidden"
-              >
-                {t("common.filters")}
-              </button>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-2 text-xs text-text-tertiary">
-              {["2bhk at bhaktapur", "1bhk at putalisadak", "4bhk at baneshwor"].map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-secondary-200/60 px-3 py-1 dark:bg-secondary-700/50"
+                <Link
+                  href="/explore"
+                  className="group/link inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-primary-600 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 dark:text-primary-400 dark:hover:border-primary-500/50"
                 >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-border bg-bg-card p-6 shadow-sm">
-            <div className="text-sm font-semibold text-text-primary">
-              {t("home.why_nhyvas")}
-            </div>
-            <div className="mt-2 text-sm text-text-secondary">
-              {t("home.why_nhyvas_desc")}
-            </div>
-          </div>
-        </section> */}
-
-          <section className={`${heroListings.length > 0 ? "mt-12" : ""}`}>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight text-text-primary">
-                  {t("home.browse_categories")}
-                </h2>
-                <p className="mt-1 text-sm text-text-secondary">
-                  {t("home.start_with_what_you_need")}
-                </p>
+                  {t("common.view_all")}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
+                </Link>
               </div>
-
-              <Link
-                href="/explore"
-                className="text-sm font-semibold text-primary-600 transition hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-              >
-                {t("common.view_all")}
-              </Link>
             </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {categoriesQuery.isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => <CategorySkeleton key={i} />)
               ) : filteredCategories.length ? (
-                filteredCategories.map((c) => (
-                  <CategoryCard key={c.id} category={c} />
-                ))
+                filteredCategories.map((c) => <CategoryCard key={c.id} category={c} />)
               ) : (
-                <div className="text-sm text-text-secondary">
-                  No categories match your search.
+                <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-bg-card/50 py-12 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary-100 dark:bg-secondary-800">
+                    <Sparkles className="h-5 w-5 text-text-tertiary" />
+                  </div>
+                  <p className="text-sm text-text-secondary">
+                    No categories match your search.
+                  </p>
                 </div>
               )}
             </div>
           </section>
         </div>
 
-        <footer className="hidden md:block border-t mt-5 border-border pt-8 mb-20 sm:mb-0 text-sm text-text-tertiary">
-          <div className="flex gap-2 items-center justify-between">
-            <div>© {new Date().getFullYear()} Nhyvas</div>
+        {/* Enhanced Footer */}
+        <footer className="hidden md:block relative mt-5 mb-20 sm:mb-0">
+          {/* Top gradient divider */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
 
-            <div className="flex gap-4">
-              {/* <Link href="/help" className="transition hover:text-text-primary">
-                {t("common.help")}
-              </Link> */}
+          <div className="pt-8 text-sm text-text-tertiary">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-tertiary-500 text-white shadow-sm">
+                  <span className="text-xs font-bold">N</span>
+                </div>
+                <span>© {new Date().getFullYear()} Nhyvas</span>
+              </div>
 
-              <Link href="/terms" className="transition hover:text-text-primary">
-                {t("common.terms")}
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/terms"
+                  className="font-medium transition-colors hover:text-text-primary"
+                >
+                  {t("common.terms")}
+                </Link>
+              </div>
             </div>
           </div>
         </footer>
       </div>
 
+      {/* Mobile Filters Sheet */}
       <div className="md:hidden">
         <MobileBottomSheet
           open={filtersOpen}
