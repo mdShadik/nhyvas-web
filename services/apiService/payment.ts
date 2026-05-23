@@ -5,6 +5,16 @@ export type PaymentGateway = {
   qr_code_url: string;
 };
 
+export type InvoiceInfo = {
+  id: string;
+  invoice_no: string;
+  amount: number;
+  currency_code: string;
+  status: "issued" | "cancelled";
+  issued_at: string;
+  metadata?: any;
+};
+
 export type ListingPayment = {
   id: string;
   transaction_id: string | null;
@@ -19,6 +29,7 @@ export type ListingPayment = {
     currency_code: string;
     approval_fee_amount: number | null;
   };
+  invoice?: InvoiceInfo | InvoiceInfo[];
 };
 
 export type SubmitPaymentInput = {

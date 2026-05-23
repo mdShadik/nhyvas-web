@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { paymentService, type ListingPayment } from "@/services/apiService/payment";
-import { Loader2, ReceiptText, ExternalLink, XCircle, CheckCircle, Clock, X, ArrowLeft } from "lucide-react";
+import { Loader2, ReceiptText, ExternalLink, XCircle, CheckCircle, Clock, X, ArrowLeft, Receipt, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ReceiptModal } from "@/components/payment/ReceiptModal";
 
 export default function PaymentHistoryPage() {
   const { t } = useTranslation();
@@ -14,6 +15,8 @@ export default function PaymentHistoryPage() {
   const [payments, setPayments] = useState<ListingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  
+  const [selectedReceipt, setSelectedReceipt] = useState<ListingPayment | null>(null);
 
   useEffect(() => {
     paymentService.getPaymentHistory()
@@ -97,6 +100,7 @@ export default function PaymentHistoryPage() {
                 payment={payment} 
                 formatDate={formatDate} 
                 onViewProof={setLightboxUrl}
+                onViewReceipt={setSelectedReceipt}
               />
             ))}
           </div>
@@ -127,6 +131,15 @@ export default function PaymentHistoryPage() {
           </div>
         </div>
       )}
+
+      {/* Receipt Modal */}
+      {selectedReceipt && (
+        <ReceiptModal
+          open={Boolean(selectedReceipt)}
+          onClose={() => setSelectedReceipt(null)}
+          payment={selectedReceipt}
+        />
+      )}
     </div>
   );
 }
@@ -134,11 +147,13 @@ export default function PaymentHistoryPage() {
 function PaymentCard({ 
   payment, 
   formatDate,
-  onViewProof
+  onViewProof,
+  onViewReceipt
 }: { 
   payment: ListingPayment; 
   formatDate: (d: string) => string;
   onViewProof: (url: string) => void;
+  onViewReceipt: (p: ListingPayment) => void;
 }) {
   const statusIcons = {
     pending: <Clock className="h-4 w-4" />,
@@ -151,6 +166,8 @@ function PaymentCard({
     verified: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400 dark:bg-green-500/5",
     rejected: "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400 dark:bg-red-500/5",
   };
+
+  const hasInvoice = payment.invoice && (Array.isArray(payment.invoice) ? payment.invoice.length > 0 : true);
 
   return (
     <div className="overflow-hidden border border-border rounded-3xl bg-bg-card shadow-sm hover:shadow-md transition-shadow">
@@ -200,7 +217,7 @@ function PaymentCard({
         </div>
       )}
       
-      <div className="border-t border-border/40 px-5 py-3 flex items-center justify-between">
+      <div className="border-t border-border/40 px-5 py-3 flex items-center justify-between bg-secondary-50/10">
         <button 
           onClick={() => onViewProof(payment.screenshot_url)}
           className="inline-flex items-center gap-2 text-xs font-bold text-primary-500 hover:text-primary-600 active:scale-95 transition-all group"
@@ -208,6 +225,16 @@ function PaymentCard({
           View Payment Proof
           <ExternalLink className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
         </button>
+
+        {payment.status === "verified" && hasInvoice && (
+          <button 
+            onClick={() => onViewReceipt(payment)}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-500/10 hover:bg-primary-500/20 border border-primary-500/20 px-4 py-2 text-xs font-black text-primary-600 dark:text-primary-400 active:scale-95 transition-all group"
+          >
+            <Download className="h-3.5 w-3.5 group-hover:-translate-y-0.5 transition-transform" />
+            Download Receipt
+          </button>
+        )}
       </div>
     </div>
   );

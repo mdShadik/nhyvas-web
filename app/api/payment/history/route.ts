@@ -11,7 +11,8 @@ export async function GET() {
       .from("listing_payments")
       .select(`
         *,
-        listing:listing_moderation_queue(id, property_title, price, currency_code, approval_fee_amount)
+        listing:listing_moderation_queue(id, property_title, price, currency_code, approval_fee_amount),
+        invoice:invoices(*)
       `)
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
