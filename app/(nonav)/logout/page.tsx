@@ -9,11 +9,15 @@ export default function LogoutPage() {
 
   useEffect(() => {
     const performLogout = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const isExpired = params.get("expired") === "true";
+
       // Clear secure HttpOnly cookies (source of truth for web auth).
       await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-       await supabaseBrowser.auth.signOut().catch(() => null);
-      // Redirect to login
-      window.location.href = "/login";
+      await supabaseBrowser.auth.signOut().catch(() => null);
+
+      // Redirect to login, preserving expired state
+      window.location.href = isExpired ? "/login?expired=true" : "/login";
     };
 
     performLogout();

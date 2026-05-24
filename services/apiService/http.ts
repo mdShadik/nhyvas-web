@@ -31,13 +31,9 @@ async function handleUnauthorized() {
   useAuthStore.getState().setLoggingOut(true);
 
   try {
-    // Clear local storage tokens
     if (typeof window !== "undefined") {
-      document.cookie = "nhyvas_at=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = "nhyvas_rt=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      
-      // Redirect to login
-      window.location.href = "/login?expired=true";
+      // Redirect to logout page to clear session properly
+      window.location.href = "/logout?expired=true";
     }
   } finally {
     isLoggingOut = false;

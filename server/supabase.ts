@@ -107,14 +107,14 @@ export async function createSupabaseUserClientOrThrow(): Promise<AuthResult> {
           sameSite: "lax",
           secure: env.mode === "production",
           path: "/",
-          maxAge: 60 * 60 * 24 * 30, // 30 days - for refresh token
+          maxAge: 60 * 60 * 24 * 14, // 14 days
         });
         jar.set(authCookieNames.refreshToken, data.session.refresh_token, {
           httpOnly: true,
           sameSite: "lax",
           secure: env.mode === "production",
           path: "/",
-          maxAge: 60 * 60 * 24 * 30, // 30 days - for refresh token
+          maxAge: 60 * 60 * 24 * 14, // 14 days
         });
       }
     }

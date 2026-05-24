@@ -61,12 +61,14 @@ export async function POST(req: Request) {
     sameSite: "lax",
     secure: env.mode === "production",
     path: "/",
+    maxAge: 60 * 60 * 24 * 14, // 14 days
   });
   res.cookies.set(authCookieNames.refreshToken, session.refresh_token, {
     httpOnly: true,
     sameSite: "lax",
     secure: env.mode === "production",
     path: "/",
+    maxAge: 60 * 60 * 24 * 14, // 14 days
   });
 
   return res;
