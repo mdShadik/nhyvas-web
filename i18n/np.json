@@ -27,7 +27,8 @@
     "email": "इमेल",
     "saving": "सेभ हुँदैछ...",
     "continue": "अगाडि बढ्नुहोस्",
-    "back": "पछाडि"
+    "back": "पछाडि",
+    "category": ""
   },
   "auth": {
     "server_session_failed": "सर्भर सत्र स्थापना गर्न असफल।",

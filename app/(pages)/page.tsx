@@ -252,10 +252,10 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
                 </span>
               </div>
 
-              <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md flex items-center gap-1.5">
+              {/* <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md flex items-center gap-1.5">
                 <TrendingUp className="h-3 w-3" />
                 <span>Trending</span>
-              </div>
+              </div> */}
             </div>
 
             <div className="max-w-2xl mt-auto">

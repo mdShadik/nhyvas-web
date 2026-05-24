@@ -323,8 +323,8 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
                     </Link>
                   </div>
                 ) : (
-                  <LoginButton 
-                    loginText={t("common.login")} 
+                  <LoginButton
+                    loginText={t("common.login")}
                     onClick={() => setLoginOpen(true)}
                   />
                 )}
@@ -333,34 +333,30 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
           </div>
         </div>
 
-        <LoginModal 
-          open={loginOpen} 
-          onClose={() => setLoginOpen(false)} 
-        />
+        <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       </header>
 
       {/* Mobile Bottom Nav */}
       {!hideMobile ? (
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border  px-4 pb-safe pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-around">
-          {[
-            {
-              href: "/explore",
-              icon: <Building2 className="h-6 w-6" />,
-              id: "explore",
-            },
-            {
-              href: "/",
-              icon: <Home className="h-6 w-6" />,
-              onClick: handleHomeClick,
-              id: "home",
-            },
-            ...(isAuthenticated
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border px-4 pb-safe pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+          <div className="flex h-14 items-center justify-around">
+            {(isAuthenticated
               ? [
                   {
                     href: "/shortlisted",
                     icon: <Heart className="h-6 w-6" />,
                     id: "shortlisted",
+                  },
+                  {
+                    href: "/explore",
+                    icon: <Building2 className="h-6 w-6" />,
+                    id: "explore",
+                  },
+                  {
+                    href: "/",
+                    icon: <Home className="h-6 w-6" />,
+                    onClick: handleHomeClick,
+                    id: "home",
                   },
                   {
                     href: "/chat",
@@ -375,42 +371,71 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
                 ]
               : [
                   {
+                    href: "/explore",
+                    icon: <Building2 className="h-6 w-6" />,
+                    id: "explore",
+                  },
+                  {
+                    href: "/",
+                    icon: <Home className="h-6 w-6" />,
+                    onClick: handleHomeClick,
+                    id: "home",
+                  },
+                  {
                     href: "#login",
                     icon: <User className="h-6 w-6" />,
                     id: "login",
                     onClick: (e: React.MouseEvent) => {
                       e.preventDefault();
                       setLoginOpen(true);
-                    }
+                    },
                   },
-                ]),
-          ].map((item) => {
-            const active = isRouteActive(pathname, item.href);
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={item.onClick}
-                className="relative flex h-12 w-12 items-center justify-center"
-              >
-                {active && (
-                  <motion.div
-                    layoutId="mobile-nav-pill"
-                    className="absolute inset-0 rounded-full bg-primary-400/15"
-                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                  />
-                )}
-                <div
-                  className={`relative z-10 transition-colors duration-200 ${active ? "text-primary-400" : "text-text-secondary hover:text-text-primary"}`}
+                ]
+            ).map((item) => {
+              const active = isRouteActive(pathname, item.href);
+
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={item.onClick}
+                  className={`relative flex items-center justify-center h-12 w-12 ${
+                    active
+                      ? "h-14 w-14 -mt-6 rounded-full bg-primary-900 shadow-lg border border-border"
+                      : "h-12 w-12"
+                  }`}
                 >
-                  {item.icon}
-                </div>
-              </Link>
-            );
-          })}
+                  {active && (
+                    <motion.div
+                      layoutId="mobile-nav-pill"
+                      className={`absolute inset-0 rounded-full ${
+                        item.id === "home"
+                          ? "bg-primary-400/20"
+                          : "bg-primary-400/15"
+                      }`}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 28,
+                      }}
+                    />
+                  )}
+
+                  <div
+                    className={`relative z-10 transition-colors duration-200 ${
+                      active
+                        ? "text-primary-400"
+                        : "text-text-secondary hover:text-text-primary"
+                    }`}
+                  >
+                    {item.icon}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    ) : null}
+      ) : null}
     </>
   );
 }

@@ -27,7 +27,8 @@
     "email": "Email",
     "saving": "Saving...",
     "continue": "Continue",
-    "back": "Back"
+    "back": "Back",
+    "category": "Category"
   },
   "auth": {
     "server_session_failed": "Failed to establish server session.",
