@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, use } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { 
@@ -34,9 +34,11 @@ interface PageProps {
 export default function PaymentPage({ searchParams: searchParamsPromise }: PageProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const nextSearchParams = useSearchParams();
   const { showToast } = useToast();
   
-  const [listingId, setListingId] = useState("");
+  // Try to get listingId from hook first, fallback to prop promise
+  const [listingId, setListingId] = useState(nextSearchParams.get("listingId") ?? "");
   const [remarks, setRemarks] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -44,10 +46,14 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    searchParamsPromise.then(params => {
-      setListingId(params.listingId?.trim() ?? "");
-    });
-  }, [searchParamsPromise]);
+    // If hook didn't have it, try the promise (sometimes needed in Next.js 15+ Page components)
+    if (!listingId) {
+      searchParamsPromise.then(params => {
+        const id = params.listingId?.trim();
+        if (id) setListingId(id);
+      }).catch(err => console.error("Failed to resolve searchParams:", err));
+    }
+  }, [searchParamsPromise, listingId]);
 
   const gatewayQuery = useQuery({
     queryKey: ["payment-gateway"],
@@ -78,7 +84,10 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!listingId) return;
+    if (!listingId) {
+      showToast({ variant: "error", message: "Listing ID is missing. Please go back and try again." });
+      return;
+    }
     if (!screenshotFile) {
       showToast({ variant: "error", message: "Please upload a payment screenshot" });
       return;
@@ -104,6 +113,7 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
       });
       router.replace("/profile/my-ads");
     } catch (error: any) {
+      console.error("Payment submission error:", error);
       showToast({ variant: "error", message: error.message || "Failed to submit payment" });
     } finally {
       setSubmitting(false);
