@@ -6,6 +6,14 @@ env.allowLocalModels = false;
 env.useBrowserCache = false;
 env.cacheDir = "/tmp/transformers-cache";
 
+// Force WASM backend to avoid native dependency issues (libonnxruntime.so) on Vercel
+// @ts-ignore - types might not match exactly depending on version
+if (env.backends?.onnx) {
+  env.backends.onnx.wasm.numThreads = 1;
+  // @ts-ignore
+  env.backends.onnx.node = false;
+}
+
 class EmbeddingModel {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static instance: any = null;
