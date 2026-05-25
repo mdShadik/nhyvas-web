@@ -152,13 +152,19 @@ export default function AddPropertyPage({ searchParams }: Props) {
   });
 
   useEffect(() => {
-    if (bootstrapQuery.isLoading) return;
+    if (bootstrapQuery.isLoading || bootstrapQuery.isFetching) return;
     const profile = bootstrapQuery.data?.profile;
     // Redirect to verification if not verified and not editing an existing listing
     if (profile && !profile.landlord_verified && !listingId) {
       router.replace("/profile/landlord-verify");
     }
-  }, [bootstrapQuery.isLoading, bootstrapQuery.data, listingId, router]);
+  }, [
+    bootstrapQuery.isLoading,
+    bootstrapQuery.isFetching,
+    bootstrapQuery.data,
+    listingId,
+    router,
+  ]);
 
   const categoryIdValue = watch("categoryId");
   const selectedCategory: HomeCategory | null = useMemo(() => {

@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Camera, Loader2, UploadCloud, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Image from "next/image";
 import Link from "next/link";
 
-import { profileService } from "@/services/apiService/profile";
+import { profileService, AppProfile, UserPreferences } from "@/services/apiService/profile";
 import { uploadToR2 } from "@/services/apiService/media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,17 @@ export default function LandlordVerifyPage() {
   const [houseImageFile, setHouseImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const bootstrapQuery = useQuery({
+    queryKey: ["profile", "bootstrap"],
+    queryFn: () => profileService.getBootstrap(),
+  });
+
+  useEffect(() => {
+    if (bootstrapQuery.data?.profile?.landlord_verified) {
+      router.replace("/add-property");
+    }
+  }, [bootstrapQuery.data, router]);
 
   const {
     control,
@@ -83,10 +94,25 @@ export default function LandlordVerifyPage() {
         message: t("landlord_verify.success_message"),
       });
 
-      // 3. Invalidate profile query to update landlord_verified status
-      await queryClient.invalidateQueries({ queryKey: ["profile", "bootstrap"] });
+      // 3. Update cache immediately
+      queryClient.setQueryData<{
+        profile: AppProfile | null;
+        preferences: UserPreferences | null;
+      }>(["profile", "bootstrap"], (old) => {
+        if (!old || !old.profile) return old;
+        return {
+          ...old,
+          profile: {
+            ...old.profile,
+            landlord_verified: true,
+          },
+        };
+      });
+
+      // 4. Invalidate profile query to ensure it's fresh
+      void queryClient.invalidateQueries({ queryKey: ["profile", "bootstrap"] });
       
-      // 4. Redirect to property listing page
+      // 5. Redirect to property listing page
       router.replace("/add-property");
     } catch (error: any) {
       showToast({
@@ -97,6 +123,14 @@ export default function LandlordVerifyPage() {
       setSubmitting(false);
     }
   };
+
+  if (bootstrapQuery.isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
 
   return (
     <RequireAuth>
