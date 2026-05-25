@@ -7,6 +7,8 @@ import { env } from "@/lib/env";
 import { authCookieNames } from "@/lib/authCookies";
 
 
+const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+
 // Token expiration codes that indicate session is completely invalid
 const INVALID_SESSION_ERRORS = [
   "refresh_token",
@@ -45,6 +47,20 @@ export async function clearAuthCookies(): Promise<void> {
   jar.delete(authCookieNames.refreshToken);
 }
 
+async function setAuthCookies(accessToken: string, refreshToken: string): Promise<void> {
+  const jar = await cookies();
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: env.mode === "production",
+    path: "/",
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+  };
+
+  jar.set(authCookieNames.accessToken, accessToken, cookieOptions);
+  jar.set(authCookieNames.refreshToken, refreshToken, cookieOptions);
+}
+
 /**
  * Result type for createSupabaseUserClientOrThrow that indicates session status
  */
@@ -68,11 +84,6 @@ export async function createSupabaseUserClientOrThrow(): Promise<AuthResult> {
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
     },
   });
 
@@ -101,22 +112,11 @@ export async function createSupabaseUserClientOrThrow(): Promise<AuthResult> {
         data.session.refresh_token !== refreshToken
       ) {
         refreshed = true;
-        const jar = await cookies();
-        jar.set(authCookieNames.accessToken, data.session.access_token, {
-          httpOnly: true,
-          sameSite: "lax",
-          secure: env.mode === "production",
-          path: "/",
-          maxAge: 60 * 60 * 24 * 14, // 14 days
-        });
-        jar.set(authCookieNames.refreshToken, data.session.refresh_token, {
-          httpOnly: true,
-          sameSite: "lax",
-          secure: env.mode === "production",
-          path: "/",
-          maxAge: 60 * 60 * 24 * 14, // 14 days
-        });
+        await setAuthCookies(data.session.access_token, data.session.refresh_token);
       }
+    } else {
+      await clearAuthCookies();
+      return { success: false, error: "expired" };
     }
   } catch (err) {
     // Check if this is a session expiration error

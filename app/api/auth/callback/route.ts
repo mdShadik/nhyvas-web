@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { authCookieNames } from "@/lib/authCookies";
 
+const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const session = body?.session;
@@ -61,14 +63,14 @@ export async function POST(req: Request) {
     sameSite: "lax",
     secure: env.mode === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 14, // 14 days
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
   });
   res.cookies.set(authCookieNames.refreshToken, session.refresh_token, {
     httpOnly: true,
     sameSite: "lax",
     secure: env.mode === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 14, // 14 days
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
   });
 
   return res;

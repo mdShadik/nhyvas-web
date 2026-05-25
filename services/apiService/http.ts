@@ -24,7 +24,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoggingOut: (value: boolean) => set({ isLoggingOut: value }),
 }));
 
-// Trigger logout on the client - call this when session is expired
+const AUTH_401_MARKERS = [
+  "expired",
+  "session",
+  "logged in",
+  "unauthorized",
+  "unauthenticated",
+  "invalid token",
+  "refresh token",
+];
+
+function isAuthFailureMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return AUTH_401_MARKERS.some((marker) => normalized.includes(marker));
+}
+
+// Trigger logout on the client - call this when session is expired or invalid
 async function handleUnauthorized() {
   if (isLoggingOut) return;
   isLoggingOut = true;
@@ -36,7 +51,10 @@ async function handleUnauthorized() {
       window.location.href = "/logout?expired=true";
     }
   } finally {
-    isLoggingOut = false;
+    if (typeof window === "undefined") {
+      isLoggingOut = false;
+      useAuthStore.getState().setLoggingOut(false);
+    }
   }
 }
 
@@ -60,8 +78,7 @@ export async function requestJson<TResponse>(
     const body = await response.json().catch(() => null);
     const message = body?.error ?? "You need to be logged in.";
     
-    // Check if it's a session expiration
-    if (message.toLowerCase().includes("expired") || message.toLowerCase().includes("session")) {
+    if (isAuthFailureMessage(message)) {
       handleUnauthorized();
     }
     

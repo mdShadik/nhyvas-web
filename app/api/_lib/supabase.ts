@@ -1,9 +1,8 @@
 import { type SupabaseClient } from "@supabase/supabase-js";
-import { jsonError, jsonOk } from "./response";
+import { jsonError } from "./response";
 import {
   createSupabaseUserClientOrThrow,
   clearAuthCookies,
-  type AuthResult,
 } from "@/server/supabase";
 
 
