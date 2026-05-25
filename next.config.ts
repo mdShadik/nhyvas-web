@@ -34,8 +34,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverExternalPackages: ["@xenova/transformers", "onnxruntime-node"],
-  turbopack: {},
+  serverExternalPackages: ["@xenova/transformers"],
+  experimental: {},
 };
 
 export default nextConfig;
