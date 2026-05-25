@@ -784,11 +784,17 @@ export function ProfileOverview() {
         description={t("profile.preferences.subtitle")}
         onClose={handleClose}
         className="sm:hidden"
+        snapPoints={[0, 1]}
+        initialSnap={30}
       >
-        <div className="space-y-5 pt-2">
-          <EditProfileForm {...sharedFormProps} />
+        <div className="flex h-[85vh] flex-col">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-4 pt-2">
+            <EditProfileForm {...sharedFormProps} />
+          </div>
 
-          <div className="flex gap-3 pb-[env(safe-area-inset-bottom)]">
+          {/* Fixed Footer */}
+          <div className="flex gap-3 border-t border-white/10  p-4 backdrop-blur-xl pb-[calc(env(safe-area-inset-bottom)+16px)]">
             <Button
               variant="outline"
               className="h-11 flex-1 border border-white/20 bg-white/5 text-sm font-semibold backdrop-blur-sm"
@@ -801,6 +807,7 @@ export function ProfileOverview() {
             >
               {t("common.cancel")}
             </Button>
+
             <Button
               className="h-11 flex-1 border border-white/20 bg-linear-to-r from-primary-500 to-tertiary-500 text-sm font-semibold shadow-[0_0_20px_rgba(99,102,241,0.4)]"
               onClick={() => saveMutation.mutate()}

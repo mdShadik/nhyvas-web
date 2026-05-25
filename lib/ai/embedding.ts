@@ -4,6 +4,7 @@ import { pipeline, env } from "@xenova/transformers";
 // but here we are server-side.
 env.allowLocalModels = false;
 env.useBrowserCache = false;
+env.cacheDir = "/tmp/transformers-cache";
 
 class EmbeddingModel {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
