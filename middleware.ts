@@ -5,7 +5,7 @@ import { authCookieNames } from "@/lib/authCookies";
 const publicRoutes = ["/", "/explore", "/property", "/terms", "/privacy"];
 const authRoutes = ["/login"];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const token = request.cookies.get(authCookieNames.accessToken)?.value;
