@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { MapPin, Heart, ArrowRight, Eye } from "lucide-react";
+import { MapPin, Heart, ArrowRight, Eye, ChevronDown } from "lucide-react";
 import { formatPrice } from "@/lib/formatPrice";
 import { logoSingleN, noImagePlaceholder } from "@/assets";
 import { useTranslation } from "react-i18next";
@@ -36,6 +36,7 @@ export function ListingCard({
   onToggleRented,
 }: ListingCardProps) {
   const { t } = useTranslation();
+  const [isNoteExpanded, setIsNoteExpanded] = React.useState(false);
   const thumbnailUrl = listing.thumbnail_url || noImagePlaceholder;
   const isCompact = variant === "compact";
   const isPublished = listing.status === "approved" || listing.status === "published";
@@ -44,6 +45,35 @@ export function ListingCard({
 
   const categoryDisplayName = listing.property_category_name || listing.property_category;
   const subcategoryDisplayName = listing.subcategory_name || listing.subcategory;
+
+  const moderatorNoteSection = isOwnAd && (listing.status === "rejected" || listing.status === "changes_requested") && listing.moderator_note && (
+    <div className="mt-2 flex flex-col items-end">
+      <div 
+        className="flex items-center gap-1 cursor-pointer group/note"
+        onClick={(e) => { 
+          e.preventDefault(); 
+          e.stopPropagation(); 
+          setIsNoteExpanded(!isNoteExpanded); 
+        }}
+      >
+        <span className="text-[10px] font-black uppercase tracking-wider text-red-500 hover:text-red-600 transition-colors">
+          {t("my_ads.reason", "reason")}
+        </span>
+        <ChevronDown className={cn("h-3 w-3 text-red-500 transition-transform duration-300", isNoteExpanded ? "rotate-180" : "")} />
+      </div>
+      
+      <motion.div
+        initial={false}
+        animate={{ height: isNoteExpanded ? "auto" : 0, opacity: isNoteExpanded ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="overflow-hidden w-full"
+      >
+        <div className="mt-2 whitespace-normal break-words text-[11px] font-medium leading-relaxed text-red-600 dark:text-red-400 bg-red-500/5 px-3 py-2 rounded-xl border border-red-500/10 text-right">
+          {listing.moderator_note}
+        </div>
+      </motion.div>
+    </div>
+  );
 
   const cardContent = (
     <article
@@ -210,62 +240,67 @@ export function ListingCard({
               </p>
             </div>
 
-            <div className="flex w-full gap-2 sm:w-auto lg:w-full">
-              {!action && !shouldShowEditButton && !shouldShowRentedToggle && (
-                <div className="group/btn flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-4 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-95 group-hover:shadow-primary-500/30">
-                  {t("explore.view_details")}
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
-                </div>
-              )}
-
-              {(action || shouldShowEditButton) && !shouldShowRentedToggle && (
-                <div className="flex w-full items-center justify-start gap-2 sm:justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                  {action}
-                </div>
-              )}
-
-              {shouldShowRentedToggle && onToggleRented && (
-                <div className="flex flex-col gap-3 w-full" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                  <div className="flex items-center justify-between rounded-2xl bg-secondary-900/10 dark:bg-white/5 border border-white/10 px-6 py-4 transition-all duration-300">
-                    <span className={cn(
-                      "text-sm font-bold tracking-tight",
-                      listing.is_rented ? "text-amber-500" : "text-text-primary"
-                    )}>
-                      {listing.is_rented ? t("my_ads.currently_rented") : t("my_ads.mark_as_rented")}
-                    </span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={listing.is_rented}
-                      onClick={() => onToggleRented(listing.id, !listing.is_rented)}
-                      className={cn(
-                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
-                        listing.is_rented ? "bg-primary-500" : "bg-secondary-200 dark:bg-secondary-800"
-                      )}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                          listing.is_rented ? "translate-x-5" : "translate-x-0"
-                        )}
-                      />
-                    </button>
+            <div className="flex flex-col w-full gap-2 sm:w-auto lg:w-full">
+              <div className="flex w-full gap-2">
+                {!action && !shouldShowEditButton && !shouldShowRentedToggle && (
+                  <div className="group/btn flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-4 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-95 group-hover:shadow-primary-500/30">
+                    {t("explore.view_details")}
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
                   </div>
-                  {listing.is_rented && (
-                    <div className="flex items-start gap-2 rounded-xl bg-amber-500/5 border border-amber-500/10 p-3">
-                      <div className="mt-0.5 shrink-0">
-                        <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <p className="text-[11px] leading-relaxed text-text-tertiary">
-                        {t("my_ads.unrent_process_hint")}
-                      </p>
+                )}
+
+                {(action || shouldShowEditButton) && !shouldShowRentedToggle && (
+                  <div className="flex w-full items-center justify-start gap-2 sm:justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                    {action}
+                  </div>
+                )}
+
+                {shouldShowRentedToggle && onToggleRented && (
+                  <div className="flex flex-col gap-3 w-full" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                    <div className="flex items-center justify-between rounded-2xl bg-secondary-900/10 dark:bg-white/5 border border-white/10 px-6 py-4 transition-all duration-300">
+                      <span className={cn(
+                        "text-sm font-bold tracking-tight",
+                        listing.is_rented ? "text-amber-500" : "text-text-primary"
+                      )}>
+                        {listing.is_rented ? t("my_ads.currently_rented") : t("my_ads.mark_as_rented")}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={listing.is_rented}
+                        onClick={() => onToggleRented(listing.id, !listing.is_rented)}
+                        className={cn(
+                          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
+                          listing.is_rented ? "bg-primary-500" : "bg-secondary-200 dark:bg-secondary-800"
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                            listing.is_rented ? "translate-x-5" : "translate-x-0"
+                          )}
+                        />
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
+                    {listing.is_rented && (
+                      <div className="flex items-start gap-2 rounded-xl bg-amber-500/5 border border-amber-500/10 p-3">
+                        <div className="mt-0.5 shrink-0">
+                          <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-text-tertiary">
+                          {t("my_ads.unrent_process_hint")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Moderator Note for Default Variant */}
+              {moderatorNoteSection}
             </div>
           </div>
         )}
@@ -326,6 +361,9 @@ export function ListingCard({
                   )}
                </div>
              )}
+
+             {/* Moderator Note for Compact Variant */}
+             {moderatorNoteSection}
           </div>
         )}
       </div>
