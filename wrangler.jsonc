@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "nhyvas-web",
+  "name": "nhyvas-web-development", // only for dev
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-05-25",
   "compatibility_flags": ["nodejs_compat"],
