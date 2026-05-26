@@ -118,9 +118,7 @@ export function MobileTopBar() {
             src={logoUrl}
             alt="Nhyvas"
             priority
-            width={110}
-            height={36}
-            style={{ width: "auto", height: "auto" }}
+            unoptimized
             className="h-9 w-auto object-contain"
           />
         </Link>
@@ -130,6 +128,7 @@ export function MobileTopBar() {
             src={singleNLogo}
             alt="Nhyvas"
             priority
+            unoptimized
             width={40}
             height={30}
             className="object-contain"

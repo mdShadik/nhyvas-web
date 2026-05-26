@@ -152,7 +152,7 @@ export function ChatList({ activeRoomId, className }: ChatListProps) {
                   <div className="relative">
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[20px] border border-border bg-secondary-100 dark:bg-secondary-800 transition-transform group-hover:scale-105 shadow-sm">
                       {avatar ? (
-                        <Image src={avatar} alt="" fill className="object-cover" sizes="56px" />
+                        <Image src={avatar} alt="" fill unoptimized className="object-cover" sizes="56px" />
                       ) : (
                         <span className="flex h-full w-full items-center justify-center">
                           <User className="h-7 w-7 text-text-tertiary" />

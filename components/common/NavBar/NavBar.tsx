@@ -95,10 +95,14 @@ function BrandLogo({ playTrigger }: { playTrigger: number }) {
       src={logoUrl}
       alt="Nhyvas"
       priority
+      unoptimized
       width={144}
       height={44}
-      style={{ width: "auto", height: "auto" }}
-      className="h-10 w-auto object-contain sm:h-11"
+      style={{
+        width: 144,
+        height: 44,
+      }}
+      className="h-10 object-contain sm:h-5"
     />
   );
 }

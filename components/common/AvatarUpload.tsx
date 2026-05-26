@@ -57,6 +57,7 @@ export function AvatarUpload({
               src={currentAvatarUrl}
               alt="Avatar"
               fill
+              unoptimized
               className="object-cover"
               sizes="(max-width: 768px) 112px, 112px"
             />

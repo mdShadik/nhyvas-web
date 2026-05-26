@@ -183,6 +183,7 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
                   src={listing.thumbnail_url || noImagePlaceholder}
                   alt=""
                   fill
+                  unoptimized
                   className="object-cover"
                 />
               </div>
@@ -274,6 +275,7 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
                         src={previewUrl}
                         alt="Screenshot Preview"
                         fill
+                        unoptimized
                         className="object-contain"
                       />
                       <button

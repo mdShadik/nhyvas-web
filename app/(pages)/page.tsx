@@ -220,6 +220,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
             alt={listing.property_title}
             fill
             priority
+            unoptimized
             className="object-cover pointer-events-none scale-105 transition-transform duration-[8000ms] ease-out group-hover:scale-110"
             sizes="100vw"
           />

@@ -141,7 +141,7 @@ const MessageBubble = memo(function MessageBubble({
       {!isMe && (
         <div className="relative mr-2.5 mt-auto mb-1 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary-100 dark:bg-secondary-800 shadow-sm transition-transform group-hover:scale-110">
           {counterpartyAvatarUrl ? (
-            <Image src={counterpartyAvatarUrl} alt="" fill className="object-cover" sizes="32px" />
+            <Image src={counterpartyAvatarUrl} alt="" fill unoptimized className="object-cover" sizes="32px" />
           ) : (
             <User className="h-4 w-4 text-text-tertiary" aria-hidden />
           )}
@@ -167,6 +167,7 @@ const MessageBubble = memo(function MessageBubble({
                 alt={t("chat.room.image_attachment_alt", "Attached image")} 
                 width={320}
                 height={240}
+                unoptimized
                 className="max-h-64 object-cover hover:scale-105 transition-transform duration-300" 
               />
             </a>
@@ -567,7 +568,7 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
           className="flex items-center gap-3 px-4 pb-3 -mt-1 transition hover:opacity-90"
         >
           <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary-100 dark:bg-secondary-800">
-            <Image src={thumb} alt="" fill sizes="36px" className="object-cover" />
+            <Image src={thumb} alt="" fill unoptimized sizes="36px" className="object-cover" />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
@@ -694,7 +695,7 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
           )}
         >
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
-            <Image src={thumb} alt="" fill sizes="44px" className="object-cover" />
+            <Image src={thumb} alt="" fill unoptimized sizes="44px" className="object-cover" />
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-wide text-text-tertiary">

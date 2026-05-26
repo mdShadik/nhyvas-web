@@ -115,7 +115,7 @@ export function ListingCard({
 
         {/* Floating Watermark */}
         <div className="pointer-events-none absolute left-4 top-4 opacity-15 transition-opacity group-hover:opacity-30">
-          <Image src={logoSingleN} alt="" width={32} height={32} />
+          <Image src={logoSingleN} unoptimized alt="" width={32} height={32} />
         </div>
 
         {/* Featured Badge */}

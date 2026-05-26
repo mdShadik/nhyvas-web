@@ -65,7 +65,7 @@ export function ReceiptModal({ open, onClose, payment }: Props) {
                   {/* Logos */}
                   <div className="flex justify-between items-center mb-8">
                      <div className="relative h-8 w-24">
-                        <Image src={lightLogo} alt="Nhyvas" fill className="object-contain" />
+                        <Image src={lightLogo} unoptimized alt="Nhyvas" fill className="object-contain" />
                      </div>
                      <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
                         <span className="text-[10px] font-bold text-gray-400">LOGO</span>

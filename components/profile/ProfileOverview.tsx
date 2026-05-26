@@ -459,6 +459,7 @@ export function ProfileOverview() {
                   src={avatar}
                   alt={name}
                   fill
+                  unoptimized
                   className="object-cover"
                   sizes="96px"
                 />
@@ -617,6 +618,7 @@ export function ProfileOverview() {
                   src={avatar}
                   alt={name}
                   fill
+                  unoptimized
                   className="object-cover"
                   sizes="64px"
                 />

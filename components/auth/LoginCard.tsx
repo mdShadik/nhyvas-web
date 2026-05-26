@@ -70,6 +70,7 @@ export function LoginCard({
             alt="Nhyvas" 
             width={112} 
             height={34} 
+            unoptimized
             style={{ width: "auto", height: "auto" }} 
             className={`h-8 w-auto object-contain ${theme === 'light' ? "hidden" : "block"}`} 
           />
@@ -78,6 +79,7 @@ export function LoginCard({
             alt="Nhyvas" 
             width={112} 
             height={34} 
+            unoptimized
             style={{ width: "auto", height: "auto" }} 
             className={`h-8 w-auto object-contain ${theme === 'light' ? "block" : "hidden"}`} 
           />

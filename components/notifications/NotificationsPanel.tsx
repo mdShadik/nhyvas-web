@@ -178,7 +178,7 @@ function NotificationRow({ item, onOpen }: { item: NotificationItem; onOpen: () 
             <div className="mt-0.5 line-clamp-2 text-xs text-text-tertiary">{item.body}</div>
             {imageUrl ? (
               <div className="relative mt-2 h-28 w-full overflow-hidden rounded-xl bg-bg-input">
-                <Image src={imageUrl} alt="" fill className="object-cover" sizes="360px" />
+                <Image src={imageUrl} alt="" fill unoptimized className="object-cover" sizes="360px" />
               </div>
             ) : null}
           </div>
