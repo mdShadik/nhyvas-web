@@ -33,7 +33,7 @@ export function ListingCard({
   onFavoriteClick,
   isFavorite = false,
   isOwnAd = false,
-  onToggleRented,
+  onToggleRented
 }: ListingCardProps) {
   const { t } = useTranslation();
   const [isNoteExpanded, setIsNoteExpanded] = React.useState(false);
