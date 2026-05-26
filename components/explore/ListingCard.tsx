@@ -156,7 +156,7 @@ export function ListingCard({
             />
           </button>
         )}
-      </div>
+      </div> 
 
       {/* Details Container - Flex row on wider screens */}
       <div
