@@ -1,45 +1,48 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-
 const CLOUDFLARE_EMBEDDING_MODEL = "@cf/baai/bge-small-en-v1.5";
 
-type CloudflareEmbeddingResponse = {
-  data?: number[] | number[][];
-};
+/**
+ * Generates an embedding vector for the given text using Cloudflare Workers AI via REST API.
+ * Output dimension: 384
+ */
+export async function generateEmbedding(text: string): Promise<number[]> {
+  const normalizedText = text.toLowerCase().replace(/\s+/g, " ").trim();
 
-type CloudflareAiBinding = {
-  run(model: string, input: { text: string; pooling?: "mean" | "cls" }): Promise<CloudflareEmbeddingResponse>;
-};
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
 
-function readEmbedding(response: CloudflareEmbeddingResponse): number[] {
-  const data = response.data;
+  if (!accountId || !apiToken) {
+    throw new Error("Cloudflare credentials missing. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.");
+  }
+
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${CLOUDFLARE_EMBEDDING_MODEL}`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: normalizedText,
+        // pooling: "mean" is handled natively by the model
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Cloudflare AI Error: ${response.status} - ${errorText}`);
+  }
+
+  const result = await response.json();
+  const data = result.result?.data;
+  
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error("Cloudflare Workers AI returned an empty embedding response.");
   }
 
   const first = data[0];
-  if (Array.isArray(first)) return first;
-  return data as number[];
-}
-
-/**
- * Generates an embedding vector for the given text using Cloudflare Workers AI.
- * Output dimension: 384
- */
-export async function generateEmbedding(text: string): Promise<number[]> {
-  // Normalize text: lowercase and remove extra whitespace
-  const normalizedText = text.toLowerCase().replace(/\s+/g, " ").trim();
-
-  const ai = (getCloudflareContext().env as any).AI as CloudflareAiBinding | undefined;
-  if (!ai) {
-    throw new Error("Cloudflare Workers AI binding `AI` is not configured.");
-  }
-
-  const output = await ai.run(CLOUDFLARE_EMBEDDING_MODEL, {
-    text: normalizedText,
-    pooling: "mean",
-  });
-
-  return readEmbedding(output);
+  return Array.isArray(first) ? first : data;
 }
 
 /**
