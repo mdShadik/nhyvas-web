@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       query_embedding: embedding,
       p_limit: 40,
       p_offset: 0,
-      p_categories: analysis.propertyType.length ? analysis.propertyType : null,
+      p_categories: analysis.categories.length ? analysis.categories : null,
       p_subcategories: analysis.subcategories.length ? analysis.subcategories.map(s => s.subCategory_id) : null,
       p_min_price: analysis.budget.min,
       p_max_price: analysis.budget.max,

@@ -1,35 +1,45 @@
-import { getTransformers } from "./transformers-config";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-class EmbeddingModel {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static instance: any = null;
-  private static modelName = "Supabase/gte-small";
+const CLOUDFLARE_EMBEDDING_MODEL = "@cf/baai/bge-small-en-v1.5";
 
-  static async getInstance() {
-    if (!this.instance) {
-      const { pipeline } = await getTransformers();
-      this.instance = await pipeline("feature-extraction", this.modelName);
-    }
-    return this.instance;
+type CloudflareEmbeddingResponse = {
+  data?: number[] | number[][];
+};
+
+type CloudflareAiBinding = {
+  run(model: string, input: { text: string; pooling?: "mean" | "cls" }): Promise<CloudflareEmbeddingResponse>;
+};
+
+function readEmbedding(response: CloudflareEmbeddingResponse): number[] {
+  const data = response.data;
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Cloudflare Workers AI returned an empty embedding response.");
   }
+
+  const first = data[0];
+  if (Array.isArray(first)) return first;
+  return data as number[];
 }
 
 /**
- * Generates a normalized embedding vector for the given text using gte-small.
+ * Generates an embedding vector for the given text using Cloudflare Workers AI.
  * Output dimension: 384
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const extractor = await EmbeddingModel.getInstance();
-  
   // Normalize text: lowercase and remove extra whitespace
   const normalizedText = text.toLowerCase().replace(/\s+/g, " ").trim();
-  
-  const output = await extractor(normalizedText, {
+
+  const ai = (getCloudflareContext().env as any).AI as CloudflareAiBinding | undefined;
+  if (!ai) {
+    throw new Error("Cloudflare Workers AI binding `AI` is not configured.");
+  }
+
+  const output = await ai.run(CLOUDFLARE_EMBEDDING_MODEL, {
+    text: normalizedText,
     pooling: "mean",
-    normalize: true,
   });
 
-  return Array.from(output.data as Float32Array);
+  return readEmbedding(output);
 }
 
 /**

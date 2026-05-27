@@ -8,7 +8,7 @@ export interface AnalyzedQuery {
   semanticQuery: string;
   keywordQuery: string;
   intent: "rent" | "buy" | "sell" | string;
-  propertyType: string[];
+  categories: string[];
   subcategories: AnalyzedSubcategory[];
   budget: { min: number | null; max: number | null };
   features: string[];
@@ -42,7 +42,7 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
     semanticQuery: query,
     keywordQuery: "",
     intent: "rent",
-    propertyType: [],
+    categories: [],
     subcategories: [],
     budget: { min: null, max: null },
     features: [],
@@ -62,23 +62,23 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
     if (regex.test(lowerQuery)) {
       switch (m.map_type) {
         case "category":
-          if (m.mapped_id && !analyzed.propertyType.includes(m.mapped_id)) {
-            analyzed.propertyType.push(m.mapped_id);
+          if (m.mapped_id && !analyzed.categories.includes(m.mapped_id)) {
+            analyzed.categories.push(m.mapped_id);
           }
           break;
         case "subcategory":
-          if (m.mapped_id && m.mapped_parent_id) {
+          if (m.mapped_id) {
             const alreadyExists = analyzed.subcategories.some(
               (s) => s.subCategory_id === m.mapped_id
             );
             if (!alreadyExists) {
               analyzed.subcategories.push({
-                category_id: m.mapped_parent_id,
+                category_id: m.mapped_parent_id || "",
                 subCategory_id: m.mapped_id,
               });
             }
-            if (!analyzed.propertyType.includes(m.mapped_parent_id)) {
-              analyzed.propertyType.push(m.mapped_parent_id);
+            if (m.mapped_parent_id && !analyzed.categories.includes(m.mapped_parent_id)) {
+              analyzed.categories.push(m.mapped_parent_id);
             }
           }
           break;

@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { ListingCard } from "@/components/explore/ListingCard";
 import { SearchParamsProps } from "@/app/(pages)/explore/page";
 import { AiSearch } from "@/components/AiSearch/Aisearch";
-import { AnalyzedQuery } from "@/lib/ai/queryAnalyzer";
+import { AnalyzedQuery, AnalyzedSubcategory } from "@/lib/ai/queryAnalyzer";
 import { LoginModal } from "@/components/auth/LoginModal";
 
 interface Props {
@@ -233,7 +233,7 @@ export default function ExplorePage({ searchParams }: Props) {
         // Map AI structured data to FilterState for visual feedback in filter panel
         const nextFilters: FilterState = {
           ...EMPTY_FILTERS,
-          categoryIds: analysis.propertyType || [],
+          categoryIds: analysis.categories || [],
           subcategoryIds: analysis.subcategories?.map(s => s.subCategory_id) || [],
           minPrice: analysis.budget?.min ? String(analysis.budget.min) : "",
           maxPrice: analysis.budget?.max ? String(analysis.budget.max) : "",
@@ -267,6 +267,18 @@ export default function ExplorePage({ searchParams }: Props) {
   const displayedListings = (aiListings && aiListings.length > 0) ? aiListings : listings;
   const isUsingAiResults = aiListings !== null && aiListings.length > 0;
 
+  // Helper to get labels for AI feedback
+  const getCategoryLabel = (id: string) => {
+    const cat = categoriesQuery.data?.find(c => c.id === id);
+    return cat ? cat.name : null;
+  };
+
+  const getSubcategoryLabel = (id: string) => {
+    // Note: since the analysis now returns objects, we could potentially get names from the API directly
+    // but for now we'll stick to resolving them from our master data cache.
+    const sub = appliedSubcategoriesQuery.data?.find(s => s.id === id);
+    return sub ? sub.name : null;
+  };
 
   return (
     <div className={`flex min-h-screen flex-col`}>
@@ -399,16 +411,36 @@ export default function ExplorePage({ searchParams }: Props) {
         {aiResponse && (
           <div className="flex flex-col gap-3 pt-2">
             <div className="flex flex-wrap gap-2">
-              {aiResponse.vibeTags?.map((vibe: string) => (
-                <span key={vibe} className="rounded-full bg-primary-500/10 px-3 py-1 text-xs font-semibold text-primary-600 dark:text-primary-400">
-                  ✨ {vibe}
-                </span>
-              ))}
-              {aiResponse.lifestyleTags?.map((tag: string) => (
-                <span key={tag} className="rounded-full bg-tertiary-500/10 px-3 py-1 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400">
-                  🏠 {tag}
-                </span>
-              ))}
+              {aiResponse.categories?.map((catId: string) => {
+                const label = getCategoryLabel(catId);
+                return label ? (
+                  <span key={catId} className="rounded-full bg-primary-500/10 px-3 py-1 text-xs font-semibold text-primary-600 dark:text-primary-400">
+                    📂 {label}
+                  </span>
+                ) : null;
+              })}
+              {aiResponse.subcategories?.map((sub: AnalyzedSubcategory) => {
+                const label = getSubcategoryLabel(sub.subCategory_id);
+                return label ? (
+                  <span key={sub.subCategory_id} className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent-foreground dark:text-accent">
+                    🏷️ {label}
+                  </span>
+                ) : null;
+              })}
+              {aiResponse.vibeTags?.map((vibe: string) => {
+                return (
+                  <span key={vibe} className="rounded-full bg-primary-500/10 px-3 py-1 text-xs font-semibold text-primary-600 dark:text-primary-400">
+                    ✨ {vibe}
+                  </span>
+                );
+              })}
+              {aiResponse.lifestyleTags?.map((tag: string) => {
+                return (
+                  <span key={tag} className="rounded-full bg-tertiary-500/10 px-3 py-1 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400">
+                    🏠 {tag}
+                  </span>
+                );
+              })}
             </div>
             {aiResponse.semanticQuery && (
               <p className="text-sm text-text-secondary italic">

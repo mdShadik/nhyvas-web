@@ -1,3 +1,9 @@
+declare global {
+  interface CloudflareEnv {
+    AI: any;
+  }
+}
+
 declare namespace NodeJS {
   interface ProcessEnv {
     NEXT_PUBLIC_ENV?: "development" | "staging" | "production";
