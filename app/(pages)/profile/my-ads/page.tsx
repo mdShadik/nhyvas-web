@@ -61,7 +61,6 @@ export default function ProfileMyAdsPage() {
       startX: event.clientX,
       scrollLeft: scroller.scrollLeft,
     };
-    scroller.setPointerCapture(event.pointerId);
   };
 
   const handleStatusPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -70,7 +69,15 @@ export default function ProfileMyAdsPage() {
     if (!drag.active || !scroller) return;
 
     const deltaX = event.clientX - drag.startX;
-    if (Math.abs(deltaX) > 4) drag.moved = true;
+    if (!drag.moved && Math.abs(deltaX) > 4) {
+      drag.moved = true;
+      try {
+        scroller.setPointerCapture(event.pointerId);
+      } catch (e) {
+        console.error("Pointer capture failed", e);
+      }
+    }
+    
     if (!drag.moved) return;
 
     scroller.scrollLeft = drag.scrollLeft - deltaX;
@@ -136,6 +143,7 @@ export default function ProfileMyAdsPage() {
             { id: "awaiting_payment", label: t("my_ads.status.awaiting_payment", "Awaiting Payment") },
             { id: "payment_verification", label: t("my_ads.status.payment_verification", "Payment Verification") },
             { id: "changes_requested", label: t("my_ads.status.changes_requested", "Request Change") },
+            { id: "rejected", label: t("my_ads.status.rejected", "Rejected") },
           ].map((tab) => {
             const isActive = statusFilter === tab.id;
             return (
@@ -172,8 +180,11 @@ export default function ProfileMyAdsPage() {
               variant="compact"
               isOwnAd
               onToggleRented={handleToggleRented}
+              initiallyExpandedNote={statusFilter === "rejected" || statusFilter === "changes_requested"}
               action={
-                item.status === "pending_review" || item.status === "changes_requested" ? (
+                item.status === "pending_review" || 
+                item.status === "changes_requested" || 
+                item.status === "rejected" ? (
                   <Link href={{ pathname: "/add-property", query: { listingId: item.id } }}>
                     <Button variant="outline" size="sm" className="h-9 px-3">
                       <Pencil className="mr-2 h-4 w-4" />

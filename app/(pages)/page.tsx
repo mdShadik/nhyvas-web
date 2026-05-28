@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles, TrendingUp, MapPin, ArrowRight } from "lucide-react";
 import { exploreService } from "@/services/apiService";
-import { noImagePlaceholder } from "../../assets";
+import { logoSingleN, noImagePlaceholder } from "../../assets";
 import { formatPrice } from "@/lib/formatPrice";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
@@ -457,7 +457,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-tertiary-500 text-white shadow-sm">
-                  <span className="text-xs font-bold">N</span>
+                  <Image src={logoSingleN} className="p-1.5" alt="logo"/>
                 </div>
                 <span>© {new Date().getFullYear()} Nhyvas</span>
               </div>

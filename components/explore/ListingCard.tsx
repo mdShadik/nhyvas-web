@@ -23,6 +23,7 @@ interface ListingCardProps {
   isFavorite?: boolean;
   isOwnAd?: boolean;
   onToggleRented?: (listingId: string, isRented: boolean) => void;
+  initiallyExpandedNote?: boolean;
 }
 
 export function ListingCard({
@@ -34,9 +35,17 @@ export function ListingCard({
   isFavorite = false,
   isOwnAd = false,
   onToggleRented,
+  initiallyExpandedNote = false,
 }: ListingCardProps) {
   const { t } = useTranslation();
-  const [isNoteExpanded, setIsNoteExpanded] = React.useState(false);
+  const [isNoteExpanded, setIsNoteExpanded] = React.useState(initiallyExpandedNote);
+
+  // Sync state if prop changes (important for tab switching)
+  React.useEffect(() => {
+    if (initiallyExpandedNote) {
+      setIsNoteExpanded(true);
+    }
+  }, [initiallyExpandedNote]);
   const thumbnailUrl = listing.thumbnail_url || noImagePlaceholder;
   const isCompact = variant === "compact";
   const isPublished = listing.status === "approved" || listing.status === "published";

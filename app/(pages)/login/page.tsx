@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { useTranslation } from "react-i18next";
 import { LoginCard } from "@/components/auth/LoginCard";
+import { PageLoading } from "@/components/common/PageLoading";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -88,7 +89,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] sm:min-h-screen flex-col">
-
+      {loading && <PageLoading />}
       <main className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-md">
           {error ? (
