@@ -8,6 +8,7 @@ export type AppProfile = {
   role: string | null;
   phone?: string | null;
   landlord_verified?: boolean;
+  push_opt_in?: boolean;
   is_onboarded?: boolean;
   max_addresses?: number;
 };
