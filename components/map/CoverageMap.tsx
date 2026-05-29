@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getTomTomStyleUrl } from "@/lib/tomtomStyle";
+import { getGalliStyleUrl } from "@/lib/galliStyle";
 
 type Center = { latitude: number; longitude: number };
 
@@ -86,7 +86,7 @@ export function CoverageMap({
   const markerRef = useRef<any>(null);
   const [mounted, setMounted] = useState(false);
 
-  const mapStyle = useMemo(() => getTomTomStyleUrl(), []);
+  const mapStyle = useMemo(() => getGalliStyleUrl(), []);
   const centerLngLat = useMemo(
     () => [center.longitude, center.latitude] as [number, number],
     [center.latitude, center.longitude]

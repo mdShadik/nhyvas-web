@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Save, ChevronLeft, LocateFixed } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
 import { RequireAuth } from "@/components/profile/RequireAuth";
 import { AddressMapPicker, type Coordinate } from "@/components/address/AddressMapPicker";
+import { LocationSearch } from "@/components/address/LocationSearch";
 import { Button } from "@/components/ui/button";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 
@@ -85,16 +86,22 @@ export default function AddressPickpage({searchParams}: Props) {
   }, []);
 
   const settleCoordinate = useCallback(
-    async (next: Coordinate) => {
+    async (next: Coordinate, label?: string) => {
       setCoord(next);
       const reqId = (reverseReqIdRef.current += 1);
-      setResolvingAdmin(true);
+      
+      if (label) {
+        setAdminLabel(label);
+        setResolvingAdmin(false);
+        return;
+      }
 
+      setResolvingAdmin(true);
       try {
         const admin = await lookupNepalAdminAtPoint(next.latitude, next.longitude);
         if (reqId !== reverseReqIdRef.current) return;
 
-        const formatted = formatAdmin(admin);
+        const formatted = admin.formattedAddress || formatAdmin(admin);
         setAdminLabel(formatted);
         
       } catch {
@@ -243,25 +250,32 @@ export default function AddressPickpage({searchParams}: Props) {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-border bg-bg-input p-3 sm:p-4">
-                  <div className="mt-4 grid grid-cols-1 gap-2">
-                    <div className="rounded-2xl border border-dashed border-border px-3 py-2">
-                      <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
-                        Coordinates
-                      </div>
-                      <div className="mt-1 text-sm text-text-primary">
-                        {coord
-                          ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
-                          : "--"}
-                      </div>
-                    </div>
+                <div className="mt-5 space-y-4">
+                  <LocationSearch 
+                    onSelect={(next, label) => void settleCoordinate(next, label)}
+                    currentCoord={coord}
+                  />
 
-                    <div className="rounded-2xl border border-dashed border-border px-3 py-2">
-                      <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
-                        Area
+                  <div className="rounded-2xl border border-border bg-bg-input p-3 sm:p-4">
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                        <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                          Coordinates
+                        </div>
+                        <div className="mt-1 text-sm text-text-primary">
+                          {coord
+                            ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
+                            : "--"}
+                        </div>
                       </div>
-                      <div className="mt-1 text-sm text-text-primary wrap-break-word">
-                        {adminLabel || "--"}
+
+                      <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                        <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                          Area
+                        </div>
+                        <div className="mt-1 text-sm text-text-primary wrap-break-word">
+                          {adminLabel || "--"}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -340,25 +354,32 @@ export default function AddressPickpage({searchParams}: Props) {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-border p-3">
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="rounded-2xl border border-dashed border-border px-3 py-2">
-                    <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
-                      Coordinates
-                    </div>
-                    <div className="mt-1 text-sm text-text-primary">
-                      {coord
-                        ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
-                        : "--"}
-                    </div>
-                  </div>
+              <div className="mt-5 space-y-4">
+                <LocationSearch 
+                  onSelect={(next, label) => void settleCoordinate(next, label)}
+                  currentCoord={coord}
+                />
 
-                  <div className="rounded-2xl border border-dashed border-border px-3 py-2">
-                    <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
-                      Area
+                <div className="rounded-2xl border border-border p-3">
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                      <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                        Coordinates
+                      </div>
+                      <div className="mt-1 text-sm text-text-primary">
+                        {coord
+                          ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
+                          : "--"}
+                      </div>
                     </div>
-                    <div className="mt-1 text-sm text-text-primary wrap-break-word">
-                      {adminLabel || "--"}
+
+                    <div className="rounded-2xl border border-dashed border-border px-3 py-2">
+                      <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                        Area
+                      </div>
+                      <div className="mt-1 text-sm text-text-primary wrap-break-word">
+                        {adminLabel || "--"}
+                      </div>
                     </div>
                   </div>
                 </div>

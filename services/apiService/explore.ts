@@ -2,6 +2,7 @@ import { mapExploreListingRows } from "@/services/apiService/mappers";
 import { registerMasterAmenities, registerMasterPropertyCategories, registerMasterPropertySubcategories } from "@/i18n/masterData";
 import { requestJson } from "@/services/apiService/http";
 import { AnalyzedQuery } from "@/lib/ai/queryAnalyzer";
+import { galliMapService } from "../galliMap";
 
 export type HomeHeroListing = {
   id: string;
@@ -243,26 +244,40 @@ export const exploreService = {
     const trimmed = query.trim();
     if (trimmed.length < 1) return [];
 
-    const safeLimit = Math.max(1, Math.min(limit, 200));
     const safeQuery = trimmed.replace(/\s+/g, " ").trim();
     if (safeQuery.length < 1) return [];
 
-    const { rows } = await requestJson<{ rows: NepalSearchRow[] }>("/api/explore/location-search", {
-      method: "POST",
-      body: JSON.stringify({ query: safeQuery, limit: safeLimit, level }),
-    });
+    try {
+      // Use Kathmandu as default center if needed, or omit if the API supports it
+      // Let's use Kathmandu coordinates as default fallback for location searches in Nepal
+      const data = await galliMapService.searchWithCurrentLocation(
+        safeQuery,
+        27.7172,
+        85.3240
+      );
 
-    return ((rows ?? []) as NepalSearchRow[]).map((row) => ({
-      level: row.level,
-      id: row.id,
-      label: row.label,
-      state_id: row.state_id ?? null,
-      district_id: row.district_id ?? null,
-      municipality_id: row.municipality_id ?? null,
-      ward_id: row.ward_id ?? null,
-      latitude: row.latitude != null ? Number(row.latitude) : null,
-      longitude: row.longitude != null ? Number(row.longitude) : null,
-    })) as LocationSearchNode[];
+      const features = data?.features || [];
+      const mapped = features
+        .filter((f) => f.properties && f.properties.searchedItem)
+        .map((f) => {
+          return {
+            level: "ward" as const, // Map to 'ward' to satisfy type constraints and ExplorePage logic
+            id: String(f.properties.searchedItem) + Math.random(),
+            label: String(f.properties.searchedItem),
+            state_id: null,
+            district_id: null,
+            municipality_id: null,
+            ward_id: null,
+            latitude: f.geometry.coordinates[1],
+            longitude: f.geometry.coordinates[0],
+          } as LocationSearchNode;
+        });
+
+      return mapped.slice(0, limit);
+    } catch (e) {
+      console.error("Galli search Location Nodes Error", e);
+      return [];
+    }
   },
 
   async getListingDetails(listingId: string): Promise<ListingDetailsResponse> {

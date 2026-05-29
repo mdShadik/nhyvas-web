@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LocateFixed, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { getTomTomStyleUrl } from "@/lib/tomtomStyle";
+import { getGalliStyleUrl } from "@/lib/galliStyle";
 import { cn } from "@/lib/utils";
 import { useCallbackRef } from "@/hooks/useCallbackRef";
 
@@ -48,6 +48,7 @@ export function AddressMapPicker({
   locating = false,
   className,
   fullScreen = false,
+  noPanZoom = false,
 }: {
   value: Coordinate | null;
   onChange: (coord: Coordinate) => void;
@@ -55,13 +56,12 @@ export function AddressMapPicker({
   locating?: boolean;
   className?: string;
   fullScreen?: boolean;
+  noPanZoom?: boolean;
 }) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
   const [mounted, setMounted] = useState(false);
-
-  const mapStyle = useMemo(() => getTomTomStyleUrl(), []);
 
   const initialCenter = useMemo(() => {
     if (value && Number.isFinite(value.latitude) && Number.isFinite(value.longitude)) {
@@ -72,6 +72,8 @@ export function AddressMapPicker({
   }, []);
 
   const onChangeRef = useCallbackRef(onChange);
+
+  const mapStyle = useMemo(() => getGalliStyleUrl() || "https://demotiles.maplibre.org/style.json", []);
 
   useEffect(() => {
     setMounted(true);
@@ -92,14 +94,29 @@ export function AddressMapPicker({
         center: [initialCenter.longitude, initialCenter.latitude],
         zoom: 16,
         attributionControl: false,
-        interactive: true,
+        interactive: !noPanZoom,
       });
 
       mapRef.current = map;
 
+      map.on("error", (e: any) => {
+        console.error("Map error:", e);
+      });
+
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-      map.dragRotate.disable();
-      map.touchZoomRotate.disableRotation();
+      
+      if (noPanZoom) {
+        map.dragPan.disable();
+        map.scrollZoom.disable();
+        map.boxZoom.disable();
+        map.dragRotate.disable();
+        map.keyboard.disable();
+        map.doubleClickZoom.disable();
+        map.touchZoomRotate.disable();
+      } else {
+        map.dragRotate.disable();
+        map.touchZoomRotate.disableRotation();
+      }
 
       map.setMaxBounds([
         [NEPAL_BOUNDS.west, NEPAL_BOUNDS.south],
@@ -107,7 +124,7 @@ export function AddressMapPicker({
       ]);
 
       const marker = new maplibregl.Marker({
-        draggable: true,
+        draggable: !noPanZoom,
       })
         .setLngLat([initialCenter.longitude, initialCenter.latitude])
         .addTo(map);
@@ -121,7 +138,9 @@ export function AddressMapPicker({
         onChangeRef(next);
       };
 
-      marker.on("dragend", emitCenter);
+      if (!noPanZoom) {
+        marker.on("dragend", emitCenter);
+      }
       map.on("load", emitCenter);
     })();
 
@@ -132,7 +151,7 @@ export function AddressMapPicker({
       } catch {}
       mapRef.current = null;
     };
-  }, [mounted, mapStyle, initialCenter, onChangeRef]);
+  }, [mounted, mapStyle, initialCenter, onChangeRef, noPanZoom]);
 
   useEffect(() => {
     const map = mapRef.current;

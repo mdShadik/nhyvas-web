@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ChevronDown,
   MapPin,
-  Search,
   SlidersHorizontal,
   Sparkles,
   X,
@@ -33,6 +32,7 @@ import {
   tPropertySubcategory,
 } from "@/i18n/masterData";
 import { useTranslation } from "react-i18next";
+import { LocationSearch } from "@/components/address/LocationSearch";
 
 type Props = {
   value: FilterState;
@@ -306,10 +306,63 @@ export function ExploreFiltersPanel({
           {/* Scrollable body */}
           <div className="flex-1 px-5 py-5 lg:overflow-y-auto">
             <div className="space-y-6">
-              <LocationSearchField
-                value={value.locationNode}
-                onChange={(node) => onChange({ ...value, locationNode: node })}
-              />
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-text-secondary">
+                  {t("explore.location", "Location")}
+                </label>
+                {value.locationNode ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-border bg-bg-input px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary-100 text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
+                          <MapPin className="h-4 w-4" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-text-primary">
+                            {value.locationNode.label}
+                          </div>
+                          <div className="mt-0.5 text-xs text-text-tertiary">
+                            {getHasPoint(value.locationNode) ? t("explore.nearby_search", "Nearby search radius: 2km") : t("explore.administrative_area", "Administrative area")}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => onChange({ ...value, locationNode: null })}
+                        className="rounded-full border border-border bg-bg-card p-2 text-text-secondary transition hover:border-primary-200 hover:text-text-primary"
+                        aria-label={t("explore.clear_location", "Clear location")}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <LocationSearch 
+                    onSelect={(coord, label) => {
+                      onChange({
+                        ...value,
+                        locationNode: {
+                          id: `custom-${coord.latitude}-${coord.longitude}`,
+                          label: label,
+                          level: "ward", // Satisfies the type constraint while acting as a custom point
+                          state_id: null,
+                          district_id: null,
+                          municipality_id: null,
+                          ward_id: null,
+                          latitude: coord.latitude,
+                          longitude: coord.longitude
+                        }
+                      });
+                    }}
+                  />
+                )}
+              </div>
 
               <div className="grid gap-4">
                 <div>
@@ -466,225 +519,6 @@ export function ExploreFiltersPanel({
         </div>
       </div>
     </motion.aside>
-  );
-}
-
-function LocationSearchField({
-  value,
-  onChange,
-}: {
-  value: LocationSearchNode | null;
-  onChange: (node: LocationSearchNode | null) => void;
-}) {
-  const { t } = useTranslation();
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
-
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (value) {
-      setQuery(value.label);
-      return;
-    }
-    setQuery("");
-  }, [value]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handler = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (containerRef.current && !containerRef.current.contains(target)) {
-        setOpen(false);
-      }
-    };
-
-    window.addEventListener("mousedown", handler);
-    return () => window.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const debouncedQuery = useDebouncedValue(query, 250);
-
-  const searchQuery = useQuery({
-    queryKey: ["explore", "location-search", debouncedQuery],
-    queryFn: () => exploreService.searchLocationNodes(debouncedQuery, 30),
-    enabled: debouncedQuery.trim().length >= 1,
-  });
-
-  const results = searchQuery.data ?? [];
-
-  useEffect(() => {
-    setHighlightedIndex(0);
-  }, [results.length]);
-
-  return (
-    <div ref={containerRef}>
-      <label className="mb-2 block text-sm font-semibold text-text-secondary">
-        {t("explore.location", "Location")}
-      </label>
-
-      {value ? (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-border bg-bg-input px-4 py-3 shadow-sm"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary-100 text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-                <MapPin className="h-4 w-4" />
-              </div>
-
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-text-primary">
-                  {value.label}
-                </div>
-                <div className="mt-0.5 text-xs text-text-tertiary">
-                  {getHasPoint(value) ? t("explore.nearby_search", "Nearby search radius: 2km") : t("explore.administrative_area", "Administrative area")}
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                onChange(null);
-                setOpen(false);
-                requestAnimationFrame(() => inputRef.current?.focus());
-              }}
-              className="rounded-full border border-border bg-bg-card p-2 text-text-secondary transition hover:border-primary-200 hover:text-text-primary"
-              aria-label={t("explore.clear_location", "Clear location")}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </motion.div>
-      ) : (
-        <div className="relative">
-          <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">
-            <Search className="h-4 w-4" />
-          </div>
-
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={(e) => {
-              if (!open) return;
-
-              if (e.key === "Escape") {
-                setOpen(false);
-              } else if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setHighlightedIndex((prev) =>
-                  clampNumber(prev + 1, 0, Math.max(0, results.length - 1))
-                );
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setHighlightedIndex((prev) =>
-                  clampNumber(prev - 1, 0, Math.max(0, results.length - 1))
-                );
-              } else if (e.key === "Enter") {
-                const node = results[highlightedIndex];
-                if (!node) return;
-                e.preventDefault();
-                onChange(node);
-                setQuery("");
-                setOpen(false);
-              }
-            }}
-            placeholder={t("explore.search_location", "Search location...")}
-            className="w-full rounded-2xl border border-border bg-bg-input py-3 pl-10 pr-10 text-text-primary outline-none transition placeholder:text-placeholder focus:border-primary-400 focus:ring-4 focus:ring-primary-500/15"
-          />
-
-          {query ? (
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                setOpen(false);
-                requestAnimationFrame(() => inputRef.current?.focus());
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-text-tertiary transition hover:bg-secondary-100 hover:text-text-primary dark:hover:bg-secondary-800"
-              aria-label={t("explore.clear_search", "Clear search")}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          ) : null}
-
-          <AnimatePresence>
-            {open ? (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.18 }}
-                className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-bg-card shadow-xl"
-              >
-                {debouncedQuery.trim().length < 1 ? (
-                  <div className="px-4 py-3 text-sm text-text-secondary">
-                    {t("explore.type_to_search", "Type to search locations.")}
-                  </div>
-                ) : searchQuery.isFetching ? (
-                  <div className="px-4 py-3 text-sm text-text-secondary">
-                    {t("common.searching", "Searching…")}
-                  </div>
-                ) : results.length ? (
-                  <ul className="max-h-72 overflow-auto py-1">
-                    {results.map((row, idx) => (
-                      <li key={`${row.level}-${row.id}`}>
-                        <motion.button
-                          type="button"
-                          whileHover={{ x: 2 }}
-                          whileTap={{ scale: 0.99 }}
-                          onClick={() => {
-                            onChange(row);
-                            setQuery("");
-                            setOpen(false);
-                          }}
-                          className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left text-sm transition ${
-                            idx === highlightedIndex
-                              ? "bg-primary-50 dark:bg-secondary-800"
-                              : "hover:bg-secondary-50 dark:hover:bg-secondary-800/70"
-                          }`}
-                        >
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium text-text-primary">
-                              {row.label}
-                            </span>
-                            <span className="mt-0.5 block text-xs text-text-tertiary">
-                              {row.level}
-                            </span>
-                          </span>
-
-                          {getHasPoint(row) ? (
-                            <span className="shrink-0 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-                              {t("explore.nearby", "Nearby")}
-                            </span>
-                          ) : null}
-                        </motion.button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="px-4 py-3 text-sm text-text-secondary">
-                    {t("explore.no_matches", "No matches found.")}
-                  </div>
-                )}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
-      )}
-    </div>
   );
 }
 

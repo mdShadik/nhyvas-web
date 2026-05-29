@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, List, Search } from "lucide-react";
 
 import {
   exploreService,
@@ -36,6 +36,8 @@ import { useAddressBook } from "@/hooks/useAddressBook";
 import { cn } from "@/lib/utils";
 import { lookupNepalAdminAtPoint } from "@/services/nepalLocations";
 import { SearchParamsProps } from "@/app/(pages)/add-property/page";
+import { LocationSearch } from "@/components/address/LocationSearch";
+import { AddressMapPicker } from "@/components/address/AddressMapPicker";
 
 function parseOptionalNumber(value: string): number | null {
   const normalized = value.trim();
@@ -113,6 +115,10 @@ export default function AddPropertyPage({ searchParams }: Props) {
   } | null>(null);
   const [locationTouched, setLocationTouched] = useState(false);
 
+  const [locationMode, setLocationMode] = useState<"existing" | "search">(
+    addressEntries.length > 0 ? "existing" : "search"
+  );
+
   const {
     register,
     control,
@@ -184,11 +190,11 @@ export default function AddPropertyPage({ searchParams }: Props) {
   const selectedSubcategory =
     subcategories.find((s) => s.id === selectedSubcategoryId) ?? null;
   const selectedAddressEntry = useMemo(() => {
-    if (!selectedAddressId) return null;
+    if (!selectedAddressId || locationMode !== "existing") return null;
     return (
       addressEntries.find((entry) => entry.id === selectedAddressId) ?? null
     );
-  }, [addressEntries, selectedAddressId]);
+  }, [addressEntries, selectedAddressId, locationMode]);
   const selectedLocation = useMemo(() => {
     if (selectedAddressEntry) {
       if (
@@ -211,7 +217,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
       : undefined;
 
   useEffect(() => {
-    if (selectedAddressId) return;
+    if (selectedAddressId || locationMode !== "existing") return;
     if (listingId && prefilledLocation) return;
     if (!addressEntries.length) return;
     setSelectedAddressId(defaultAddressId ?? addressEntries[0]!.id);
@@ -221,6 +227,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
     listingId,
     prefilledLocation,
     selectedAddressId,
+    locationMode
   ]);
 
   const amenityCategoriesQuery = useQuery({
@@ -1019,111 +1026,172 @@ export default function AddPropertyPage({ searchParams }: Props) {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-text-secondary">
-                  {t("landlord.create.selected_address")}
-                </label>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-text-secondary">
+                    {t("landlord.create.selected_address")}
+                  </label>
+                  <div className="flex gap-1 rounded-xl bg-bg-input p-1 border border-border">
+                    <button
+                      type="button"
+                      onClick={() => setLocationMode("existing")}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition",
+                        locationMode === "existing"
+                          ? "bg-bg-card text-primary-600 shadow-sm"
+                          : "text-text-tertiary hover:text-text-secondary"
+                      )}
+                    >
+                      <List className="h-3.5 w-3.5" />
+                      {t("landlord.create.choose_existing", "Existing")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLocationMode("search")}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition",
+                        locationMode === "search"
+                          ? "bg-bg-card text-primary-600 shadow-sm"
+                          : "text-text-tertiary hover:text-text-secondary"
+                      )}
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                      {t("landlord.create.search_new", "Search")}
+                    </button>
+                  </div>
+                </div>
+
+                {locationMode === "search" ? (
+                  <div className="space-y-3">
+                    <LocationSearch 
+                      onSelect={(next, label) => {
+                        setPrefilledLocation({ label, ...next });
+                        setSelectedAddressId(null);
+                        setLocationTouched(false);
+                      }}
+                      currentCoord={prefilledLocation}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          if (!addressEntries.length) {
+                            router.push("/addresses/pick");
+                            return;
+                          }
+                          const fallbackId =
+                            selectedAddressId ??
+                            defaultAddressId ??
+                            addressEntries[0]?.id ??
+                            null;
+                          if (fallbackId) {
+                            setSelectedAddressId(fallbackId);
+                            setPrefilledLocation(null);
+                            setLocationTouched(false);
+                          }
+                        }}
+                      >
+                        {addressEntries.length === 0
+                          ? t("landlord.create.add_address_btn")
+                          : t("landlord.create.change_address_btn")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.push("/addresses")}
+                      >
+                        {t("landlord.create.manage_btn")}
+                      </Button>
+                    </div>
+
+                    {addressEntries.length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto space-y-2 rounded-2xl border border-border bg-bg-input p-3">
+                        {addressEntries.map((entry) => {
+                          const active = entry.id === selectedAddressId;
+                          const isDefault = entry.id === defaultAddressId;
+                          return (
+                            <button
+                              key={entry.id}
+                              type="button"
+                              className={cn(
+                                "block w-full rounded-xl border px-3 py-2 text-left",
+                                active
+                                  ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20"
+                                  : "border-border bg-bg-card",
+                              )}
+                              onClick={() => {
+                                setPrefilledLocation(null);
+                                setSelectedAddressId(entry.id);
+                                setLocationTouched(false);
+                              }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="truncate text-sm font-semibold text-text-primary">
+                                  {entry.label}
+                                </div>
+                                {isDefault ? (
+                                  <span className="rounded bg-primary-500/60 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                                    {t("landlord.create.default_badge")}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="mt-0.5 text-xs text-text-tertiary">
+                                {entry.latitude != null && entry.longitude != null
+                                  ? `${entry.latitude.toFixed(4)}, ${entry.longitude.toFixed(4)}`
+                                  : "--"}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
                 <div
                   className={cn(
-                    "rounded-2xl border bg-bg-input px-4 py-3",
+                    "relative overflow-hidden rounded-2xl border bg-bg-input",
                     locationError ? "border-destructive" : "border-border",
                   )}
                 >
-                  {selectedLocation ? (
-                    <>
-                      <div className="text-sm font-semibold text-text-primary">
-                        {selectedLocation.label}
+                  <div className="px-4 py-3 border-b border-border bg-bg-card/50">
+                    {selectedLocation ? (
+                      <>
+                        <div className="text-sm font-semibold text-text-primary">
+                          {selectedLocation.label}
+                        </div>
+                        <div className="mt-0.5 text-xs text-text-tertiary">
+                          {selectedLocation.latitude.toFixed(5)},{" "}
+                          {selectedLocation.longitude.toFixed(5)}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-text-tertiary">
+                        {locationMode === "existing" 
+                          ? (addressEntries.length > 0
+                            ? t("landlord.create.select_address_to_continue")
+                            : t("landlord.create.add_address_to_continue"))
+                          : t("landlord.create.search_address_to_continue", "Search for a location to continue")}
                       </div>
-                      <div className="mt-0.5 text-xs text-text-tertiary">
-                        {selectedLocation.latitude.toFixed(5)},{" "}
-                        {selectedLocation.longitude.toFixed(5)}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-sm text-text-tertiary">
-                      {addressEntries.length > 0
-                        ? t("landlord.create.select_address_to_continue")
-                        : t("landlord.create.add_address_to_continue")}
+                    )}
+                  </div>
+                  
+                  {selectedLocation && (
+                    <div className="h-48 w-full">
+                      <AddressMapPicker 
+                        value={selectedLocation}
+                        onChange={() => {}}
+                        noPanZoom={true}
+                        className="h-full border-0 rounded-none"
+                      />
                     </div>
                   )}
                 </div>
-
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      if (!addressEntries.length) {
-                        router.push("/addresses/pick");
-                        return;
-                      }
-                      const fallbackId =
-                        selectedAddressId ??
-                        defaultAddressId ??
-                        addressEntries[0]?.id ??
-                        null;
-                      if (fallbackId) {
-                        setSelectedAddressId(fallbackId);
-                        setPrefilledLocation(null);
-                        setLocationTouched(false);
-                      }
-                    }}
-                  >
-                    {addressEntries.length === 0
-                      ? t("landlord.create.add_address_btn")
-                      : t("landlord.create.change_address_btn")}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.push("/addresses")}
-                  >
-                    {t("landlord.create.manage_btn")}
-                  </Button>
-                </div>
-
-                {addressEntries.length > 0 ? (
-                  <div className="space-y-2 rounded-2xl border border-border bg-bg-input p-3">
-                    {addressEntries.map((entry) => {
-                      const active = entry.id === selectedAddressId;
-                      const isDefault = entry.id === defaultAddressId;
-                      return (
-                        <button
-                          key={entry.id}
-                          type="button"
-                          className={cn(
-                            "block w-full rounded-xl border px-3 py-2 text-left",
-                            active
-                              ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20"
-                              : "border-border bg-bg-card",
-                          )}
-                          onClick={() => {
-                            setPrefilledLocation(null);
-                            setSelectedAddressId(entry.id);
-                            setLocationTouched(false);
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="truncate text-sm font-semibold text-text-primary">
-                              {entry.label}
-                            </div>
-                            {isDefault ? (
-                              <span className="rounded bg-primary-500/60 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
-                                {t("landlord.create.default_badge")}
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="mt-0.5 text-xs text-text-tertiary">
-                            {entry.latitude != null && entry.longitude != null
-                              ? `${entry.latitude.toFixed(4)}, ${entry.longitude.toFixed(4)}`
-                              : "--"}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
 
                 {locationError ? (
                   <div className="text-xs text-destructive">

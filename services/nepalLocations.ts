@@ -1,4 +1,5 @@
 import { requestJson } from "@/services/apiService/http";
+import { galliMapService } from "./galliMap";
 
 export type NepalLocationLevel = "state" | "district" | "municipality" | "ward";
 
@@ -17,6 +18,7 @@ export type NepalLookupResult = {
   municipality: NepalLocationRow | null;
   district: NepalLocationRow | null;
   state: NepalLocationRow | null;
+  formattedAddress?: string;
 };
 
 export type NepalAdminSearchResult = {
@@ -29,38 +31,29 @@ export type NepalAdminSearchResult = {
   hierarchy: NepalLookupResult;
 };
 
-type RpcRow = {
-  ward_id: string | null;
-  ward_name: string | null;
-  ward_pcode: string | null;
-  municipality_id: string | null;
-  municipality_name: string | null;
-  municipality_pcode: string | null;
-  district_id: string | null;
-  district_name: string | null;
-  district_pcode: string | null;
-  state_id: string | null;
-  state_name: string | null;
-  state_pcode: string | null;
-};
-
-function rowToLocation(level: NepalLocationLevel, id: string | null, name: string | null, pcode: string | null) {
-  if (!id || !name || !pcode) return null;
-  return { id, name_en: name, level, parent_id: null, pcode } satisfies NepalLocationRow;
-}
-
 export async function lookupNepalAdminAtPoint(latitude: number, longitude: number): Promise<NepalLookupResult> {
-  const { row } = await requestJson<{ row: RpcRow }>("/api/nepal/lookup-point", {
-    method: "POST",
-    body: JSON.stringify({ latitude, longitude }),
-  });
+  try {
+    const result = await galliMapService.reverseGeocode(latitude, longitude);
+    if (!result) throw new Error("Galli reverse geocode failed");
 
-  return {
-    ward: rowToLocation("ward", row.ward_id, row.ward_name, row.ward_pcode),
-    municipality: rowToLocation("municipality", row.municipality_id, row.municipality_name, row.municipality_pcode),
-    district: rowToLocation("district", row.district_id, row.district_name, row.district_pcode),
-    state: rowToLocation("state", row.state_id, row.state_name, row.state_pcode),
-  };
+    // Map Galli Map result to our NepalLookupResult structure
+    // Since we don't have IDs from Galli Map that match our DB, we'll use names as IDs or null
+    return {
+      ward: result.ward ? { id: result.ward, name_en: result.ward, level: "ward", parent_id: null, pcode: "" } : null,
+      municipality: result.municipality ? { id: result.municipality, name_en: result.municipality, level: "municipality", parent_id: null, pcode: "" } : null,
+      district: result.district ? { id: result.district, name_en: result.district, level: "district", parent_id: null, pcode: "" } : null,
+      state: result.province ? { id: result.province, name_en: result.province, level: "state", parent_id: null, pcode: "" } : null,
+      formattedAddress: result.generalName || `${result.municipality}, ${result.district}`,
+    };
+  } catch (error) {
+    console.error("Galli reverse geocode error, falling back to empty:", error);
+    return {
+      ward: null,
+      municipality: null,
+      district: null,
+      state: null,
+    };
+  }
 }
 
 export async function searchNepalLocationsByName(level: NepalLocationLevel, query: string, limit = 20) {

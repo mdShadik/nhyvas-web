@@ -98,7 +98,9 @@ export async function createSupabaseUserClientOrThrow(): Promise<AuthResult> {
     if (error) {
       // Check if this is a session expiration error
       if (isSessionExpiredError(error)) {
-        await clearAuthCookies();
+        // We DO NOT clear cookies here because concurrent API requests
+        // might trigger a race condition where one request successfully refreshes
+        // and the other fails, causing the valid session to be wiped.
         return { success: false, error: "expired" };
       }
       throw error;
@@ -115,13 +117,11 @@ export async function createSupabaseUserClientOrThrow(): Promise<AuthResult> {
         await setAuthCookies(data.session.access_token, data.session.refresh_token);
       }
     } else {
-      await clearAuthCookies();
       return { success: false, error: "expired" };
     }
   } catch (err) {
     // Check if this is a session expiration error
     if (err instanceof Error && isSessionExpiredError(err)) {
-      await clearAuthCookies();
       return { success: false, error: "expired" };
     }
     // For other errors, let downstream fail with 401 from Supabase
