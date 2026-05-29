@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -31,7 +31,7 @@ interface PageProps {
   searchParams: Promise<SearchParamsProps>;
 }
 
-export default function PaymentPage({ searchParams: searchParamsPromise }: PageProps) {
+function PaymentContent({ searchParamsPromise }: { searchParamsPromise: Promise<SearchParamsProps> }) {
   const { t } = useTranslation();
   const router = useRouter();
   const nextSearchParams = useSearchParams();
@@ -338,5 +338,13 @@ export default function PaymentPage({ searchParams: searchParamsPromise }: PageP
         </div>
       </div>
     </form>
+  );
+}
+
+export default function PaymentPage({ searchParams }: PageProps) {
+  return (
+    <Suspense>
+      <PaymentContent searchParamsPromise={searchParams} />
+    </Suspense>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
@@ -12,7 +13,7 @@ import { useToast } from "@/context/ToastContext";
 import { useAddressBook } from "@/hooks/useAddressBook";
 import { profileService } from "@/services/apiService/profile";
 
-export default function AddressesPage() {
+function AddressesContent() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const router = useRouter();
@@ -187,5 +188,13 @@ export default function AddressesPage() {
         </div>
       </div>
     </RequireAuth>
+  );
+}
+
+export default function AddressesPage() {
+  return (
+    <Suspense>
+      <AddressesContent />
+    </Suspense>
   );
 }

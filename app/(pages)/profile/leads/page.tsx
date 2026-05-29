@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,7 @@ function safeDate(value: string) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-export default function ProfileLeadsPage() {
+function ProfileLeadsContent() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const listingId = searchParams.get("listingId")?.trim() || null;
@@ -152,5 +152,13 @@ function LeadRow({ lead }: { lead: PropertyLead }) {
       </td>
       <td className="px-4 py-3 text-text-secondary">{dateLabel}</td>
     </tr>
+  );
+}
+
+export default function ProfileLeadsPage() {
+  return (
+    <Suspense>
+      <ProfileLeadsContent />
+    </Suspense>
   );
 }
