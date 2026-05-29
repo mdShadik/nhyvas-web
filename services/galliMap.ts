@@ -1,7 +1,3 @@
-import { requestJson } from "@/services/apiService/http";
-
-const GALLI_MAP_API_KEY = process.env.NEXT_PUBLIC_GALLI_MAP_API_KEY;
-
 export interface GalliSearchItem {
   name: string;
   province: string;
@@ -59,33 +55,45 @@ export interface GalliCurrentLocationSearchResult {
 
 export const galliMapService = {
   async search(query: string, lat?: number, lng?: number): Promise<GalliSearchItem[]> {
-    if (!GALLI_MAP_API_KEY) throw new Error("Galli Map API key is missing");
-    
-    let url = `https://route-init.gallimap.com/api/v1/search/autocomplete?accessToken=${GALLI_MAP_API_KEY}&word=${encodeURIComponent(query)}`;
-    if (lat !== undefined && lng !== undefined) {
-      url += `&lat=${lat}&lng=${lng}`;
-    }
+    try {
+      let url = `/api/map/search?word=${encodeURIComponent(query)}`;
+      if (lat !== undefined && lng !== undefined) {
+        url += `&currentLat=${lat}&currentLng=${lng}`;
+      }
 
-    const response = await fetch(url);
-    const result: GalliSearchResult = await response.json();
-    return result.success ? result.data : [];
+      const response = await fetch(url);
+      if (!response.ok) return [];
+      const result: GalliSearchResult = await response.json();
+      return result.success ? result.data : [];
+    } catch (error) {
+      console.error("Galli search error:", error);
+      return [];
+    }
   },
 
   async searchWithCurrentLocation(query: string, lat: number, lng: number): Promise<GalliCurrentLocationSearchResult["data"]> {
-    if (!GALLI_MAP_API_KEY) throw new Error("Galli Map API key is missing");
-
-    const url = `https://route-init.gallimap.com/api/v1/search/currentLocation?accessToken=${GALLI_MAP_API_KEY}&name=${encodeURIComponent(query)}&currentLat=${lat}&currentLng=${lng}`;
-    const response = await fetch(url);
-    const result: GalliCurrentLocationSearchResult = await response.json();
-    return result.success ? result.data : { type: "FeatureCollection", features: [] };
+    try {
+      const url = `/api/map/search?word=${encodeURIComponent(query)}&currentLat=${lat}&currentLng=${lng}`;
+      const response = await fetch(url);
+      if (!response.ok) return { type: "FeatureCollection", features: [] };
+      const result: GalliCurrentLocationSearchResult = await response.json();
+      return result.success ? result.data : { type: "FeatureCollection", features: [] };
+    } catch (error) {
+      console.error("Galli current location search error:", error);
+      return { type: "FeatureCollection", features: [] };
+    }
   },
 
   async reverseGeocode(lat: number, lng: number): Promise<GalliReverseResult["data"] | null> {
-    if (!GALLI_MAP_API_KEY) throw new Error("Galli Map API key is missing");
-
-    const url = `https://route-init.gallimap.com/api/v1/reverse/generalReverse?accessToken=${GALLI_MAP_API_KEY}&lat=${lat}&lng=${lng}`;
-    const response = await fetch(url);
-    const result: GalliReverseResult = await response.json();
-    return result.success ? result.data : null;
+    try {
+      const url = `/api/map/reverse?lat=${lat}&lng=${lng}`;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const result: GalliReverseResult = await response.json();
+      return result.success ? result.data : null;
+    } catch (error) {
+      console.error("Galli reverse geocode error:", error);
+      return null;
+    }
   },
 };

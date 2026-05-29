@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ExploreListing, exploreService } from "@/services/apiService/explore";
+import { ExploreListing, exploreService, type LocationSearchNode } from "@/services/apiService/explore";
 import { profileService } from "@/services/apiService/profile";
+import { galliMapService } from "@/services/galliMap";
 import { SlidersHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
@@ -190,39 +191,34 @@ export default function ExplorePage({ searchParams }: Props) {
       setAiListings(listings);
 
       if (analysis) {
-        let locationNode = null;
+        let locationNode: FilterState["locationNode"] = null;
         if (analysis.location) {
           try {
-            if (analysis.isWardSearch && analysis.wardNumber) {
-              // Exact ward search: search for "Kathmandu ward 12" as a whole
-              const wardQuery = `${analysis.location} ward ${analysis.wardNumber}`;
-              const nodes = await exploreService.searchLocationNodes(wardQuery, 10, "ward");
-              
-              // Find the exact ward number in the results to be sure
-              locationNode = nodes.find(n => 
-                n.level === "ward" && 
-                n.label.toLowerCase().includes(`ward ${analysis.wardNumber}`)
-              ) || null;
-            }
+            const searchQuery = analysis.isWardSearch && analysis.wardNumber
+              ? `${analysis.location} ward ${analysis.wardNumber}`
+              : analysis.location;
 
-            // Fallback if ward not found or not a specific ward search
-            if (!locationNode) {
-              const level = analysis.isWardSearch ? "ward" : "municipality";
-              let nodes = await exploreService.searchLocationNodes(analysis.location, 10, level);
-              
-              if (nodes.length === 0) {
-                nodes = await exploreService.searchLocationNodes(analysis.location, 10);
-              }
+            // Default to Kathmandu if user location is not available
+            const lat = userLocation?.latitude ?? 27.7172;
+            const lng = userLocation?.longitude ?? 85.3240;
 
-              if (nodes.length > 0) {
-                if (analysis.isWardSearch) {
-                  locationNode = nodes.find(n => n.level === "ward") || nodes[0];
-                } else {
-                  locationNode = nodes.find(n => n.level === "municipality") || 
-                                 nodes.find(n => n.level === "district") || 
-                                 nodes.find(n => n.level === "state") || 
-                                 nodes[0];
-                }
+            const galliData = await galliMapService.searchWithCurrentLocation(searchQuery, lat, lng);
+            const features = galliData?.features || [];
+
+            if (features.length > 0) {
+              const f = features[0];
+              if (f.geometry && f.geometry.coordinates) {
+                locationNode = {
+                  id: `galli-${f.geometry.coordinates[1]}-${f.geometry.coordinates[0]}`,
+                  label: f.properties.searchedItem || searchQuery,
+                  level: "ward" as const, // Satisfies type constraint
+                  state_id: null,
+                  district_id: null,
+                  municipality_id: null,
+                  ward_id: null,
+                  latitude: f.geometry.coordinates[1], // [longitude, latitude]
+                  longitude: f.geometry.coordinates[0],
+                };
               }
             }
           } catch (err) {
