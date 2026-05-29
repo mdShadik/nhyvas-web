@@ -15,16 +15,16 @@ import { NotificationManager } from "@/components/notifications/NotificationMana
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => sharedQueryClient);
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <AuthProvider>
-          <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
             <NotificationManager />
             {children}
             <Toaster />
-          </QueryClientProvider>
-        </AuthProvider>
-      </ToastProvider>
-    </ThemeProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

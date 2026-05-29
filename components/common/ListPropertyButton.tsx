@@ -2,9 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { Plus, Loader2 } from "lucide-react";
-import { profileService } from "@/services/apiService/profile";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -18,16 +16,8 @@ interface ListPropertyButtonProps {
 export function ListPropertyButton({ className, children }: ListPropertyButtonProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, profile, isLoading: authLoading } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
-  const [checking, setChecking] = useState(false);
-
-  // We use query for bootstrap to get landlord_verified status
-  const bootstrapQuery = useQuery({
-    queryKey: ["profile", "bootstrap"],
-    queryFn: () => profileService.getBootstrap(),
-    enabled: isAuthenticated,
-  });
 
   const handlePress = async () => {
     if (!isAuthenticated) {
@@ -35,7 +25,6 @@ export function ListPropertyButton({ className, children }: ListPropertyButtonPr
       return;
     }
 
-    const profile = bootstrapQuery.data?.profile;
     if (!profile) return;
 
     if (profile.landlord_verified) {
@@ -45,7 +34,7 @@ export function ListPropertyButton({ className, children }: ListPropertyButtonPr
     }
   };
 
-  const isLoading = isAuthenticated && (bootstrapQuery.isLoading || checking);
+  const isLoading = isAuthenticated && authLoading;
 
   return (
     <>

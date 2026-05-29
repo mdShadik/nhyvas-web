@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { SearchParamsProps } from "@/app/(pages)/add-property/page";
 import { LocationSearch } from "@/components/address/LocationSearch";
 import { AddressMapPicker } from "@/components/address/AddressMapPicker";
+import { useAuth } from "@/context/AuthContext";
 
 function parseOptionalNumber(value: string): number | null {
   const normalized = value.trim();
@@ -192,22 +193,17 @@ export default function AddPropertyPage({ searchParams }: Props) {
     queryFn: () => exploreService.getHomeCategories(50),
   });
 
-  const bootstrapQuery = useQuery({
-    queryKey: ["profile", "bootstrap"],
-    queryFn: () => profileService.getBootstrap(),
-  });
+  const { profile, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (bootstrapQuery.isLoading || bootstrapQuery.isFetching) return;
-    const profile = bootstrapQuery.data?.profile;
+    if (authLoading) return;
     // Redirect to verification if not verified and not editing an existing listing
     if (profile && !profile.landlord_verified && !listingId) {
       router.replace("/profile/landlord-verify");
     }
   }, [
-    bootstrapQuery.isLoading,
-    bootstrapQuery.isFetching,
-    bootstrapQuery.data,
+    authLoading,
+    profile,
     listingId,
     router,
   ]);
@@ -1070,7 +1066,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
                     <button
                       type="button"
                       onClick={() => {
-                        const maxAddresses = bootstrapQuery.data?.profile?.max_addresses ?? 3;
+                        const maxAddresses = profile?.max_addresses ?? 3;
                         if (addressEntries.length >= maxAddresses) {
                           showToast({
                             variant: "error",

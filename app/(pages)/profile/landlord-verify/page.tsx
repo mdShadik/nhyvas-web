@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Loader2, UploadCloud, CheckCircle2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Camera, Loader2, UploadCloud } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/context/ToastContext";
 import { cn } from "@/lib/utils";
 import { RequireAuth } from "@/components/profile/RequireAuth";
+import { useAuth } from "@/context/AuthContext";
 
 type FormData = {
   legalName: string;
@@ -33,16 +34,13 @@ export default function LandlordVerifyPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const bootstrapQuery = useQuery({
-    queryKey: ["profile", "bootstrap"],
-    queryFn: () => profileService.getBootstrap(),
-  });
+  const { profile, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (bootstrapQuery.data?.profile?.landlord_verified) {
+    if (profile?.landlord_verified) {
       router.replace("/add-property");
     }
-  }, [bootstrapQuery.data, router]);
+  }, [profile, router]);
 
   const {
     control,
@@ -124,7 +122,7 @@ export default function LandlordVerifyPage() {
     }
   };
 
-  if (bootstrapQuery.isLoading) {
+  if (authLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary-500" />

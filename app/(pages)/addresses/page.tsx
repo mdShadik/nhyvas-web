@@ -5,13 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 
 import { RequireAuth } from "@/components/profile/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/context/ToastContext";
 import { useAddressBook } from "@/hooks/useAddressBook";
-import { profileService } from "@/services/apiService/profile";
+import { useAuth } from "@/context/AuthContext";
 
 function AddressesContent() {
   const { t } = useTranslation();
@@ -20,12 +19,8 @@ function AddressesContent() {
   const searchParams = useSearchParams();
   const { entries, defaultId, remove, setDefault } = useAddressBook();
 
-  const bootstrapQuery = useQuery({
-    queryKey: ["profile", "bootstrap"],
-    queryFn: () => profileService.getBootstrap(),
-  });
-
-  const maxAddresses = bootstrapQuery.data?.profile?.max_addresses ?? 3;
+  const { profile } = useAuth();
+  const maxAddresses = profile?.max_addresses ?? 3;
   const returnTo = searchParams.get("returnTo");
 
   const onCancel = () => {

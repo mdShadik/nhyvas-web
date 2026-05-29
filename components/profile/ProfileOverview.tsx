@@ -13,7 +13,6 @@ import {
   Sparkles,
   UserRound,
   Bell,
-  BellOff,
 } from "lucide-react";
 
 import { profileService } from "@/services/apiService/profile";
@@ -28,6 +27,7 @@ import { useToast } from "@/context/ToastContext";
 import { tAmenity } from "@/i18n/masterData";
 import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
 
 function parseOptionalNumber(value: string) {
   const normalized = value.trim();
@@ -42,7 +42,6 @@ function EditProfileForm({
   setForm,
   categoriesData,
   amenitiesData,
-  selectedCategory,
   t,
 }: {
   form: {
@@ -198,10 +197,7 @@ export function ProfileOverview() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const bootstrapQuery = useQuery({
-    queryKey: ["profile", "bootstrap"],
-    queryFn: () => profileService.getBootstrap(),
-  });
+  const { profile, preferences, isLoading: authLoading } = useAuth();
 
   const categoriesQuery = useQuery({
     queryKey: ["explore", "categories"],
@@ -212,9 +208,6 @@ export function ProfileOverview() {
     queryKey: ["explore", "amenities"],
     queryFn: () => exploreService.getAmenities(),
   });
-
-  const profile = bootstrapQuery.data?.profile ?? null;
-  const preferences = bootstrapQuery.data?.preferences ?? null;
 
   const [editOpen, setEditOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -255,15 +248,14 @@ export function ProfileOverview() {
   const hasRegisteredRef = useRef(false);
 
   useEffect(() => {
-    const profile = bootstrapQuery.data?.profile;
     if (!profile) return;
 
     // If opted in (or default) and permission is NOT denied, ensure we are registered.
     const pushOptIn = profile.push_opt_in ?? true;
     const canRegister = browserPermission === "default" || browserPermission === "granted";
-    
+
     console.log("[ProfileOverview] Push check:", { pushOptIn, browserPermission, canRegister, supported: pushRegistrationService.isSupported() });
-    
+
     if (pushOptIn && canRegister && pushRegistrationService.isSupported() && !hasRegisteredRef.current) {
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       console.log("[ProfileOverview] Attempting registration, VAPID key present:", !!vapidKey);
@@ -279,7 +271,7 @@ export function ProfileOverview() {
         });
       }
     }
-  }, [bootstrapQuery.data?.profile, browserPermission]);
+  }, [profile, browserPermission]);
 
   const openEdit = () => {
     if (!profile) return;
@@ -355,7 +347,7 @@ export function ProfileOverview() {
         if (!pushRegistrationService.isSupported()) {
           throw new Error("Push notifications are not supported on this browser.");
         }
-        
+
         const currentStatus = Notification.permission;
         if (currentStatus === "denied") {
           throw new Error("Notifications are blocked by your browser. Please enable them in your browser settings to receive alerts.");
@@ -363,7 +355,7 @@ export function ProfileOverview() {
 
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!vapidKey) throw new Error("Push configuration missing.");
-        
+
         const success = await pushRegistrationService.register(vapidKey);
         if (!success) {
           throw new Error("Failed to register for push notifications. Please check your browser settings.");
@@ -389,7 +381,7 @@ export function ProfileOverview() {
     if (!busy) setEditOpen(false);
   };
 
-  if (bootstrapQuery.isLoading) {
+  if (authLoading) {
     return (
       <div
         className="h-56 animate-pulse border border-white/20 bg-white/5 backdrop-blur-xl"

@@ -38,14 +38,16 @@ export function ListingCard({
   initiallyExpandedNote = false,
 }: ListingCardProps) {
   const { t } = useTranslation();
+  // Use initiallyExpandedNote directly for initial state, but allow tracking explicit toggles
   const [isNoteExpanded, setIsNoteExpanded] = React.useState(initiallyExpandedNote);
+  // Add a key to force re-render/reset state if initiallyExpandedNote changes significantly (e.g. tab switch)
+  const [prevInitial, setPrevInitial] = React.useState(initiallyExpandedNote);
 
-  // Sync state if prop changes (important for tab switching)
-  React.useEffect(() => {
-    if (initiallyExpandedNote) {
-      setIsNoteExpanded(true);
-    }
-  }, [initiallyExpandedNote]);
+  if (initiallyExpandedNote !== prevInitial) {
+      setIsNoteExpanded(initiallyExpandedNote);
+      setPrevInitial(initiallyExpandedNote);
+  }
+
   const thumbnailUrl = listing.thumbnail_url || noImagePlaceholder;
   const isCompact = variant === "compact";
   const isPublished = listing.status === "approved" || listing.status === "published";
@@ -56,7 +58,7 @@ export function ListingCard({
   const subcategoryDisplayName = listing.subcategory_name || listing.subcategory;
 
   const moderatorNoteSection = isOwnAd && (listing.status === "rejected" || listing.status === "changes_requested") && listing.moderator_note && (
-    <div className="mt-2 flex flex-col items-end">
+    <div className="mt-2 flex flex-col lg:items-end">
       <div 
         className="flex items-center gap-1 cursor-pointer group/note"
         onClick={(e) => { 
@@ -77,7 +79,7 @@ export function ListingCard({
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="overflow-hidden w-full"
       >
-        <div className="mt-2 whitespace-normal break-words text-[11px] font-medium leading-relaxed text-red-600 dark:text-red-400 bg-red-500/5 px-3 py-2 rounded-xl border border-red-500/10 text-right">
+        <div className="mt-2 whitespace-normal break-words text-[11px] font-medium leading-relaxed text-red-600 dark:text-red-400 bg-red-500/5 px-3 py-2 rounded-xl border border-red-500/10 lg:text-right">
           {listing.moderator_note}
         </div>
       </motion.div>
@@ -88,7 +90,7 @@ export function ListingCard({
     <article
       className={cn(
         "group relative overflow-hidden border border-white/20 bg-white/5 shadow-sm transition-all duration-500 backdrop-blur-md hover:border-primary-500/40 hover:shadow-2xl hover:shadow-primary-500/10 dark:shadow-none",
-        isCompact ? "flex flex-col p-3 sm:flex-row" : "flex flex-col sm:flex-row sm:min-h-[260px]",
+        isCompact ? "flex flex-col p-3 sm:flex-row" : "flex flex-col lg:flex-row lg:min-h-[260px]",
         className,
       )}
       style={{
@@ -102,7 +104,7 @@ export function ListingCard({
           "relative shrink-0 overflow-hidden bg-secondary-900/10",
           isCompact
             ? "h-44 w-full rounded-2xl sm:h-auto sm:min-h-[180px] sm:w-44 lg:w-52"
-            : "h-56 w-full sm:h-auto sm:min-h-full sm:w-[300px] lg:w-[360px] xl:w-[400px]",
+            : "h-56 w-full lg:h-auto lg:min-h-full lg:w-[300px] 2xl:w-[400px]",
         )}
         style={
           !isCompact
@@ -171,7 +173,7 @@ export function ListingCard({
       <div
         className={cn(
           "flex min-w-0 flex-1",
-          isCompact ? "flex-col" : "flex-col lg:flex-row",
+          isCompact ? "flex-col" : "flex-col 2xl:flex-row",
         )}
       >
         {/* Main Info Section (Left/Center) */}
@@ -236,37 +238,37 @@ export function ListingCard({
 
         {/* Side Section: Price & Action (Right side on desktop, footer on mobile) */}
         {!isCompact && (
-          <div className="flex flex-col gap-5 border-t border-border/50 bg-secondary-50/30 p-5 dark:bg-secondary-900/10 sm:flex-row sm:items-center sm:justify-between sm:p-6 lg:w-[280px] lg:flex-col lg:items-end lg:justify-center lg:border-l lg:border-t-0 lg:p-8">
-            <div className="flex flex-col sm:min-w-0 lg:items-end">
+          <div className="flex flex-col gap-4 border-t border-border/50 bg-secondary-50/30 p-5 dark:bg-secondary-900/10 sm:flex-row sm:items-center sm:justify-between 2xl:flex-col 2xl:items-end 2xl:justify-center 2xl:border-l 2xl:border-t-0 2xl:w-[280px] 2xl:p-8">
+            <div className="flex flex-col 2xl:w-full 2xl:items-end">
               <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
                 {t("explore.price_label")}
               </p>
-              <div className="text-3xl font-black tracking-tighter text-primary-500 dark:text-primary-400 lg:text-4xl">
+              <div className="text-2xl font-black tracking-tighter text-primary-500 dark:text-primary-400 lg:text-3xl xl:text-4xl">
                 {formatPrice(listing.price, listing.currency_code)}
               </div>
-              <p className="mt-1 hidden text-[10px] font-medium text-text-tertiary md:block">
+              <p className="mt-1 hidden text-[10px] font-medium text-text-tertiary 2xl:block">
                 {t("explore.per_month")}
               </p>
             </div>
 
-            <div className="flex flex-col w-full gap-2 sm:w-auto lg:w-full">
+            <div className="flex w-full flex-col gap-2 sm:w-auto 2xl:w-full">
               <div className="flex w-full gap-2">
                 {!action && !shouldShowEditButton && !shouldShowRentedToggle && (
-                  <div className="group/btn flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-4 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-95 group-hover:shadow-primary-500/30">
+                  <div className="group/btn flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-4 py-3 lg:px-6 lg:py-4 text-sm font-black text-white shadow-xl shadow-primary-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-95 group-hover:shadow-primary-500/30">
                     {t("explore.view_details")}
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
                   </div>
                 )}
 
                 {(action || shouldShowEditButton) && !shouldShowRentedToggle && (
-                  <div className="flex w-full items-center justify-start gap-2 sm:justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  <div className="flex w-full items-center justify-start gap-2 2xl:justify-end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                     {action}
                   </div>
                 )}
 
                 {shouldShowRentedToggle && onToggleRented && (
                   <div className="flex flex-col gap-3 w-full" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                    <div className="flex items-center justify-between rounded-2xl bg-secondary-900/10 dark:bg-white/5 border border-white/10 px-6 py-4 transition-all duration-300">
+                    <div className="flex items-center justify-between rounded-2xl bg-secondary-900/10 dark:bg-white/5 border border-white/10 px-4 py-3 lg:px-6 lg:py-4 transition-all duration-300">
                       <span className={cn(
                         "text-sm font-bold tracking-tight",
                         listing.is_rented ? "text-amber-500" : "text-text-primary"

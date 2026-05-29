@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ExploreListing, exploreService, type LocationSearchNode } from "@/services/apiService/explore";
-import { profileService } from "@/services/apiService/profile";
+import { ExploreListing, exploreService } from "@/services/apiService/explore";
 import { galliMapService } from "@/services/galliMap";
 import { SlidersHorizontal, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +14,7 @@ import { SearchParamsProps } from "@/app/(pages)/explore/page";
 import { AiSearch } from "@/components/AiSearch/Aisearch";
 import { AnalyzedQuery, AnalyzedSubcategory } from "@/lib/ai/queryAnalyzer";
 import { LoginModal } from "@/components/auth/LoginModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -28,16 +28,12 @@ export default function ExplorePage({ searchParams }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const bootstrapQuery = useQuery({
-    queryKey: ["auth", "bootstrap"],
-    queryFn: () => profileService.getBootstrap(),
-  });
-
-  const isLoggedIn = !!bootstrapQuery.data?.profile;
+  const { isAuthenticated, preferences, isLoading: authLoading } = useAuth();
+  const isLoggedIn = isAuthenticated;
 
   useEffect(() => {
     if (didInitFromUrlRef.current) return;
-    if (bootstrapQuery.isLoading) return;
+    if (authLoading) return;
 
     didInitFromUrlRef.current = true;
 
@@ -62,7 +58,7 @@ export default function ExplorePage({ searchParams }: Props) {
       } catch {}
     }
 
-    const prefs = bootstrapQuery.data?.preferences;
+    const prefs = preferences;
 
     const categoryIds = categoryIdsRaw?.trim()
       ? categoryIdsRaw.split(",").map((s:any) => s.trim()).filter(Boolean)
@@ -93,7 +89,7 @@ export default function ExplorePage({ searchParams }: Props) {
 
     setFilters(next);
     setDraftFilters(next);
-  }, [searchParams, bootstrapQuery.isLoading, bootstrapQuery.data]);
+  }, [searchParams, authLoading, preferences]);
 
   useEffect(() => {
     if (!("geolocation" in navigator)) return;
@@ -193,36 +189,51 @@ export default function ExplorePage({ searchParams }: Props) {
       if (analysis) {
         let locationNode: FilterState["locationNode"] = null;
         if (analysis.location) {
-          try {
-            const searchQuery = analysis.isWardSearch && analysis.wardNumber
-              ? `${analysis.location} ward ${analysis.wardNumber}`
-              : analysis.location;
+          if (analysis.latitude != null && analysis.longitude != null) {
+            // Use pre-resolved location from AI API
+            locationNode = {
+              id: `galli-${analysis.latitude}-${analysis.longitude}`,
+              label: analysis.location,
+              level: "ward" as const,
+              state_id: null,
+              district_id: null,
+              municipality_id: null,
+              ward_id: null,
+              latitude: analysis.latitude,
+              longitude: analysis.longitude,
+            };
+          } else {
+            try {
+              const searchQuery = analysis.isWardSearch && analysis.wardNumber
+                ? `${analysis.location} ward ${analysis.wardNumber}`
+                : analysis.location;
 
-            // Default to Kathmandu if user location is not available
-            const lat = userLocation?.latitude ?? 27.7172;
-            const lng = userLocation?.longitude ?? 85.3240;
+              // Default to Kathmandu if user location is not available
+              const lat = userLocation?.latitude ?? 27.7172;
+              const lng = userLocation?.longitude ?? 85.3240;
 
-            const galliData = await galliMapService.searchWithCurrentLocation(searchQuery, lat, lng);
-            const features = galliData?.features || [];
+              const galliData = await galliMapService.searchWithCurrentLocation(searchQuery, lat, lng);
+              const features = galliData?.features || [];
 
-            if (features.length > 0) {
-              const f = features[0];
-              if (f.geometry && f.geometry.coordinates) {
-                locationNode = {
-                  id: `galli-${f.geometry.coordinates[1]}-${f.geometry.coordinates[0]}`,
-                  label: f.properties.searchedItem || searchQuery,
-                  level: "ward" as const, // Satisfies type constraint
-                  state_id: null,
-                  district_id: null,
-                  municipality_id: null,
-                  ward_id: null,
-                  latitude: f.geometry.coordinates[1], // [longitude, latitude]
-                  longitude: f.geometry.coordinates[0],
-                };
+              if (features.length > 0) {
+                const f = features[0];
+                if (f.geometry && f.geometry.coordinates) {
+                  locationNode = {
+                    id: `galli-${f.geometry.coordinates[1]}-${f.geometry.coordinates[0]}`,
+                    label: f.properties.searchedItem || searchQuery,
+                    level: "ward" as const, // Satisfies type constraint
+                    state_id: null,
+                    district_id: null,
+                    municipality_id: null,
+                    ward_id: null,
+                    latitude: f.geometry.coordinates[1], // [longitude, latitude]
+                    longitude: f.geometry.coordinates[0],
+                  };
+                }
               }
+            } catch (err) {
+              console.error("Location resolution failed:", err);
             }
-          } catch (err) {
-            console.error("Location resolution failed:", err);
           }
         }
 
@@ -270,8 +281,6 @@ export default function ExplorePage({ searchParams }: Props) {
   };
 
   const getSubcategoryLabel = (id: string) => {
-    // Note: since the analysis now returns objects, we could potentially get names from the API directly
-    // but for now we'll stick to resolving them from our master data cache.
     const sub = appliedSubcategoriesQuery.data?.find(s => s.id === id);
     return sub ? sub.name : null;
   };
@@ -279,9 +288,9 @@ export default function ExplorePage({ searchParams }: Props) {
   return (
     <div className={`flex min-h-screen flex-col`}>
 
-      <main className="flex flex-1 gap-6 p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto w-full">
+      <main className="flex w-full max-w-screen-2xl flex-1 gap-4 p-4 sm:p-6 lg:gap-6 lg:p-8 mx-auto">
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <div className="mb-6 flex items-center justify-end sm:justify-between">
             <div className="hidden sm:block">
               <h1 className="text-3xl font-bold text-text-primary">
@@ -297,7 +306,7 @@ export default function ExplorePage({ searchParams }: Props) {
                 setDraftFilters(filters);
                 setFiltersOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-(--surface) px-4 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-(--surface)/80 md:hidden"
+              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-(--surface) px-4 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-(--surface)/80 min-[748px]:hidden"
             >
               <SlidersHorizontal className="h-4 w-4 text-accent" />
               {t("common.filters")}
@@ -311,7 +320,7 @@ export default function ExplorePage({ searchParams }: Props) {
               ))}
             </div>
           ) : displayedListings.length > 0 ? (
-            <div className="gap-6 flex flex-col">
+            <div className="flex min-w-0 flex-col gap-6">
               {displayedListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
@@ -328,9 +337,8 @@ export default function ExplorePage({ searchParams }: Props) {
         </div>
 
         {/* Right Sidebar - Filters */}
-        <aside className="max-w-100 mt-21 shrink-0 hidden md:block">
-          <div className="sticky top-6 rounded-3xl border border-border bg-page-bg-from p-6 shadow-sm">
-            {/* <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-3">{t("common.filters")}</h2> */}
+        <aside className="mt-21 hidden w-[260px] shrink-0 min-[748px]:block md:w-[280px] lg:w-[320px] xl:w-[360px] 2xl:w-[400px]">
+          <div className="sticky top-6 rounded-3xl border border-border bg-page-bg-from p-4 shadow-sm lg:p-6">
             <ExploreFiltersPanel
               value={draftFilters}
               onChange={handleFilterChange}
@@ -346,7 +354,7 @@ export default function ExplorePage({ searchParams }: Props) {
         </aside>
       </main>
 
-      <div className="md:hidden">
+      <div className="min-[748px]:hidden">
         <MobileBottomSheet
           open={filtersOpen}
           title={t("explore.refine_search")}
@@ -388,7 +396,6 @@ export default function ExplorePage({ searchParams }: Props) {
         buttonLabel="AI Search"
         buttonPosition="bottom-right"
         showMic={false}
-        // onMicPress={() => console.log("Start voice input")}
         minQueryLength={2}
         placeholders={[
           "Search properties with AI…",

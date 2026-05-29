@@ -16,6 +16,8 @@ export interface AnalyzedQuery {
   vibeTags: string[];
   nearMe: boolean;
   location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   isWardSearch: boolean;
   wardNumber?: number;
   city?: string;
@@ -166,11 +168,29 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
     analyzed.isWardSearch = true;
   }
 
+  // 6b. Heuristic Location Detection (if not already found by dynamic mapping)
+  if (!analyzed.location) {
+    // Look for patterns like "at [Location]", "in [Location]", "near [Location]"
+    // but avoid matching words that are already identified as categories/amenities/etc.
+    const locationPattern = /\b(?:at|in|near|around|nearby|beside|opposite to)\s+([a-z0-9\s\-]+?)(?:\s+ward|\s+bhk|\s+bedroom|\s+under|\s+above|\s+with|\s+for|\s+below|\s+price|\s+budget|$)/i;
+    const locMatch = lowerQuery.match(locationPattern);
+    if (locMatch) {
+      const potentialLoc = locMatch[1].trim();
+      // Only accept if it's 1-3 words and doesn't contain common category/intent words
+      if (potentialLoc && potentialLoc.split(/\s+/).length <= 3) {
+        const forbidden = ["apartment", "room", "flat", "house", "villa", "rent", "buy", "sale"];
+        if (!forbidden.some(f => potentialLoc.includes(f))) {
+          analyzed.location = potentialLoc;
+        }
+      }
+    }
+  }
+
   // 7. Build Keyword Query
-  const mappedKeywords = dynamicMappings.map(m => m.keyword);
+  const mappedKeywords = dynamicMappings.map(m => m.keyword.toLowerCase());
   const internalMappedWords = [
     ...STOP_WORDS,
-    "buy", "sale", "rent", "budget", "price", "between", "under", "above", "more", "less", "than", "to", "and", "rs", "npr", "k", "m", "bhk", "bedroom", "room"
+    "buy", "sale", "rent", "budget", "price", "between", "under", "above", "more", "less", "than", "to", "and", "rs", "npr", "k", "m", "bhk", "bedroom", "room", "flat", "apartment", "house", "villa"
   ];
 
   const importantWords = words.filter(w => {
