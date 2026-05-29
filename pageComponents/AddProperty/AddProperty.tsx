@@ -34,7 +34,6 @@ import { Select } from "@/components/ui/select";
 import { useToast } from "@/context/ToastContext";
 import { useAddressBook } from "@/hooks/useAddressBook";
 import { cn } from "@/lib/utils";
-import { lookupNepalAdminAtPoint } from "@/services/nepalLocations";
 import { SearchParamsProps } from "@/app/(pages)/add-property/page";
 import { LocationSearch } from "@/components/address/LocationSearch";
 import { AddressMapPicker } from "@/components/address/AddressMapPicker";
@@ -93,7 +92,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
     (searchParams.listingId && searchParams.listingId.trim()) || "";
   const initialCategoryId = (searchParams.categoryId ?? "").trim() || "";
   const lockCategory = Boolean(initialCategoryId);
-  const { entries: addressEntries, defaultId: defaultAddressId } =
+  const { entries: addressEntries, defaultId: defaultAddressId, add: addAddress } =
     useAddressBook();
 
   const totalSteps = 3;
@@ -118,6 +117,12 @@ export default function AddPropertyPage({ searchParams }: Props) {
   const [locationMode, setLocationMode] = useState<"existing" | "search">(
     addressEntries.length > 0 ? "existing" : "search"
   );
+
+  useEffect(() => {
+    if (addressEntries.length > 0 && locationMode === "search" && !locationTouched) {
+      setLocationMode("existing");
+    }
+  }, [addressEntries.length, locationMode, locationTouched]);
 
   const {
     register,
@@ -146,6 +151,41 @@ export default function AddPropertyPage({ searchParams }: Props) {
       amenityIds: [],
     },
   });
+
+  // Persist form state to sessionStorage
+  const allValues = watch();
+  useEffect(() => {
+    if (!listingId && Object.keys(allValues).length > 0) {
+      const stateToSave = {
+        ...allValues,
+        currentStep,
+        locationMode,
+        selectedAddressId,
+        prefilledLocation,
+      };
+      sessionStorage.setItem("nhyvas.addPropertyForm", JSON.stringify(stateToSave));
+    }
+  }, [allValues, currentStep, locationMode, selectedAddressId, prefilledLocation, listingId]);
+
+  // Restore form state from sessionStorage
+  useEffect(() => {
+    if (listingId) return;
+    const saved = sessionStorage.getItem("nhyvas.addPropertyForm");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const { currentStep: savedStep, locationMode: savedMode, selectedAddressId: savedAddrId, prefilledLocation: savedLoc, ...formValues } = parsed;
+        
+        reset(formValues);
+        if (savedStep) setCurrentStep(savedStep);
+        if (savedMode) setLocationMode(savedMode);
+        if (savedAddrId) setSelectedAddressId(savedAddrId);
+        if (savedLoc) setPrefilledLocation(savedLoc);
+      } catch (e) {
+        console.error("Failed to restore form state", e);
+      }
+    }
+  }, [listingId, reset]);
 
   const categoriesQuery = useQuery({
     queryKey: ["explore", "categories"],
@@ -460,37 +500,6 @@ export default function AddPropertyPage({ searchParams }: Props) {
       const parsedTotalFloor = parseOptionalInteger(values.totalFloor);
       const parsedPropertyFloor = parseOptionalInteger(values.propertyFloorNo);
       const locationText = selectedLocation?.label?.trim() || "";
-      let resolvedLocationIds: {
-        state_id: string | null;
-        district_id: string | null;
-        municipality_id: string | null;
-        ward_id: string | null;
-      } = {
-        state_id: null,
-        district_id: null,
-        municipality_id: null,
-        ward_id: null,
-      };
-
-      if (
-        selectedLocation?.latitude != null &&
-        selectedLocation?.longitude != null
-      ) {
-        try {
-          const adminAtPoint = await lookupNepalAdminAtPoint(
-            selectedLocation.latitude,
-            selectedLocation.longitude,
-          );
-          resolvedLocationIds = {
-            state_id: adminAtPoint.state?.id ?? null,
-            district_id: adminAtPoint.district?.id ?? null,
-            municipality_id: adminAtPoint.municipality?.id ?? null,
-            ward_id: adminAtPoint.ward?.id ?? null,
-          };
-        } catch {
-          // Keep null IDs if lookup fails; location text/coords still submitted.
-        }
-      }
 
       const uploadUrls: string[] = [];
       for (const file of selectedFiles) {
@@ -522,7 +531,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
         category_id: values.categoryId,
         subcategory: selectedSubcategory?.name ?? null,
         subcategory_id: values.subcategoryId,
-        property_title: values.propertyTitle.trim(),
+        property_title: values.propertyTitle?.trim() ?? "",
         description: values.description.trim(),
         price: parsedPrice,
         is_negotiable: values.isNegotiable,
@@ -530,10 +539,10 @@ export default function AddPropertyPage({ searchParams }: Props) {
         carpet_area_sqft: parsedCarpetArea,
         total_floor: parsedTotalFloor,
         property_floor_no: parsedPropertyFloor,
-        state_id: resolvedLocationIds.state_id,
-        district_id: resolvedLocationIds.district_id,
-        municipality_id: resolvedLocationIds.municipality_id,
-        ward_id: resolvedLocationIds.ward_id,
+        state_id: null,
+        district_id: null,
+        municipality_id: null,
+        ward_id: null,
         location_text: locationText,
         latitude: selectedLocation?.latitude ?? null,
         longitude: selectedLocation?.longitude ?? null,
@@ -553,6 +562,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
           : "Your listing has been sent for moderation.",
       });
 
+      sessionStorage.removeItem("nhyvas.addPropertyForm");
       router.replace("/");
     } catch (error: unknown) {
       const message =
@@ -591,6 +601,18 @@ export default function AddPropertyPage({ searchParams }: Props) {
           message: t("landlord.create.fix_fields_message"),
         });
         return;
+      }
+
+      // If in search mode, save the searched location as a new address entry
+      if (locationMode === "search" && prefilledLocation) {
+        const newAddrId = addAddress({
+          label: prefilledLocation.label,
+          latitude: prefilledLocation.latitude,
+          longitude: prefilledLocation.longitude,
+        });
+        setSelectedAddressId(newAddrId);
+        setLocationMode("existing");
+        setPrefilledLocation(null);
       }
     }
 
@@ -1047,7 +1069,17 @@ export default function AddPropertyPage({ searchParams }: Props) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setLocationMode("search")}
+                      onClick={() => {
+                        const maxAddresses = bootstrapQuery.data?.profile?.max_addresses ?? 3;
+                        if (addressEntries.length >= maxAddresses) {
+                          showToast({
+                            variant: "error",
+                            message: t("landlord.create.address_limit_error", `You already have ${maxAddresses} addresses to be selected from`),
+                          });
+                          return;
+                        }
+                        setLocationMode("search");
+                      }}
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition",
                         locationMode === "search"
@@ -1080,8 +1112,9 @@ export default function AddPropertyPage({ searchParams }: Props) {
                         variant="outline"
                         className="flex-1"
                         onClick={() => {
+                          const returnTo = "/add-property" + (listingId ? `?listingId=${listingId}` : "");
                           if (!addressEntries.length) {
-                            router.push("/addresses/pick");
+                            router.push(`/addresses/pick?returnTo=${encodeURIComponent(returnTo)}`);
                             return;
                           }
                           const fallbackId =
@@ -1103,7 +1136,10 @@ export default function AddPropertyPage({ searchParams }: Props) {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => router.push("/addresses")}
+                        onClick={() => {
+                          const returnTo = "/add-property" + (listingId ? `?listingId=${listingId}` : "");
+                          router.push(`/addresses?returnTo=${encodeURIComponent(returnTo)}`);
+                        }}
                       >
                         {t("landlord.create.manage_btn")}
                       </Button>
@@ -1182,11 +1218,18 @@ export default function AddPropertyPage({ searchParams }: Props) {
                   </div>
                   
                   {selectedLocation && (
-                    <div className="h-48 w-full">
+                    <div className="h-80 w-full">
                       <AddressMapPicker 
                         value={selectedLocation}
-                        onChange={() => {}}
-                        noPanZoom={true}
+                        onChange={(next) => {
+                          if (locationMode === "search") {
+                            setPrefilledLocation((prev) => ({
+                              ...next,
+                              label: prev?.label || "Selected location",
+                            }));
+                          }
+                        }}
+                        noPanZoom={false}
                         className="h-full border-0 rounded-none"
                       />
                     </div>

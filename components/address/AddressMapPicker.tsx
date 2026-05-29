@@ -61,6 +61,7 @@ export function AddressMapPicker({
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
+  const markerRef = useRef<any | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const initialCenter = useMemo(() => {
@@ -129,6 +130,8 @@ export function AddressMapPicker({
         .setLngLat([initialCenter.longitude, initialCenter.latitude])
         .addTo(map);
 
+      markerRef.current = marker;
+
       const emitCenter = () => {
         const { lng, lat } = marker.getLngLat();
         const next = clampToNepal({
@@ -150,12 +153,18 @@ export function AddressMapPicker({
         mapRef.current?.remove?.();
       } catch {}
       mapRef.current = null;
+      markerRef.current = null;
     };
   }, [mounted, mapStyle, initialCenter, onChangeRef, noPanZoom]);
 
   useEffect(() => {
     const map = mapRef.current;
+    const marker = markerRef.current;
     if (!map || !value) return;
+
+    if (marker) {
+      marker.setLngLat([value.longitude, value.latitude]);
+    }
 
     const current = map.getCenter?.();
     if (!current) return;
@@ -210,7 +219,8 @@ export function AddressMapPicker({
       </div>
       )}
 
-      <div className={cn("relative", fullScreen && "h-full")}>        <div
+      <div className={cn("relative", fullScreen && "h-full")}>
+        <div
           ref={containerRef}
           className={cn(
             "w-full",

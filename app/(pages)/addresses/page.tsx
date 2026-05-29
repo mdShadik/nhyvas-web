@@ -1,22 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 
 import { RequireAuth } from "@/components/profile/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/context/ToastContext";
 import { useAddressBook } from "@/hooks/useAddressBook";
+import { profileService } from "@/services/apiService/profile";
 
 export default function AddressesPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { entries, defaultId, remove, setDefault } = useAddressBook();
 
-  console.log({ entries });
+  const bootstrapQuery = useQuery({
+    queryKey: ["profile", "bootstrap"],
+    queryFn: () => profileService.getBootstrap(),
+  });
+
+  const maxAddresses = bootstrapQuery.data?.profile?.max_addresses ?? 3;
+  const returnTo = searchParams.get("returnTo");
+
+  const onCancel = () => {
+    if (returnTo) {
+      router.push(returnTo);
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <RequireAuth>
@@ -31,12 +48,15 @@ export default function AddressesPage() {
             </p>
           </div>
 
-          {entries.length > 0 && entries.length < 3 && (
+          {entries.length > 0 && entries.length < maxAddresses && (
             <Button
               asChild
               className="w-full sm:w-auto bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
             >
-              <Link href="/addresses/pick">
+              <Link href={{
+                pathname: "/addresses/pick",
+                query: returnTo ? { returnTo } : {},
+              }}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t("addresses.add_address")}
               </Link>
@@ -58,7 +78,10 @@ export default function AddressesPage() {
                 asChild
                 className="w-full bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500"
               >
-                <Link href="/addresses/pick">
+                <Link href={{
+                  pathname: "/addresses/pick",
+                  query: returnTo ? { returnTo } : {},
+                }}>
                   <Plus className="mr-2 h-4 w-4" />
                   {t("addresses.add_address")}
                 </Link>
@@ -120,7 +143,10 @@ export default function AddressesPage() {
                         <Link
                           href={{
                             pathname: "/addresses/pick",
-                            query: { addressId: entry.id },
+                            query: { 
+                              addressId: entry.id,
+                              ...(returnTo ? { returnTo } : {}),
+                            },
                           }}
                         >
                           <Pencil className="h-4 w-4" />
@@ -153,7 +179,7 @@ export default function AddressesPage() {
         <div className="mt-6">
           <Button
             variant="outline"
-            onClick={() => router.back()}
+            onClick={onCancel}
             className="w-full sm:w-auto"
           >
             {t("common.cancel")}

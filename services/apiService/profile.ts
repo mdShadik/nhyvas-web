@@ -8,8 +8,10 @@ export type AppProfile = {
   role: string | null;
   phone?: string | null;
   landlord_verified?: boolean;
-  push_opt_in?: boolean;
+  is_onboarded?: boolean;
+  max_addresses?: number;
 };
+
 
 export type UserPreferences = {
   user_id: string;
@@ -59,6 +61,7 @@ export const profileService = {
       phone: row.phone ?? null,
       landlord_verified: row.landlord_verified ?? false,
       push_opt_in: row.push_opt_in ?? true,
+      max_addresses: row.maxAddresses ?? 3,
     };
 
     const preferences: UserPreferences = {
@@ -74,8 +77,12 @@ export const profileService = {
   },
 
   async getCurrentProfile(): Promise<AppProfile | null> {
-    const { profile } = await requestJson<{ profile: AppProfile | null }>("/api/profile/current", { method: "POST" });
-    return profile ?? null;
+    const { profile } = await requestJson<{ profile: any | null }>("/api/profile/current", { method: "POST" });
+    if (!profile) return null;
+    return {
+      ...profile,
+      max_addresses: profile.maxAddresses ?? 3,
+    };
   },
 
   async submitLandlordVerification(input: LandlordVerificationInput): Promise<void> {

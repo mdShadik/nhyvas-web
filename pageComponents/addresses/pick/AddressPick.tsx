@@ -179,7 +179,21 @@ export default function AddressPickpage({searchParams}: Props) {
       });
     }
 
-    router.push("/addresses");
+    const returnTo = (searchParams as any).returnTo;
+    if (returnTo) {
+      router.push(returnTo);
+    } else {
+      router.push("/addresses");
+    }
+  };
+
+  const onCancel = () => {
+    const returnTo = (searchParams as any).returnTo;
+    if (returnTo) {
+      router.push(returnTo);
+    } else {
+      router.back();
+    }
   };
 
   const picker = (
@@ -215,7 +229,7 @@ export default function AddressPickpage({searchParams}: Props) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={onCancel}
               className="shrink-0 rounded-2xl"
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
@@ -409,7 +423,7 @@ export default function AddressPickpage({searchParams}: Props) {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => router.back()}
+                  onClick={onCancel}
                   className="h-11 rounded-2xl"
                 >
                   {t("common.cancel")}
