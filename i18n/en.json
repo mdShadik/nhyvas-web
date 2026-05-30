@@ -173,8 +173,7 @@
     "use_current_location": "Use current location",
     "label": "Label",
     "label_placeholder": "Home, Office, …",
-    "label_required": "Label is required."
-    ,
+    "label_required": "Label is required.",
     "map_hint": "Drag the map to pick a location in Nepal.",
     "nepal_only": "Please pick a location inside Nepal."
   },
@@ -350,7 +349,13 @@
       "new_user_bonus_desc": "A one-time bonus to get you started.",
       "got_it": "Got it"
     },
-    "sections": { "manage": "Manage", "activity": "Activity", "account": "Account", "support": "Support", "danger": "Danger Zone" },
+    "sections": {
+      "manage": "Manage",
+      "activity": "Activity",
+      "account": "Account",
+      "support": "Support",
+      "danger": "Danger Zone"
+    },
     "menu": {
       "my_ads": "My Ads / My Listings",
       "my_leads": "My Interested Leads",
@@ -430,8 +435,26 @@
     "status": "Status: {{status}}"
   },
   "my_ads": {
-    "filters": { "all": "All", "approved": "Approved", "pending_review": "Pending Review", "awaiting_payment": "Awaiting Payment", "payment_verification": "Payment Verification", "changes": "Changes", "rejected": "Rejected", "expired": "Expired" },
-    "status": { "approved": "Approved", "pending_review": "Pending Review", "awaiting_payment": "Awaiting Payment", "payment_verification": "Payment Verification", "changes_requested": "Changes Requested", "rejected": "Rejected", "expired": "Expired", "unknown": "Unknown" },
+    "filters": {
+      "all": "All",
+      "approved": "Approved",
+      "pending_review": "Pending Review",
+      "awaiting_payment": "Awaiting Payment",
+      "payment_verification": "Payment Verification",
+      "changes": "Changes",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending_review": "Pending Review",
+      "awaiting_payment": "Awaiting Payment",
+      "payment_verification": "Payment Verification",
+      "changes_requested": "Changes Requested",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "unknown": "Unknown"
+    },
     "empty_title": "No listings found",
     "empty_hint_all": "Ready to rent out your place? Return to the Landlord hub.",
     "empty_hint_filtered": "You have no {{status}} listings.",
@@ -526,6 +549,8 @@
     "validation_description": "Description must be at least 10 characters unless you attach an image."
   },
   "home": {
+    "nearby_properties": "Nearby Properties",
+    "around_you": "Discover properties around you",
     "verified_featured": "Verified & Featured",
     "loading_featured_homes": "Loading featured homes...",
     "no_featured_properties": "No featured properties yet",

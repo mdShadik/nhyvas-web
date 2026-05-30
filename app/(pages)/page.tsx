@@ -6,7 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, TrendingUp, MapPin, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, TrendingUp, MapPin, ArrowRight, Loader2 } from "lucide-react";
 import { exploreService } from "@/services/apiService";
 import { logoSingleN, noImagePlaceholder } from "../../assets";
 import { formatPrice } from "@/lib/formatPrice";
@@ -16,114 +16,233 @@ import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { useTranslation } from "react-i18next";
 import { tPropertyCategory, tPropertyCategoryDescription } from "@/i18n/masterData";
 import { StoryFeed } from "@/components/stories/StoryFeed";
+import { type ExploreListing } from "@/services/apiService/explore";
 
 type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
 
-function CategoryCard({ category }: { category: Category }) {
-  const { t } = useTranslation();
-  const rawName = category.code ?? category.name ?? "";
-  const name = tPropertyCategory(rawName) || "Category";
-  const desc = tPropertyCategoryDescription(rawName, category.description || t("home.explore_listings"));
+/**
+ * Custom hook to get user location or fallback to Kathmandu
+ */
+function useNearbyLocation() {
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(true);
 
+  useEffect(() => {
+    if (!("geolocation" in navigator)) {
+      setUserLocation({ latitude: 27.7172, longitude: 85.3240 });
+      setIsLocating(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+        setIsLocating(false);
+      },
+      () => {
+        // Fallback to Kathmandu if user declined or error
+        setUserLocation({ latitude: 27.7172, longitude: 85.3240 });
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  }, []);
+
+  return { userLocation, isLocating };
+}
+
+function NearbyPropertyCard({ listing }: { listing: ExploreListing }) {
+  const { t } = useTranslation();
   return (
     <Link
-      href={{
-        pathname: "/explore",
-        query: category.code ? { category: category.code } : undefined,
-      }}
-      className="group relative isolate overflow-hidden rounded-2xl border border-border bg-bg-card/40 p-5 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:border-primary-400/50 hover:shadow-xl hover:shadow-primary-500/20 dark:hover:border-primary-500/40 dark:hover:shadow-primary-500/10"
+      href={{ pathname: "/property", query: { id: listing.id } }}
+      className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-border bg-bg-card/40 p-2 transition-all hover:border-primary-500/30 hover:shadow-lg dark:hover:bg-bg-card/60"
     >
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-60 transition-opacity duration-500 group-hover:opacity-100">
-        <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-primary-400/80 via-primary-500/20 to-transparent blur-3xl transition-transform duration-700 group-hover:scale-125 dark:from-primary-500/25 dark:via-primary-600/15" />
-        <div className="absolute -bottom-20 -right-10 h-52 w-52 rounded-full bg-gradient-to-tl from-tertiary-400/30 via-tertiary-500/20 to-transparent blur-3xl transition-transform duration-700 group-hover:scale-125 dark:from-tertiary-500/25 dark:via-tertiary-600/15" />
+      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-secondary-100 dark:bg-secondary-800">
+        <Image
+          src={listing.thumbnail_url || noImagePlaceholder}
+          alt={listing.property_title}
+          fill
+          unoptimized
+          className="object-cover transition-transform duration-500 group-hover:scale-115 scale-110"
+          sizes="96px"
+        />
       </div>
-
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.03] transition-opacity duration-500 group-hover:opacity-[0.06] dark:opacity-[0.05] dark:group-hover:opacity-[0.08]"
-        style={{
-          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
-          backgroundSize: '16px 16px',
-        }}
-      />
-
-      <div className="pointer-events-none absolute right-4 top-4 h-2 w-2 rounded-full bg-tertiary-400 opacity-0 shadow-lg shadow-tertiary-400/50 transition-all duration-500 group-hover:opacity-100" />
-      <div className="pointer-events-none absolute right-8 top-8 h-1 w-1 rounded-full bg-primary-400 opacity-0 shadow-lg shadow-primary-400/50 transition-all delay-100 duration-500 group-hover:opacity-100" />
-
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-primary-200/60 bg-primary-50/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700 backdrop-blur-sm dark:border-primary-500/20 dark:bg-primary-900/30 dark:text-primary-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-tertiary-500 shadow-sm shadow-tertiary-500/50" />
-            {t("common.category") || "Category"}
-          </div>
-
-          <h3 className="bg-gradient-to-br from-text-primary to-text-primary bg-clip-text text-lg font-bold leading-tight text-transparent transition-all duration-500 group-hover:from-primary-600 group-hover:to-tertiary-600 dark:group-hover:from-primary-400 dark:group-hover:to-tertiary-400">
-            {name}
-          </h3>
-
-          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-text-secondary">
-            {desc}
-          </p>
-
-          <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-primary-600 dark:text-primary-400">
-            <span className="transition-transform duration-300 group-hover:translate-x-0.5">
-              {t("common.view")}
-            </span>
-            <svg
-              className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </div>
+      <div className="flex min-w-0 flex-1 flex-col justify-center py-1">
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          <span className="truncate text-[10px] font-black uppercase tracking-wider text-primary-600 dark:text-primary-400">
+            {tPropertyCategory(listing.property_category_name || listing.property_category)}
+          </span>
         </div>
-
-        <div className="relative shrink-0">
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-500 to-tertiary-500 opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-60" />
-
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 shadow-lg shadow-primary-500/30 transition-all duration-500 group-hover:rotate-6 group-hover:scale-110 dark:from-primary-500 dark:via-primary-600 dark:to-primary-800 dark:shadow-primary-500/20">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/0 via-white/20 to-white/0" />
-
-            <svg
-              className="relative h-7 w-7 text-white drop-shadow-md"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </div>
-
-          <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-bg-card bg-tertiary-500 shadow-md transition-transform duration-500 group-hover:scale-125" />
+        <h3 className="mt-0.5 line-clamp-1 text-sm font-bold text-text-primary">
+          {listing.property_title}
+        </h3>
+        <div className="mt-1 flex items-center gap-1 text-[11px] text-text-secondary">
+          <MapPin className="h-3 w-3 shrink-0 text-primary-500" />
+          <span className="truncate">{listing.location_text}</span>
+        </div>
+        <div className="mt-1.5 text-sm font-black text-primary-600 dark:text-primary-400">
+          {formatPrice(listing.price, listing.currency_code)}
         </div>
       </div>
-
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
     </Link>
   );
 }
 
-function CategorySkeleton() {
+function NearbyListingSkeleton() {
   return (
-    <div className="relative h-[160px] overflow-hidden rounded-2xl border border-border bg-bg-card p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-3">
-          <div className="h-4 w-20 rounded-full bg-secondary-200 dark:bg-secondary-700" />
-          <div className="h-5 w-32 rounded-md bg-secondary-200 dark:bg-secondary-700" />
-          <div className="space-y-1.5">
-            <div className="h-3 w-full rounded-md bg-secondary-100 dark:bg-secondary-800" />
-            <div className="h-3 w-3/4 rounded-md bg-secondary-100 dark:bg-secondary-800" />
-          </div>
-          <div className="h-3 w-16 rounded-md bg-secondary-200 dark:bg-secondary-700" />
-        </div>
-        <div className="h-14 w-14 shrink-0 rounded-2xl bg-secondary-200 dark:bg-secondary-700" />
+    <div className="flex w-[280px] shrink-0 items-center gap-3 rounded-2xl border border-border bg-bg-card/40 p-2">
+      <div className="h-24 w-24 shrink-0 animate-pulse rounded-xl bg-secondary-100 dark:bg-secondary-800" />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="h-3 w-16 animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
+        <div className="h-4 w-full animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
+        <div className="h-3 w-24 animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
+        <div className="h-4 w-20 animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
       </div>
-      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/5" />
     </div>
+  );
+}
+
+function NearbyListings({ userLocation, isLocating }: { userLocation: { latitude: number; longitude: number } | null; isLocating: boolean }) {
+  const { t } = useTranslation();
+
+  const { data: listings = [], isLoading } = useQuery({
+    queryKey: ["home", "nearby", userLocation],
+    queryFn: () => {
+      if (!userLocation) return [];
+      return exploreService.getRecommendedListings({
+        userLat: userLocation.latitude,
+        userLng: userLocation.longitude,
+        userRadiusKm: 10,
+        limit: 10,
+      });
+    },
+    enabled: !!userLocation,
+  });
+
+  if (!isLocating && !isLoading && listings.length === 0) return null;
+
+  return (
+    <section className="mt-14">
+      <div className="relative">
+        <div className="flex items-end justify-between gap-4">
+          <div className="relative">
+            {/* Decorative line accent */}
+            <div className="absolute -left-4 top-10 hidden h-8 w-1 rounded-full bg-gradient-to-b from-primary-500 to-tertiary-500 sm:block" />
+
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-200/60 bg-primary-50/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700 backdrop-blur-sm dark:border-primary-500/20 dark:bg-primary-900/30 dark:text-primary-300">
+                <MapPin className="h-3 w-3" />
+                {t("home.nearby_properties")}
+              </div>
+            </div>
+
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+              {t("home.nearby_properties")}
+            </h2>
+
+            <p className="mt-1.5 text-sm text-text-secondary">
+              {t("home.around_you")}
+            </p>
+          </div>
+
+          <Link
+            href="/explore"
+            className="group/link inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-primary-600 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 dark:text-primary-400 dark:hover:border-primary-500/50"
+          >
+            {t("common.view_all")}
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
+          </Link>
+        </div>
+
+        {/* Divider after title */}
+        <div className="mt-6 h-px w-full bg-gradient-to-r from-border via-border/20 to-border" />
+      </div>
+
+      <div className="scrollbar-hide -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 pt-6 sm:mx-0 sm:px-0">
+        {isLocating || isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <NearbyListingSkeleton key={i} />)
+        ) : (
+          listings.map((listing) => (
+            <div key={listing.id} className="w-[280px] shrink-0 sm:w-[320px]">
+              <NearbyPropertyCard listing={listing} />
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function CategoryPropertiesSection({ category, userLocation, isLocating }: { category: Category; userLocation: { latitude: number; longitude: number } | null; isLocating: boolean }) {
+  const { t } = useTranslation();
+  const name = tPropertyCategory(category.code ?? category.name ?? "") || "Category";
+
+  const { data: listings = [], isLoading } = useQuery({
+    queryKey: ["home", "category", category.id, userLocation],
+    queryFn: () => {
+      if (!userLocation) return [];
+      return exploreService.getRecommendedListings({
+        categoryIds: [category.id],
+        userLat: userLocation.latitude,
+        userLng: userLocation.longitude,
+        userRadiusKm: 10,
+        limit: 5,
+      });
+    },
+    enabled: !!userLocation,
+  });
+
+  if (!isLocating && !isLoading && listings.length === 0) return null;
+
+  return (
+    <section className="mt-14">
+      <div className="relative">
+        <div className="flex items-end justify-between gap-4">
+          <div className="relative">
+            {/* Decorative line accent */}
+            <div className="absolute -left-4 top-1 hidden h-8 w-1 rounded-full bg-gradient-to-b from-primary-500 to-tertiary-500 sm:block" />
+
+            <h2 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+              {name}
+            </h2>
+            <p className="mt-1.5 text-sm text-text-secondary">
+              {t("home.category_explore_near_you", { category: name })}
+            </p>
+          </div>
+
+          <Link
+            href={{
+              pathname: "/explore",
+              query: { categories: category.id },
+            }}
+            className="group/link inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-primary-600 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 dark:text-primary-400 dark:hover:border-primary-500/50"
+          >
+            {t("common.view_all")}
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
+          </Link>
+        </div>
+
+        {/* Divider after title */}
+        <div className="mt-6 h-px w-full bg-linear-to-r from-border via-border/20 to-border" />
+      </div>
+
+      <div className="scrollbar-hide -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 pt-6 sm:mx-0 sm:px-0">
+        {isLocating || isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <NearbyListingSkeleton key={i} />)
+        ) : (
+          listings.map((listing) => (
+            <div key={listing.id} className="w-[280px] shrink-0 sm:w-[320px]">
+              <NearbyPropertyCard listing={listing} />
+            </div>
+          ))
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -251,11 +370,6 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
                   {t("home.badge_featured")}
                 </span>
               </div>
-
-              {/* <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md flex items-center gap-1.5">
-                <TrendingUp className="h-3 w-3" />
-                <span>Trending</span>
-              </div> */}
             </div>
 
             <div className="max-w-2xl mt-auto">
@@ -348,6 +462,8 @@ export default function HomePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
 
+  const { userLocation, isLocating } = useNearbyLocation();
+
   const categoriesQuery = useQuery({
     queryKey: ["home", "categories"],
     queryFn: () => exploreService.getHomeCategories(12),
@@ -394,58 +510,40 @@ export default function HomePage() {
             ) : null}
           </section>
 
-          {/* Categories Section */}
-          <section className={`${heroListings.length > 0 ? "mt-14" : "mt-10"} mb-25 md:mb-5`}>
-            {/* Section header with decorative elements */}
-            <div className="relative">
-              <div className="flex items-end justify-between gap-4">
-                <div className="relative">
-                  {/* Decorative line accent */}
-                  <div className="absolute -left-4 top-2 hidden h-8 w-1 rounded-full bg-gradient-to-b from-primary-500 to-tertiary-500 sm:block" />
+          {/* Nearby Listings Section */}
+          <NearbyListings userLocation={userLocation} isLocating={isLocating} />
 
-                  <div className="flex items-center gap-2">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-200/60 bg-primary-50/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700 backdrop-blur-sm dark:border-primary-500/20 dark:bg-primary-900/30 dark:text-primary-300">
-                      <Sparkles className="h-3 w-3" />
-                      {t("home.browse_categories")}
-                    </div>
+          {/* Categories Sections */}
+          <div className="mb-25 md:mb-5">
+            {categoriesQuery.isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="mt-14 animate-pulse">
+                  <div className="h-8 w-48 rounded bg-secondary-100 dark:bg-secondary-800" />
+                  <div className="mt-6 flex gap-4 overflow-hidden">
+                    {Array.from({ length: 3 }).map((_, j) => <NearbyListingSkeleton key={j} />)}
                   </div>
-
-                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-                    {t("home.browse_categories")}
-                  </h2>
-
-                  <p className="mt-1.5 text-sm text-text-secondary">
-                    {t("home.start_with_what_you_need")}
-                  </p>
                 </div>
-
-                <Link
-                  href="/explore"
-                  className="group/link inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-primary-600 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 dark:text-primary-400 dark:hover:border-primary-500/50"
-                >
-                  {t("common.view_all")}
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
-                </Link>
+              ))
+            ) : filteredCategories.length > 0 ? (
+              filteredCategories.map((category) => (
+                <CategoryPropertiesSection
+                  key={category.id}
+                  category={category}
+                  userLocation={userLocation}
+                  isLocating={isLocating}
+                />
+              ))
+            ) : (
+              <div className="mt-14 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-bg-card/50 py-12 text-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary-100 dark:bg-secondary-800">
+                  <Sparkles className="h-5 w-5 text-text-tertiary" />
+                </div>
+                <p className="text-sm text-text-secondary">
+                  No categories match your search.
+                </p>
               </div>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {categoriesQuery.isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => <CategorySkeleton key={i} />)
-              ) : filteredCategories.length ? (
-                filteredCategories.map((c) => <CategoryCard key={c.id} category={c} />)
-              ) : (
-                <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-bg-card/50 py-12 text-center">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary-100 dark:bg-secondary-800">
-                    <Sparkles className="h-5 w-5 text-text-tertiary" />
-                  </div>
-                  <p className="text-sm text-text-secondary">
-                    No categories match your search.
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
+            )}
+          </div>
         </div>
 
         {/* Enhanced Footer */}

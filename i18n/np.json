@@ -437,6 +437,8 @@
     "validation_description": "यदि छवि संलग्न छैन भने विवरण कम्तिमा १० अक्षर हुनुपर्छ।"
   },
   "home": {
+    "nearby_properties": "नजिकैका सम्पत्तिहरू",
+    "around_you": "तपाईंको वरिपरि रहेका सम्पत्तिहरू पत्ता लगाउनुहोस्",
     "verified_featured": "प्रमाणित र विशेष",
     "loading_featured_homes": "विशेष घरहरू लोड हुँदैछन्...",
     "no_featured_properties": "अहिलेसम्म विशेष सम्पत्ति छैन",
