@@ -17,17 +17,18 @@ import {
   User,
   Download,
   ChevronRight,
-  Shield,
-  X,
   ReceiptText,
+  Sparkles,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useCallback, Fragment, useMemo } from "react";
-import { Button } from "../ui/button";
 import { Dialog } from "../ui/dialog";
+import { MobileBottomSheet } from "../ui/mobile-bottom-sheet";
 import { PWAInstallPrompt } from "../ui/pwa-install-prompt";
 import { useQuery } from "@tanstack/react-query";
 import { paymentService } from "@/services/apiService/payment";
+import { useAuth } from "@/context/AuthContext";
 
 type NavItem = {
   href: string;
@@ -44,12 +45,70 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function AiCreditInfoContent({ t }: { t: any }) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  return (
+    <div className="flex flex-col gap-6 p-4 sm:p-0">
+      {/* Placeholder Image */}
+      <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center group/ai-img">
+        <Sparkles className="h-16 w-16 text-primary-500/30 transition-transform duration-700 group-hover/ai-img:scale-110" />
+        <div className="absolute inset-0 bg-linear-to-t from-primary-500/10 to-transparent" />
+        <span className="absolute bottom-4 right-4 text-[10px] font-black uppercase tracking-widest text-primary-500/40">
+          AI-Powered Search
+        </span>
+      </div>
+
+      <div className="space-y-6">
+        {/* Search Cost */}
+        <div className="flex items-center justify-between border-b border-border/50 pb-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-black text-text-primary">{t("profile.ai_credit.usage_search")}</span>
+            <span className="text-xs font-medium text-text-secondary">{t("profile.ai_credit.usage_search_desc")}</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-lg bg-primary-500/10 px-3 py-1.5 text-primary-600 dark:text-primary-400">
+            <span className="text-sm font-black">1</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">{t("profile.ai_credit.title")}</span>
+          </div>
+        </div>
+
+        {/* Info Items */}
+        <div className="grid gap-5">
+           <div className="flex gap-3">
+             <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-primary-500/10 flex items-center justify-center">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary-500" />
+             </div>
+             <div className="space-y-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-text-tertiary">{t("profile.ai_credit.daily_bonus")}</h4>
+                <p className="text-xs font-medium leading-relaxed text-text-secondary">
+                  {t("profile.ai_credit.daily_bonus_desc")}
+                </p>
+             </div>
+           </div>
+
+           <div className="flex gap-3">
+             <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-tertiary-500/10 flex items-center justify-center">
+                <div className="h-1.5 w-1.5 rounded-full bg-tertiary-500" />
+             </div>
+             <div className="space-y-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-text-tertiary">{t("profile.ai_credit.new_user_bonus")}</h4>
+                <p className="text-xs font-medium leading-relaxed text-text-secondary">
+                  {t("profile.ai_credit.new_user_bonus_desc")}
+                </p>
+             </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProfileNav() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
+  const { profile } = useAuth();
   const [openInstall, setOpenInstall] = useState(false);
   const [openLogout, setOpenLogout] = useState(false);
+  const [openAiInfo, setOpenAiInfo] = useState(false);
 
   const { data: payments = [] } = useQuery({
     queryKey: ["profile", "payment-history"],
@@ -148,10 +207,86 @@ export function ProfileNav() {
     legal: t("profile.menu.group_legal", "Legal"),
   };
 
+  const aiCredit = useMemo(() => {
+    const total = Number(profile?.ai_total_credit ?? 0);
+    const used = Number(profile?.ai_used_credit ?? 0);
+    const remaining = Number(profile?.ai_remaining_credit ?? Math.max(0, total - used));
+    const bonus = Number(profile?.ai_bonus_credit ?? 0);
+    const display = Number(profile?.ai_display_credit_amount ?? 0);
+    const base = Number(profile?.ai_base_credit ?? 0);
+
+    return {
+      total,
+      used,
+      remaining,
+      bonus,
+      display,
+      base,
+      hasBonus: bonus > 0,
+    };
+  }, [profile]);
+
+  const aiCreditCard = profile ? (
+    <div className="rounded-2xl border border-primary-500/15 bg-linear-to-br from-primary-500/10 via-bg-card to-tertiary-500/10 p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-500/15 text-primary-500">
+          <Sparkles className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-black text-text-primary">
+                {t("profile.ai_credit.title", "AI Credit")}
+              </p>
+              <button 
+                onClick={() => setOpenAiInfo(true)}
+                className="text-text-tertiary transition-colors hover:text-primary-500 active:scale-90"
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <p className="shrink-0 text-xs font-bold text-primary-500">
+              {aiCredit.remaining}/{aiCredit.total}
+            </p>
+          </div>
+
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary-100 dark:bg-secondary-800">
+            <div
+              className="h-full rounded-full bg-linear-to-r from-primary-500 to-tertiary-500"
+              style={{
+                width: `${aiCredit.total > 0 ? Math.min(100, Math.max(0, (aiCredit.remaining / aiCredit.total) * 100)) : 0}%`,
+              }}
+            />
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-text-tertiary">
+            {aiCredit.hasBonus && aiCredit.display > 0 ? (
+              <>
+                <span className="text-text-tertiary line-through decoration-2">
+                  {aiCredit.display}
+                </span>
+                <span className="text-primary-500">
+                  {aiCredit.base} + {aiCredit.bonus}
+                </span>
+                <span>{t("profile.ai_credit.extra_bonus", "extra bonus for you")}</span>
+              </>
+            ) : (
+              <span>
+                {t("profile.ai_credit.used_today", "{{used}} used today", { used: aiCredit.used })}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
       {/* ===================== DESKTOP NAV ===================== */}
       <nav className="hidden md:flex flex-col gap-1.5 w-full" aria-label="Profile navigation">
+        {aiCreditCard ? <div className="mb-3">{aiCreditCard}</div> : null}
+
         {(["main", "support", "legal"] as const).map((groupKey, gi) => (
           <Fragment key={groupKey}>
             {gi > 0 && <div className="my-1.5" />}
@@ -264,7 +399,9 @@ export function ProfileNav() {
           <ChevronRight className="ml-auto h-4 w-4 text-white/50" />
         </button>
 
-        {(["main", "support", "legal"] as const).map((groupKey, gi) => (
+        {aiCreditCard ? <div className="mx-4 mb-4">{aiCreditCard}</div> : null}
+
+        {(["main", "support", "legal"] as const).map((groupKey) => (
           <Fragment key={groupKey}>
             {/* Group Label */}
             <div className="px-6 pt-4 pb-1.5">
@@ -399,6 +536,43 @@ export function ProfileNav() {
         onClose={() => setOpenLogout(false)}
         onConfirm={handleLogout}
       />
+
+      {/* AI Credit Info Modal (Desktop) */}
+      <Dialog
+        open={openAiInfo}
+        title={t("profile.ai_credit.info_modal_title", "About AI Credit")}
+        confirmLabel={t("profile.ai_credit.got_it", "Got it")}
+        cancelLabel={t("common.cancel", "Cancel")}
+        onClose={() => setOpenAiInfo(false)}
+        onConfirm={() => setOpenAiInfo(false)}
+        className="hidden md:flex"
+      >
+        <AiCreditInfoContent t={t} />
+      </Dialog>
+
+      {/* AI Credit Info Sheet (Mobile) */}
+      <MobileBottomSheet
+        open={openAiInfo}
+        title={t("profile.ai_credit.info_modal_title", "About AI Credit")}
+        onClose={() => setOpenAiInfo(false)}
+        className="md:hidden"
+        snapPoints={[0, 0.7]}
+        initialSnap={1}
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <AiCreditInfoContent t={t} />
+          </div>
+          <div className="p-4 border-t border-border/50 bg-bg-page/50 backdrop-blur pb-[calc(env(safe-area-inset-bottom)+16px)]">
+             <button
+               onClick={() => setOpenAiInfo(false)}
+               className="w-full h-12 rounded-2xl bg-linear-to-r from-primary-500 to-tertiary-500 text-sm font-black text-white shadow-xl shadow-primary-500/20 active:scale-[0.98] transition-transform"
+             >
+               {t("profile.ai_credit.got_it", "Got it")}
+             </button>
+          </div>
+        </div>
+      </MobileBottomSheet>
     </>
   );
 }

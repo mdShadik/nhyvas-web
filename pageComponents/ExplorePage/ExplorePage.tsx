@@ -28,7 +28,7 @@ export default function ExplorePage({ searchParams }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const { isAuthenticated, preferences, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, profile, preferences, isLoading: authLoading } = useAuth();
   const isLoggedIn = isAuthenticated;
 
   useEffect(() => {
@@ -393,6 +393,7 @@ export default function ExplorePage({ searchParams }: Props) {
         }}
         onSearch={handleSearch}
         isSearching={isSearching}
+        aiRemainingCredit={profile?.ai_remaining_credit}
         buttonLabel="AI Search"
         buttonPosition="bottom-right"
         showMic={false}

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
+import { useTranslation } from "react-i18next";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -49,6 +50,7 @@ export interface AiSearchProps {
   showMic?: boolean;
   onMicPress?: () => void;
   disabled?: boolean;
+  aiRemainingCredit?: number;
   children?: React.ReactNode;
 }
 
@@ -352,8 +354,10 @@ export function AiSearch({
   showMic = false,
   onMicPress,
   disabled = false,
+  aiRemainingCredit,
   children,
 }: AiSearchProps) {
+  const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const [internalQuery, setInternalQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -1002,12 +1006,12 @@ export function AiSearch({
                     <motion.button
                       type="button"
                       onClick={handleSubmit}
-                      disabled={!canSearch}
-                      whileHover={canSearch ? { scale: 1.05 } : {}}
-                      whileTap={canSearch ? { scale: 0.92 } : {}}
+                      disabled={!canSearch || (aiRemainingCredit !== undefined && aiRemainingCredit <= 0)}
+                      whileHover={canSearch && !(aiRemainingCredit !== undefined && aiRemainingCredit <= 0) ? { scale: 1.05 } : {}}
+                      whileTap={canSearch && !(aiRemainingCredit !== undefined && aiRemainingCredit <= 0) ? { scale: 0.92 } : {}}
                       className={cn(
                         "flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold transition-all duration-200",
-                        canSearch
+                        canSearch && !(aiRemainingCredit !== undefined && aiRemainingCredit <= 0)
                           ? "bg-linear-to-r from-primary-500 to-primary-600 text-white shadow-md shadow-primary-500/25 hover:shadow-lg hover:shadow-primary-500/30"
                           : "bg-secondary-100 text-text-tertiary dark:bg-secondary-700 dark:text-secondary-400 cursor-not-allowed"
                       )}
@@ -1024,9 +1028,20 @@ export function AiSearch({
                 </div>
 
                 <div className="mt-1.5 flex items-center justify-between px-1">
-                  <AnimatePresence>
-                    {query.length > 0 && query.length < minQueryLength && (
+                  <AnimatePresence mode="wait">
+                    {aiRemainingCredit !== undefined && aiRemainingCredit <= 0 ? (
                       <motion.span
+                        key="exhausted"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="text-[11px] font-bold text-red-500 dark:text-red-400"
+                      >
+                        {t("profile.ai_credit.exhausted_notice", "Credit exhausted! Please try again tomorrow.")}
+                      </motion.span>
+                    ) : query.length > 0 && query.length < minQueryLength ? (
+                      <motion.span
+                        key="chars-left"
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -8 }}
@@ -1038,7 +1053,7 @@ export function AiSearch({
                           : " char"}
                         …
                       </motion.span>
-                    )}
+                    ) : null}
                   </AnimatePresence>
                   <span className="ml-auto text-[11px] font-medium text-text-tertiary/50">
                     <kbd className="rounded bg-secondary-100 px-1 py-0.5 text-[10px] font-mono dark:bg-secondary-700">
@@ -1050,7 +1065,7 @@ export function AiSearch({
               </motion.div>
 
               {/* Suggestions */}
-              {suggestions.length > 0 && !query && (
+              {suggestions.length > 0 && !query && (aiRemainingCredit === undefined || aiRemainingCredit > 0) && (
                 <motion.div
                   variants={itemVariants}
                   className="relative px-5 pt-3 pb-1"

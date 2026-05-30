@@ -1,7 +1,6 @@
 import { jsonError, jsonOk } from "@/app/api/_lib/response";
 import { analyzeQuery, AiMapping } from "@/lib/ai/queryAnalyzer";
 import { generateEmbedding } from "@/lib/ai/embedding";
-import { createSupabasePublicClient } from "@/app/api/_lib/supabaseClients";
 import { getAuthenticatedClientOrNull } from "@/app/api/_lib/supabase";
 
 const AI_LOCATION_RADIUS_KM = 25;
@@ -60,6 +59,12 @@ type ResolvedLocation = {
   label: string;
   latitude: number;
   longitude: number;
+};
+
+type AiCreditConsumeResult = {
+  allowed: boolean;
+  message: string;
+  remaining_credit: number;
 };
 
 let aiMappingsCache: { expiresAt: number; data: AiMapping[] } | null = null;
@@ -142,7 +147,22 @@ export async function POST(req: Request) {
     const { query, lat, lng } = (await req.json()) as AiSearchRequestBody;
     if (!query) return jsonError("Query is required", 400);
 
-    const supabase = (await getAuthenticatedClientOrNull()) ?? createSupabasePublicClient();
+    const supabase = await getAuthenticatedClientOrNull();
+    if (!supabase) return jsonError("Login required to use AI search.", 401);
+
+    const { data: creditRows, error: creditError } = await supabase.rpc("consume_ai_search_credit");
+    if (creditError) {
+      console.error("AI Search Credit Error:", creditError);
+      return jsonError(creditError.message, 500);
+    }
+
+    const creditResult = Array.isArray(creditRows)
+      ? (creditRows[0] as AiCreditConsumeResult | undefined)
+      : (creditRows as AiCreditConsumeResult | null);
+
+    if (!creditResult?.allowed) {
+      return jsonError(creditResult?.message || "AI search credit exhausted for today.", 429);
+    }
 
     // Mapping fetch and embedding generation are independent, so start both at once.
     const dynamicMappingsPromise = (async () => {
@@ -217,6 +237,7 @@ export async function POST(req: Request) {
       p_max_price: analysis.budget.max,
       p_user_lat: searchLat,
       p_user_lng: searchLng,
+      p_amenity_tags: analysis.features.length ? analysis.features : null,
     });
 
     if (error) {

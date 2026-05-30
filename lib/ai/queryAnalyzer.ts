@@ -33,7 +33,7 @@ export interface AiMapping {
 }
 
 
-const STOP_WORDS = ["at", "in", "near", "with", "a", "an", "the", "for", "to", "of", "and"];
+const STOP_WORDS = ["at", "in", "near", "with", "a", "an", "the", "for", "to", "of", "and", "around", "nearby", "beside", "opposite"];
 
 export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): AnalyzedQuery {
   const lowerQuery = query.toLowerCase().replace(/[?.,!]/g, " ");
@@ -56,11 +56,13 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
   };
 
   // 1. Detect Intent
-  if (lowerQuery.includes("buy") || lowerQuery.includes("sale")) analyzed.intent = "buy";
+  if (lowerQuery.includes("buy") || lowerQuery.includes("sale") || lowerQuery.includes("purchase")) analyzed.intent = "buy";
   
   // 2. Dynamic Mapping detection (Categories, Subcategories, Amenities, Vibes, Lifestyle, Locations)
   dynamicMappings.forEach((m) => {
-    const regex = new RegExp(`\\b${m.keyword}\\b`, 'i');
+    // Escape keyword for regex if it contains special chars
+    const escapedKeyword = m.keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
     if (regex.test(lowerQuery)) {
       switch (m.map_type) {
         case "category":
@@ -110,9 +112,9 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
 
   // 3. Detect Budget
   // Max budget
-  const maxBudgetMatch = lowerQuery.match(/(?:under|below|less than|max|up to)\s*(?:rs\.?|npr)?\s*(\d+(?:k|m)?)/);
+  const maxBudgetMatch = lowerQuery.match(/(?:under|below|less than|max|up to|within|around)\s*(?:rs\.?|npr)?\s*(\d+(?:\s?k|\s?m)?)/);
   if (maxBudgetMatch) {
-    const val = maxBudgetMatch[1];
+    const val = maxBudgetMatch[1].replace(/\s/g, "");
     let num = parseInt(val);
     if (val.endsWith("k")) num *= 1000;
     if (val.endsWith("m")) num *= 1000000;
@@ -120,9 +122,9 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
   }
 
   // Min budget
-  const minBudgetMatch = lowerQuery.match(/(?:above|more than|at least|min|starting from)\s*(?:rs\.?|npr)?\s*(\d+(?:k|m)?)/);
+  const minBudgetMatch = lowerQuery.match(/(?:above|more than|at least|min|starting from)\s*(?:rs\.?|npr)?\s*(\d+(?:\s?k|\s?m)?)/);
   if (minBudgetMatch) {
-    const val = minBudgetMatch[1];
+    const val = minBudgetMatch[1].replace(/\s/g, "");
     let num = parseInt(val);
     if (val.endsWith("k")) num *= 1000;
     if (val.endsWith("m")) num *= 1000000;
@@ -130,10 +132,10 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
   }
 
   // Range budget
-  const rangeMatch = lowerQuery.match(/(?:between|from)?\s*(\d+(?:k|m)?)\s*(?:to|-|and)\s*(\d+(?:k|m)?)/);
+  const rangeMatch = lowerQuery.match(/(?:between|from)?\s*(\d+(?:\s?k|\s?m)?)\s*(?:to|-|and)\s*(\d+(?:\s?k|\s?m)?)/);
   if (rangeMatch) {
-    const val1 = rangeMatch[1];
-    const val2 = rangeMatch[2];
+    const val1 = rangeMatch[1].replace(/\s/g, "");
+    const val2 = rangeMatch[2].replace(/\s/g, "");
     
     let num1 = parseInt(val1);
     if (val1.endsWith("k")) num1 *= 1000;
@@ -143,8 +145,10 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
     if (val2.endsWith("k")) num2 *= 1000;
     if (val2.endsWith("m")) num2 *= 1000000;
     
-    analyzed.budget.min = Math.min(num1, num2);
-    analyzed.budget.max = Math.max(num1, num2);
+    if (!Number.isNaN(num1) && !Number.isNaN(num2)) {
+      analyzed.budget.min = Math.min(num1, num2);
+      analyzed.budget.max = Math.max(num1, num2);
+    }
   }
 
   // 4. Detect Bedrooms/BHK
@@ -155,7 +159,7 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
   }
 
   // 5. Detect near me
-  if (lowerQuery.includes("near me") || lowerQuery.includes("nearby") || lowerQuery.includes("close to me")) {
+  if (lowerQuery.includes("near me") || lowerQuery.includes("nearby") || lowerQuery.includes("close to me") || lowerQuery.includes("around me")) {
     analyzed.nearMe = true;
   }
 
@@ -170,16 +174,13 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
 
   // 6b. Heuristic Location Detection (if not already found by dynamic mapping)
   if (!analyzed.location) {
-    // Look for patterns like "at [Location]", "in [Location]", "near [Location]"
-    // but avoid matching words that are already identified as categories/amenities/etc.
-    const locationPattern = /\b(?:at|in|near|around|nearby|beside|opposite to)\s+([a-z0-9\s\-]+?)(?:\s+ward|\s+bhk|\s+bedroom|\s+under|\s+above|\s+with|\s+for|\s+below|\s+price|\s+budget|$)/i;
+    const locationPattern = /\b(?:at|in|near|around|nearby|beside|opposite to|location)\s+([a-z0-9\s\-]+?)(?:\s+ward|\s+bhk|\s+bedroom|\s+under|\s+above|\s+with|\s+for|\s+below|\s+price|\s+budget|$)/i;
     const locMatch = lowerQuery.match(locationPattern);
     if (locMatch) {
       const potentialLoc = locMatch[1].trim();
-      // Only accept if it's 1-3 words and doesn't contain common category/intent words
-      if (potentialLoc && potentialLoc.split(/\s+/).length <= 3) {
-        const forbidden = ["apartment", "room", "flat", "house", "villa", "rent", "buy", "sale"];
-        if (!forbidden.some(f => potentialLoc.includes(f))) {
+      if (potentialLoc && potentialLoc.split(/\s+/).length <= 4) {
+        const forbidden = ["apartment", "room", "flat", "house", "villa", "rent", "buy", "sale", "rental", "properties", "property"];
+        if (!forbidden.some(f => potentialLoc.toLowerCase().includes(f))) {
           analyzed.location = potentialLoc;
         }
       }
@@ -190,7 +191,7 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
   const mappedKeywords = dynamicMappings.map(m => m.keyword.toLowerCase());
   const internalMappedWords = [
     ...STOP_WORDS,
-    "buy", "sale", "rent", "budget", "price", "between", "under", "above", "more", "less", "than", "to", "and", "rs", "npr", "k", "m", "bhk", "bedroom", "room", "flat", "apartment", "house", "villa"
+    "buy", "sale", "rent", "budget", "price", "between", "under", "above", "more", "less", "than", "to", "and", "rs", "npr", "k", "m", "bhk", "bedroom", "room", "flat", "apartment", "house", "villa", "rental", "rentals", "purchase", "available", "wanted", "listing", "listings", "property", "properties"
   ];
 
   const importantWords = words.filter(w => {
@@ -201,6 +202,9 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
     }
     if (w === "ward") return false;
     
+    // If it's part of the detected location, ignore it for keyword query
+    if (analyzed.location && analyzed.location.toLowerCase().includes(w)) return false;
+    
     return (!mappedKeywords.includes(w) && !internalMappedWords.includes(w));
   });
   
@@ -210,7 +214,14 @@ export function analyzeQuery(query: string, dynamicMappings: AiMapping[] = []): 
 
   analyzed.keywordQuery = importantWords.join(" ");
   if (!analyzed.keywordQuery.trim()) {
-    analyzed.keywordQuery = words.filter(w => !STOP_WORDS.includes(w)).join(" ");
+    // Fallback if all words were filtered out
+    analyzed.keywordQuery = words.filter(w => !STOP_WORDS.includes(w) && !["rent", "sale", "buy"].includes(w)).join(" ");
+  }
+
+  // If we have categories or subcategories or features, we might want to disable pure recommendation mode
+  // and focus on strict matching.
+  if (analyzed.categories.length > 0 || analyzed.subcategories.length > 0 || analyzed.features.length > 0 || analyzed.location) {
+    analyzed.recommendationMode = false;
   }
 
   return analyzed;

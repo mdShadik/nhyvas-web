@@ -337,6 +337,19 @@
     },
     "guest_user": "Guest User",
     "no_email": "No email added",
+    "ai_credit": {
+      "title": "AI Credit",
+      "extra_bonus": "extra bonus for you",
+      "used_today": "{{used}} used today",
+      "info_modal_title": "About AI Credits",
+      "usage_search": "Search",
+      "usage_search_desc": "1 credit per search",
+      "daily_bonus": "Daily Credited Bonus (Base)",
+      "daily_bonus_desc": "Free credits added to your account every 24 hours.",
+      "new_user_bonus": "New User Bonus",
+      "new_user_bonus_desc": "A one-time bonus to get you started.",
+      "got_it": "Got it"
+    },
     "sections": { "manage": "Manage", "activity": "Activity", "account": "Account", "support": "Support", "danger": "Danger Zone" },
     "menu": {
       "my_ads": "My Ads / My Listings",

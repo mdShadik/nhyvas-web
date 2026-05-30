@@ -11,6 +11,16 @@ export type AppProfile = {
   push_opt_in?: boolean;
   is_onboarded?: boolean;
   max_addresses?: number;
+  ai_credit?: number;
+  is_vip_user?: boolean;
+  ai_base_credit?: number;
+  ai_display_credit_amount?: number;
+  ai_bonus_credit?: number;
+  ai_total_credit?: number;
+  ai_used_credit?: number;
+  ai_remaining_credit?: number;
+  ai_is_new_user_bonus?: boolean;
+  ai_quota_label?: string;
 };
 
 
@@ -43,12 +53,17 @@ export type RegisterPushDeviceInput = {
   appBuild?: string;
 };
 
+type ProfileApiRow = AppProfile &
+  UserPreferences & {
+    maxAddresses?: number;
+  };
+
 export const profileService = {
   async getBootstrap(): Promise<{
     profile: AppProfile | null;
     preferences: UserPreferences | null;
   }> {
-    const { row } = await requestJson<{ row: any | null }>("/api/profile/bootstrap", { method: "POST" });
+    const { row } = await requestJson<{ row: ProfileApiRow | null }>("/api/profile/bootstrap", { method: "POST" });
     if (!row) {
       return { profile: null, preferences: null };
     }
@@ -63,6 +78,16 @@ export const profileService = {
       landlord_verified: row.landlord_verified ?? false,
       push_opt_in: row.push_opt_in ?? true,
       max_addresses: row.maxAddresses ?? 3,
+      ai_credit: Number(row.ai_credit ?? 0),
+      is_vip_user: row.is_vip_user ?? false,
+      ai_base_credit: Number(row.ai_base_credit ?? 0),
+      ai_display_credit_amount: Number(row.ai_display_credit_amount ?? 0),
+      ai_bonus_credit: Number(row.ai_bonus_credit ?? 0),
+      ai_total_credit: Number(row.ai_total_credit ?? 0),
+      ai_used_credit: Number(row.ai_used_credit ?? 0),
+      ai_remaining_credit: Number(row.ai_remaining_credit ?? 0),
+      ai_is_new_user_bonus: row.ai_is_new_user_bonus ?? false,
+      ai_quota_label: row.ai_quota_label ?? "standard",
     };
 
     const preferences: UserPreferences = {
@@ -78,11 +103,21 @@ export const profileService = {
   },
 
   async getCurrentProfile(): Promise<AppProfile | null> {
-    const { profile } = await requestJson<{ profile: any | null }>("/api/profile/current", { method: "POST" });
+    const { profile } = await requestJson<{ profile: ProfileApiRow | null }>("/api/profile/current", { method: "POST" });
     if (!profile) return null;
     return {
       ...profile,
       max_addresses: profile.maxAddresses ?? 3,
+      ai_credit: Number(profile.ai_credit ?? 0),
+      is_vip_user: profile.is_vip_user ?? false,
+      ai_base_credit: Number(profile.ai_base_credit ?? 0),
+      ai_display_credit_amount: Number(profile.ai_display_credit_amount ?? 0),
+      ai_bonus_credit: Number(profile.ai_bonus_credit ?? 0),
+      ai_total_credit: Number(profile.ai_total_credit ?? 0),
+      ai_used_credit: Number(profile.ai_used_credit ?? 0),
+      ai_remaining_credit: Number(profile.ai_remaining_credit ?? 0),
+      ai_is_new_user_bonus: profile.ai_is_new_user_bonus ?? false,
+      ai_quota_label: profile.ai_quota_label ?? "standard",
     };
   },
 
