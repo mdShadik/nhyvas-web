@@ -8,6 +8,8 @@ import { useState } from "react";
 import { queryClient as sharedQueryClient } from "@/services/queryClient";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { GoogleAuthProvider } from "@/components/auth/GoogleAuthProvider";
+import { env } from "@/lib/env";
 import { ToastProvider } from "@/context/ToastContext";
 import { Toaster } from "@/components/ui/toaster";
 import { NotificationManager } from "@/components/notifications/NotificationManager";
@@ -19,8 +21,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <NotificationManager />
-            {children}
+            {env.useNhyvasAuth ? (
+              <GoogleAuthProvider>
+                <NotificationManager />
+                {children}
+              </GoogleAuthProvider>
+            ) : (
+              <>
+                <NotificationManager />
+                {children}
+              </>
+            )}
             <Toaster />
           </AuthProvider>
         </ToastProvider>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { useTranslation } from "react-i18next";
@@ -10,7 +9,6 @@ import { PageLoading } from "@/components/common/PageLoading";
 
 export default function LoginPage() {
   const { t } = useTranslation();
-  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +20,6 @@ export default function LoginPage() {
     return next.startsWith("/") ? next : "";
   }, []);
 
-  // Check for session expired message
   const sessionExpired = useMemo(() => {
     if (typeof window === "undefined") return false;
     const params = new URLSearchParams(window.location.search);
@@ -30,20 +27,22 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    // Show session expired message
     if (sessionExpired) {
       setError(t("auth.session_expired") || "Your session has expired. Please login again.");
     }
   }, [sessionExpired, t]);
 
   useEffect(() => {
+    if (env.useNhyvasAuth) {
+      return;
+    }
+
     const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         setLoading(true);
-        // Send the session to our server route to set cookies
         fetch("/api/auth/callback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -53,11 +52,7 @@ export default function LoginPage() {
             if (res.ok) {
               const data = await res.json();
               if (typeof window !== "undefined") {
-                if (data.onboard) {
-                  window.location.href = "/onboard";
-                } else {
-                  window.location.href = nextUrl || "/";
-                }
+                window.location.href = data.onboard ? "/onboard" : nextUrl || "/";
               }
             } else {
               setError(t("auth.server_session_failed"));
@@ -71,7 +66,6 @@ export default function LoginPage() {
       }
     });
 
-    // Check for error in URL hash or search string
     if (typeof window !== "undefined") {
       const hash = window.location.hash;
       const search = window.location.search;
@@ -85,7 +79,7 @@ export default function LoginPage() {
     }
 
     return () => subscription.unsubscribe();
-  }, [router, nextUrl, t]);
+  }, [nextUrl, t]);
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] sm:min-h-screen flex-col">
@@ -97,7 +91,15 @@ export default function LoginPage() {
               {error}
             </div>
           ) : null}
-          <LoginCard nextUrl={nextUrl} title={t("auth.welcome_back")} description={t("auth.sign_in_desc")} />
+          <LoginCard
+            nextUrl={nextUrl}
+            title={t("auth.welcome_back")}
+            description={t("auth.sign_in_desc")}
+            onAuthSuccess={({ onboard }) => {
+              setLoading(true);
+              window.location.href = onboard ? "/onboard" : nextUrl || "/";
+            }}
+          />
         </div>
       </main>
     </div>

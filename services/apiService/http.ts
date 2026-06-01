@@ -58,6 +58,33 @@ async function handleUnauthorized() {
   }
 }
 
+const API_BASE = (process.env.NEXT_PUBLIC_NHYVAS_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+
+export function toV1ApiUrl(url: string): string {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  if (url.startsWith("/api/")) {
+    return `${API_BASE}/api/v1${url.slice(4)}`;
+  }
+  return url;
+}
+
+const WEB_TOKEN_KEY = "nhyvas_at";
+
+export function getWebToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(WEB_TOKEN_KEY);
+}
+
+export function setWebToken(token: string) {
+  localStorage.setItem(WEB_TOKEN_KEY, token);
+}
+
+export function clearWebToken() {
+  localStorage.removeItem(WEB_TOKEN_KEY);
+}
+
 export async function requestJson<TResponse>(
   url: string,
   init?: RequestInit,
@@ -65,9 +92,11 @@ export async function requestJson<TResponse>(
   const isFormDataBody =
     typeof FormData !== "undefined" && init?.body instanceof FormData;
 
-  const response = await fetch(url, {
+  const token = getWebToken();
+  const response = await fetch(toV1ApiUrl(url), {
     headers: {
       ...(isFormDataBody ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
     ...init,

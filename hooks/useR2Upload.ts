@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { getWebToken, toV1ApiUrl } from "@/services/apiService/http";
+
 type UseR2UploadOptions = {
   folder?: string;
   onSuccess?: (publicUrl: string) => void;
@@ -21,8 +23,10 @@ export function useR2Upload(options?: UseR2UploadOptions) {
       formData.append("folder", folder);
 
       // Upload file directly through our backend proxy
-      const uploadRes = await fetch("/api/media/r2-upload", {
+      const token = getWebToken();
+      const uploadRes = await fetch(toV1ApiUrl("/api/media/r2-upload"), {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 

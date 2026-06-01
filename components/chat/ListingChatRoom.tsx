@@ -26,7 +26,9 @@ import { useTranslation } from "react-i18next";
 import { noImagePlaceholder } from "@/assets";
 import { authApi } from "@/services/apiService";
 import { chatService, type ChatMessage, type ChatMessagesPage } from "@/services/apiService/chat";
+import { env } from "@/lib/env";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
+import { getWebToken } from "@/services/apiService/http";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ChatRoomSkeleton } from "./ChatRoomSkeleton";
@@ -270,6 +272,43 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
   useEffect(() => {
     if (!roomId) return;
 
+    const onIncoming = (newMessage: ChatMessage) => {
+      queryClient.setQueryData(
+        ["chat_messages", roomId],
+        (old: InfiniteData<ChatMessagesPage> | undefined) =>
+          mapAllMessages(old, (all) => reconcileIncomingMessage(all, newMessage))
+      );
+      scrollToBottom("smooth");
+    };
+
+    if (env.useNhyvasAuth) {
+      const token = getWebToken();
+      if (!token) return;
+
+      const wsBase = env.nhyvasApiUrl.replace(/^http/i, "ws");
+      const ws = new WebSocket(
+        `${wsBase}/api/v1/chat/ws?roomId=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`
+      );
+
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data as string) as {
+            type?: string;
+            message?: ChatMessage;
+          };
+          if (payload.type === "message" && payload.message) {
+            onIncoming(payload.message);
+          }
+        } catch {
+          // ignore malformed frames
+        }
+      };
+
+      return () => {
+        ws.close();
+      };
+    }
+
     const channelName = `public:chat_messages:${roomId}:${Date.now()}`;
     const channel = supabaseBrowser
       .channel(channelName)
@@ -277,13 +316,7 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", filter: `room_id=eq.${roomId}` },
         (payload) => {
-          const newMessage = payload.new as ChatMessage;
-          queryClient.setQueryData(
-            ["chat_messages", roomId],
-            (old: InfiniteData<ChatMessagesPage> | undefined) =>
-              mapAllMessages(old, (all) => reconcileIncomingMessage(all, newMessage))
-          );
-          scrollToBottom("smooth");
+          onIncoming(payload.new as ChatMessage);
         }
       )
       .subscribe();

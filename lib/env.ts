@@ -8,6 +8,8 @@ function getPublicEnv() {
     NEXT_PUBLIC_R2_UPLOAD_URL: process.env.NEXT_PUBLIC_R2_UPLOAD_URL,
     NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV,
     NEXT_PUBLIC_GOOGLE_CLIENT_ID_WEB: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_WEB,
+    NEXT_PUBLIC_NHYVAS_API_URL: process.env.NEXT_PUBLIC_NHYVAS_API_URL,
+    NEXT_PUBLIC_USE_NHYVAS_AUTH: process.env.NEXT_PUBLIC_USE_NHYVAS_AUTH,
   };
 }
 
@@ -33,7 +35,14 @@ export const env = {
   ),
   supabaseKycBucket: requireEnv(raw.NEXT_PUBLIC_SUPABASE_KYC_BUCKET, "NEXT_PUBLIC_SUPABASE_KYC_BUCKET"),
   r2PublicBaseUrl: requireEnv(raw.NEXT_PUBLIC_R2_PUBLIC_BASE_URL, "NEXT_PUBLIC_R2_PUBLIC_BASE_URL"),
-  r2SignUrl: requireEnv(raw.NEXT_PUBLIC_R2_SIGN_URL, "NEXT_PUBLIC_R2_SIGN_URL"),
+  r2SignUrl:
+    raw.NEXT_PUBLIC_USE_NHYVAS_AUTH === "true" || raw.NEXT_PUBLIC_NHYVAS_API_URL?.trim()
+      ? `${(raw.NEXT_PUBLIC_NHYVAS_API_URL ?? "http://localhost:8080").replace(/\/$/, "")}/api/v1/media/r2-sign`
+      : requireEnv(raw.NEXT_PUBLIC_R2_SIGN_URL, "NEXT_PUBLIC_R2_SIGN_URL"),
   r2UploadUrl: raw.NEXT_PUBLIC_R2_UPLOAD_URL ?? "", // Optional for now
   googleClientIdWeb: requireEnv(raw.NEXT_PUBLIC_GOOGLE_CLIENT_ID_WEB, "NEXT_PUBLIC_GOOGLE_CLIENT_ID_WEB"),
+  nhyvasApiUrl: (raw.NEXT_PUBLIC_NHYVAS_API_URL ?? "http://localhost:8080").replace(/\/$/, ""),
+  useNhyvasAuth:
+    raw.NEXT_PUBLIC_USE_NHYVAS_AUTH === "true" ||
+    Boolean(raw.NEXT_PUBLIC_NHYVAS_API_URL?.trim()),
 };

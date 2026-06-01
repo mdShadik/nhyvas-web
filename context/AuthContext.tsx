@@ -2,7 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { env } from "@/lib/env";
+import { nhyvasFetchMe } from "@/lib/nhyvasApi";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
+import { clearWebToken, getWebToken } from "@/services/apiService/http";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { profileService, type AppProfile, type UserPreferences } from "@/services/apiService/profile";
@@ -32,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [nhyvasAuthenticated, setNhyvasAuthenticated] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const router = useRouter();
 
@@ -39,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: bootstrap, isLoading: isBootstrapLoading } = useQuery({
     queryKey: ["profile", "bootstrap"],
     queryFn: () => profileService.getBootstrap(),
-    enabled: !!session,
+    enabled: env.useNhyvasAuth ? nhyvasAuthenticated : !!session,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -48,6 +52,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function getInitialSession() {
       try {
+        if (env.useNhyvasAuth) {
+          const token = getWebToken();
+          if (!token) {
+            if (mounted) {
+              setNhyvasAuthenticated(false);
+              setIsAuthLoading(false);
+            }
+            return;
+          }
+
+          try {
+            const me = await nhyvasFetchMe(token);
+            if (mounted) {
+              setNhyvasAuthenticated(true);
+              setUser({
+                id: me.id,
+                email: me.email,
+                app_metadata: {},
+                user_metadata: { full_name: me.full_name },
+                aud: "authenticated",
+                created_at: "",
+              } as User);
+              setIsAuthLoading(false);
+            }
+          } catch {
+            clearWebToken();
+            if (mounted) {
+              setNhyvasAuthenticated(false);
+              setIsAuthLoading(false);
+            }
+          }
+          return;
+        }
+
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -74,6 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     getInitialSession();
+
+    if (env.useNhyvasAuth) {
+      return () => {
+        mounted = false;
+      };
+    }
 
     const {
       data: { subscription },
@@ -106,21 +150,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setIsAuthLoading(true);
-    // Clear browser Supabase session (localStorage) and server cookies.
-    await supabase.auth.signOut().catch(() => null);
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    if (!env.useNhyvasAuth) {
+      await supabase.auth.signOut().catch(() => null);
+      await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    } else {
+      clearWebToken();
+      setNhyvasAuthenticated(false);
+      setUser(null);
+      setSession(null);
+    }
     router.push("/login");
     router.refresh();
   };
 
-  // The application is "loading" auth if either Supabase is initializing 
-  // or if we have a session but haven't finished fetching the profile yet.
-  const isLoading = isAuthLoading || (!!session && isBootstrapLoading);
+  const isAuthenticated = env.useNhyvasAuth ? nhyvasAuthenticated : !!session;
+  const isLoading = isAuthLoading || (isAuthenticated && isBootstrapLoading);
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated: !!session,
+        isAuthenticated,
         isLoading,
         session,
         user,
