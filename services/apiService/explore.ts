@@ -1,8 +1,8 @@
 import { mapExploreListingRows } from "@/services/apiService/mappers";
 import { registerMasterAmenities, registerMasterPropertyCategories, registerMasterPropertySubcategories } from "@/i18n/masterData";
 import { requestJson } from "@/services/apiService/http";
-import { AnalyzedQuery } from "@/lib/ai/queryAnalyzer";
 import { galliMapService } from "../galliMap";
+import { performAiSearch } from "@/app/actions/exploreActions";
 
 export type HomeHeroListing = {
   id: string;
@@ -356,16 +356,10 @@ export const exploreService = {
   },
 
   async aiSearch(query: string, lat?: number | null, lng?: number | null): Promise<{
-    analysis: AnalyzedQuery;
+    analysis: any;
     listings: ExploreListing[];
   }> {
-    const { analysis, listings } = await requestJson<{
-      analysis: AnalyzedQuery;
-      listings: any[];
-    }>("/api/explore/ai-search", {
-      method: "POST",
-      body: JSON.stringify({ query, lat, lng }),
-    });
+    const { analysis, listings } = await performAiSearch(query, lat, lng);
     
     return {
       analysis,

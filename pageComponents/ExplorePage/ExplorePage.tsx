@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 import { ListingCard } from "@/components/explore/ListingCard";
 import { SearchParamsProps } from "@/app/(pages)/explore/page";
 import { AiSearch } from "@/components/AiSearch/Aisearch";
-import { AnalyzedQuery, AnalyzedSubcategory } from "@/lib/ai/queryAnalyzer";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { useAuth } from "@/context/AuthContext";
 
@@ -171,7 +170,7 @@ export default function ExplorePage({ searchParams }: Props) {
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [aiResponse, setAiResponse] = useState<AnalyzedQuery | null>(null);
+  const [aiResponse, setAiResponse] = useState<any | null>(null);
   const [aiListings, setAiListings] = useState<ExploreListing[] | null>(null);
 
   const handleSearch = async (query: string) => {
@@ -241,7 +240,7 @@ export default function ExplorePage({ searchParams }: Props) {
         const nextFilters: FilterState = {
           ...EMPTY_FILTERS,
           categoryIds: analysis.categories || [],
-          subcategoryIds: analysis.subcategories?.map(s => s.subCategory_id) || [],
+          subcategoryIds: analysis.subcategories?.map((s: any) => s.subCategory_id) || [],
           minPrice: analysis.budget?.min ? String(analysis.budget.min) : "",
           maxPrice: analysis.budget?.max ? String(analysis.budget.max) : "",
           amenityIds: analysis.features || [],
@@ -423,7 +422,7 @@ export default function ExplorePage({ searchParams }: Props) {
                   </span>
                 ) : null;
               })}
-              {aiResponse.subcategories?.map((sub: AnalyzedSubcategory) => {
+              {aiResponse.subcategories?.map((sub: any) => {
                 const label = getSubcategoryLabel(sub.subCategory_id);
                 return label ? (
                   <span key={sub.subCategory_id} className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent-foreground dark:text-accent">

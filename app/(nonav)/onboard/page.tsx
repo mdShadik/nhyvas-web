@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 // import { useRouter } from "next/navigation";
 import { AvatarUpload } from "@/components/common/AvatarUpload";
 // import { useTheme } from "@/context/ThemeContext";
-import { createClient } from "@supabase/supabase-js";
-import { env } from "@/lib/env";
+import { profileService } from "@/services/apiService/profile";
+import { requestJson } from "@/services/apiService/http";
+import { useAuth } from "@/context/AuthContext";
 // import { darkLogo, lightLogo } from "../../../assets";
 import { useTranslation } from "react-i18next";
 
 export default function OnboardPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   // const router = useRouter();
   // const { theme } = useTheme();
   // const logoUrl = theme === "dark" ? darkLogo : lightLogo;
@@ -26,29 +28,19 @@ export default function OnboardPage() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await fetch("/api/profile/bootstrap", { method: "POST" });
-        if (!res.ok) throw new Error("Failed to load profile");
-
-        const { data } = await res.json();
-        const profile = data?.row;
+        const bootstrap = await profileService.getBootstrap();
+        const profile = bootstrap?.profile;
 
         if (profile?.is_onboarded) {
           window.location.href = "/";
           return;
         }
 
-        // Fetch Google OAuth metadata directly from the active session
-        const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey);
-        const { data: { user } } = await supabase.auth.getUser();
-
-        const metaFullName = user?.user_metadata?.full_name || user?.user_metadata?.name;
-        const metaAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+        const metaFullName = user?.user_metadata?.full_name;
         const metaEmail = user?.email;
-
-        // Prefill using user_metadata first, fallback to profile
-        if (metaFullName || profile?.full_name) setFullName(metaFullName || profile.full_name);
-        if (metaEmail || profile?.email) setEmail(metaEmail || profile.email);
-        if (metaAvatar || profile?.avatar_url) setAvatarUrl(metaAvatar || profile.avatar_url);
+        if (metaFullName || profile?.full_name) setFullName(metaFullName || profile?.full_name || "");
+        if (metaEmail || profile?.email) setEmail(metaEmail || profile?.email || "");
+        if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
 
       } catch (err: any) {
         setError(t("auth.profile_load_failed"));
@@ -64,17 +56,11 @@ export default function OnboardPage() {
     if (!url || !url.startsWith("http")) return url;
     
     try {
-      const res = await fetch("/api/media/proxy-avatar", {
+      const data = await requestJson<{ publicUrl?: string }>("/api/media/proxy-avatar", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ avatarUrl: url }),
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        console.error("Avatar proxy failed", { status: res.status, data });
-        return url;
-      }
-      return data?.url ?? url;
+      return data?.publicUrl ?? url;
     } catch (e) {
       console.error("Failed to proxy avatar", e);
       return url;
@@ -101,16 +87,10 @@ export default function OnboardPage() {
     }
 
     try {
-      const res = await fetch("/api/profile/complete-onboarding", {
+      await requestJson("/api/profile/complete-onboarding", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email, avatarUrl: finalAvatarUrl }),
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || t("auth.onboard_failed"));
-      }
 
       if (typeof window !== "undefined") {
         localStorage.setItem("user_email", email);

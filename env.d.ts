@@ -1,10 +1,6 @@
 declare namespace NodeJS {
   interface ProcessEnv {
     NEXT_PUBLIC_ENV?: "development" | "staging" | "production";
-    NEXT_PUBLIC_SUPABASE_URL?: string;
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
-    NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
-    NEXT_PUBLIC_SUPABASE_KYC_BUCKET?: string;
     NEXT_PUBLIC_R2_PUBLIC_BASE_URL?: string;
     NEXT_PUBLIC_R2_SIGN_URL?: string;
     NEXT_PUBLIC_TOMTOM_KEY?: string;
@@ -17,9 +13,6 @@ declare namespace NodeJS {
 
     // Back-compat with the mobile app env naming
     EXPO_PUBLIC_ENV?: "development" | "staging" | "production";
-    EXPO_PUBLIC_SUPABASE_URL?: string;
-    EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
-    EXPO_PUBLIC_SUPABASE_KYC_BUCKET?: string;
     EXPO_PUBLIC_R2_PUBLIC_BASE_URL?: string;
     EXPO_PUBLIC_R2_SIGN_URL?: string;
     EXPO_PUBLIC_TOMTOM_KEY?: string;

@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import TextareaAutosize from "react-textarea-autosize";
 
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { Button } from "@/components/ui/button";
 import {
   supportService,
@@ -59,33 +58,11 @@ export function SupportTicketChat({
 
   useEffect(() => {
     if (!ticketId) return;
-
-    const channel = supabaseBrowser
-      .channel(`support_ticket_${ticketId}_${Date.now()}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "support_ticket_messages",
-          filter: `ticket_id=eq.${ticketId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({
-            queryKey: messagesQueryKey,
-          });
-
-          queryClient.invalidateQueries({
-            queryKey: ["support-tickets"],
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      void channel.unsubscribe();
-      supabaseBrowser.removeChannel(channel);
-    };
+    const interval = setInterval(() => {
+      void queryClient.invalidateQueries({ queryKey: messagesQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
+    }, 5000);
+    return () => clearInterval(interval);
   }, [messagesQueryKey, queryClient, ticketId]);
 
   const scrollToBottom = (smooth = true) => {

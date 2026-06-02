@@ -27,7 +27,6 @@ import { noImagePlaceholder } from "@/assets";
 import { authApi } from "@/services/apiService";
 import { chatService, type ChatMessage, type ChatMessagesPage } from "@/services/apiService/chat";
 import { env } from "@/lib/env";
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { getWebToken } from "@/services/apiService/http";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
@@ -227,21 +226,11 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
   const counterpartyId = roomDetails?.counterparty?.id ?? null;
 
   const { data: blockInfo } = useQuery({
-    queryKey: ["chat_block_status", currentUserId, counterpartyId],
-    enabled: Boolean(currentUserId && counterpartyId),
+    queryKey: ["chat_block_status", roomId, roomDetails?.counterparty?.id],
+    enabled: Boolean(roomDetails),
     queryFn: async () => {
-      const me = currentUserId as string;
-      const other = counterpartyId as string;
-      const { data, error } = await supabaseBrowser
-        .from("user_blocks")
-        .select("blocker_id, blocked_id")
-        .or(`and(blocker_id.eq.${me},blocked_id.eq.${other}),and(blocker_id.eq.${other},blocked_id.eq.${me})`)
-        .limit(2);
-
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ blocker_id: string; blocked_id: string }>;
-      if (!rows.length) return { blocked: false, byMe: false };
-      return { blocked: true, byMe: rows.some((r) => r.blocker_id === me) };
+      const listingHidden = !roomDetails?.listing_id && !roomDetails?.property_title;
+      return { blocked: listingHidden, byMe: false };
     },
   });
 
@@ -281,49 +270,30 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
       scrollToBottom("smooth");
     };
 
-    if (env.useNhyvasAuth) {
-      const token = getWebToken();
-      if (!token) return;
+    const token = getWebToken();
+    if (!token) return;
 
-      const wsBase = env.nhyvasApiUrl.replace(/^http/i, "ws");
-      const ws = new WebSocket(
-        `${wsBase}/api/v1/chat/ws?roomId=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`
-      );
+    const wsBase = env.nhyvasApiUrl.replace(/^http/i, "ws");
+    const ws = new WebSocket(
+      `${wsBase}/api/v1/chat/ws?roomId=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`
+    );
 
-      ws.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data as string) as {
-            type?: string;
-            message?: ChatMessage;
-          };
-          if (payload.type === "message" && payload.message) {
-            onIncoming(payload.message);
-          }
-        } catch {
-          // ignore malformed frames
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data as string) as {
+          type?: string;
+          message?: ChatMessage;
+        };
+        if (payload.type === "message" && payload.message) {
+          onIncoming(payload.message);
         }
-      };
-
-      return () => {
-        ws.close();
-      };
-    }
-
-    const channelName = `public:chat_messages:${roomId}:${Date.now()}`;
-    const channel = supabaseBrowser
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `room_id=eq.${roomId}` },
-        (payload) => {
-          onIncoming(payload.new as ChatMessage);
-        }
-      )
-      .subscribe();
+      } catch {
+        // ignore malformed frames
+      }
+    };
 
     return () => {
-      void channel.unsubscribe();
-      supabaseBrowser.removeChannel(channel);
+      ws.close();
     };
   }, [roomId, queryClient, scrollToBottom]);
 

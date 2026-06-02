@@ -1,21 +1,21 @@
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
-import type { Database } from "@/types/supabase";
+import { requestJson } from "@/services/apiService/http";
 
-type NotificationEvent = Database["public"]["Tables"]["notification_events"]["Row"];
+export type NotificationItem = {
+  id: string;
+  title: string | null;
+  body: string | null;
+  category_id: string | null;
+  route: string | null;
+  data: Record<string, unknown> | null;
+  is_read: boolean;
+  created_at: string;
+  read_at: string | null;
+};
 
-export type NotificationItem = Pick<
-  NotificationEvent,
-  "id" | "title" | "body" | "category_id" | "route" | "data" | "is_read" | "created_at" | "read_at"
->;
-
-function parseData(data: NotificationEvent["data"]): Record<string, unknown> {
+function parseData(data: NotificationItem["data"]): Record<string, unknown> {
   if (!data) return {};
-  if (typeof data === "object") return data as Record<string, unknown>;
-  try {
-    return JSON.parse(data as string) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
+  if (typeof data === "object") return data;
+  return {};
 }
 
 export function getImageUrl(data: Record<string, unknown>): string | null {
@@ -26,35 +26,27 @@ export function getImageUrl(data: Record<string, unknown>): string | null {
 }
 
 export async function listNotifications(limit = 50): Promise<NotificationItem[]> {
-  const { data, error } = await supabaseBrowser
-    .from("notification_events")
-    .select("id, title, body, category_id, route, data, is_read, created_at, read_at")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) throw error;
-  return (data ?? []) as NotificationItem[];
+  const { rows } = await requestJson<{ rows: NotificationItem[] }>(
+    "/api/profile/notifications/list",
+    { method: "POST", body: JSON.stringify({ limit }) }
+  );
+  return rows ?? [];
 }
 
 export async function getUnreadCount(): Promise<number> {
-  const { count, error } = await supabaseBrowser
-    .from("notification_events")
-    .select("id", { count: "exact", head: true })
-    .eq("is_read", false);
-
-  if (error) throw error;
-  return count ?? 0;
+  const rows = await listNotifications(100);
+  return rows.filter((n) => !n.is_read).length;
 }
 
 export async function markAsRead(id: string): Promise<void> {
-  await supabaseBrowser
-    .from("notification_events")
-    .update({ is_read: true, read_at: new Date().toISOString() })
-    .eq("id", id);
+  await requestJson("/api/profile/notifications/mark-read", {
+    method: "POST",
+    body: JSON.stringify({ id }),
+  });
 }
 
 export async function markAllAsRead(): Promise<void> {
-  await supabaseBrowser.rpc("mark_all_notifications_read");
+  await requestJson("/api/profile/notifications/mark-all-read", { method: "POST" });
 }
 
 export { parseData };
