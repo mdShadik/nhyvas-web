@@ -1,6 +1,5 @@
 export function getGalliStyleUrl() {
-  const key = (process.env.NEXT_PUBLIC_GALLI_MAP_API_KEY ?? "").trim();
-  if (!key) return null;
-  return `https://map-init.gallimap.com/styles/light/style.json?accessToken=${key}`;
+  const API_BASE = (process.env.NEXT_PUBLIC_NHYVAS_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+  return `${API_BASE}/api/v1/map/style`;
 }
 

@@ -41,13 +41,13 @@ export type SubmitPaymentInput = {
 
 export const paymentService = {
   async getActiveGateway(): Promise<PaymentGateway | null> {
-    const { row } = await requestJson<{ row: PaymentGateway | null }>(
+    const { gateway } = await requestJson<{ gateway: PaymentGateway | null }>(
       "/api/payment/gateways",
       {
         method: "POST",
       }
     );
-    return row;
+    return gateway;
   },
 
   async submitPayment(input: SubmitPaymentInput): Promise<void> {

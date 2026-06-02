@@ -82,7 +82,7 @@ export default function PropertyPage({searchParams}: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const id = searchParams.id?.trim() || "";
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -104,10 +104,7 @@ export default function PropertyPage({searchParams}: Props) {
     setLoginOpen(true);
   };
 
-  const { data: currentUserId } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: authApi.getCurrentUserId,
-  });
+  const currentUserId = user?.id;
 
   const listingQuery = useQuery({
     queryKey: ["listing-details", id],
@@ -117,7 +114,7 @@ export default function PropertyPage({searchParams}: Props) {
 
   const listing = listingQuery.data?.listing ?? null;
   const isOwner = Boolean(currentUserId && listing?.listed_by && listing.listed_by === currentUserId);
-  const listingStatus = listing?.status ?? "";
+  const listingStatus = (listing?.status ?? "").toLowerCase().trim();
   const isApprovedListing = listingStatus === "approved" || listingStatus === "published";
   const canEditListing = isOwner && (listingStatus === "pending_review" || listingStatus === "changes_requested");
   const canPayForListing = isOwner && listingStatus === "awaiting_payment";
@@ -254,13 +251,12 @@ export default function PropertyPage({searchParams}: Props) {
 
   const description = (listing?.description ?? "").trim();
   const displayDescription = showFullDescription ? description : description.slice(0, 420);
-  const paymentAmount =
-    listing?.approval_fee_amount == null
-      ? null
-      : `${tCurrency(listing.currency_code ?? "NPR")} ${formatPrice(
-          Number(listing.approval_fee_amount),
-          "",
-        )}`;
+  
+  const paymentAmount = useMemo(() => {
+    if (listing?.approval_fee_amount == null) return null;
+    return formatPrice(Number(listing.approval_fee_amount), listing.currency_code ?? "NPR");
+  }, [listing?.approval_fee_amount, listing?.currency_code]);
+
   const formattedStatus = listingStatus
     ? listingStatus
         .split("_")
@@ -270,6 +266,21 @@ export default function PropertyPage({searchParams}: Props) {
 
   const renderListingAction = (variant: "mobile" | "desktop") => {
     const fullWidth = variant === "mobile";
+
+    // Debugging logs to help identify missing CTAs
+    if (process.env.NODE_ENV === "development") {
+      console.log("[PropertyPage] CTA Debug:", {
+        id,
+        listingStatus,
+        isOwner,
+        isApprovedListing,
+        canEditListing,
+        canPayForListing,
+        canUsePublicActions,
+        currentUserId
+      });
+    }
+
     const primaryClass = fullWidth
       ? "flex w-full items-center justify-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] rounded-2xl"
       : "inline-flex items-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 rounded-2xl";
@@ -631,7 +642,7 @@ export default function PropertyPage({searchParams}: Props) {
                     type="button"
                     onClick={() => requireAuth(() => setMobileMapOpen(true))}
                     disabled={!hasPoint}
-                    className="flex w-full mb-30 sm:mb-30 items-center gap-3 px-5 py-4 text-left transition hover:bg-secondary-50 dark:hover:bg-secondary-900/30 disabled:opacity-50"
+                    className="flex w-full mb-32 items-center gap-3 px-5 py-4 text-left transition hover:bg-secondary-50 dark:hover:bg-secondary-900/30 disabled:opacity-50"
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-tertiary-400/10 text-tertiary-600 dark:text-tertiary-400">
                       <Map className="h-4.5 w-4.5" />

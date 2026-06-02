@@ -34,10 +34,20 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
+const WEB_TOKEN_KEY = "nhyvas_at";
+const USER_CACHE_KEY = "nhyvas_user";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    if (typeof window === "undefined") return null;
+    const cached = localStorage.getItem(USER_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem(WEB_TOKEN_KEY);
+  });
+  const [isAuthLoading, setIsAuthLoading] = useState(!user);
   const router = useRouter();
 
   const { data: bootstrap, isLoading: isBootstrapLoading } = useQuery({
@@ -56,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!token) {
           if (mounted) {
             setIsAuthenticated(false);
+            setUser(null);
+            localStorage.removeItem(USER_CACHE_KEY);
             setIsAuthLoading(false);
           }
           return;
@@ -63,18 +75,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const me = await nhyvasFetchMe(token);
         if (mounted) {
-          setIsAuthenticated(true);
-          setUser({
+          const nextUser = {
             id: me.id,
             email: me.email,
             user_metadata: { full_name: me.full_name },
-          });
+          };
+          setIsAuthenticated(true);
+          setUser(nextUser);
+          localStorage.setItem(USER_CACHE_KEY, JSON.stringify(nextUser));
           setIsAuthLoading(false);
         }
       } catch {
         clearWebToken();
         if (mounted) {
           setIsAuthenticated(false);
+          setUser(null);
+          localStorage.removeItem(USER_CACHE_KEY);
           setIsAuthLoading(false);
         }
       }

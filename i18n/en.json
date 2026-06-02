@@ -98,7 +98,10 @@
       "interested_failed": "Could not send your interest.",
       "failed": "Failed",
       "chat_failed": "Chat Failed",
-      "chat_failed_message": "Could not initiate chat."
+      "chat_failed_message": "Could not initiate chat.",
+      "pay_amount": "Pay {{amount}}",
+      "pay": "Pay",
+      "edit_listing": "Edit Listing"
     }
   },
   "map": {

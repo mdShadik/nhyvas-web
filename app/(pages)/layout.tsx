@@ -17,7 +17,7 @@ export default function WithNavLayout({
   return (
     <>
       {!isChat && <MobileTopBar />}
-      <NavBar hideMobile={isAddProperty || isProperty || isChat} />
+        <NavBar hideMobile={isAddProperty || isProperty || isChat} />
       {children}
     </>
   );

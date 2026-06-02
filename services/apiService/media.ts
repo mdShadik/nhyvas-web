@@ -27,26 +27,34 @@ type UploadToR2Input = {
 };
 
 export async function uploadToR2(input: UploadToR2Input): Promise<R2UploadResult> {
-  // Prefer proxy upload to avoid R2/S3 CORS issues with browser PUTs to presigned URLs.
-  // If NEXT_PUBLIC_R2_UPLOAD_URL isn't configured, fall back to presigned PUT.
-  if (env.r2UploadUrl && env.r2UploadUrl.trim().length > 0) {
+  // Always try proxy upload first to avoid R2/S3 CORS issues with browser PUTs to presigned URLs.
+  try {
     const form = new FormData();
     form.append("file", input.file);
     form.append("folder", input.folder);
-    if (typeof input.userId === "string" && input.userId.trim()) form.append("userId", input.userId.trim());
+    if (typeof input.userId === "string" && input.userId.trim()) {
+      form.append("userId", input.userId.trim());
+    }
 
     const { data } = await requestJson<{ data: ProxyUploadResponse }>("/api/media/r2-upload", {
       method: "POST",
       body: form as any,
-      headers: {},
     } as any);
 
     const objectPath = (data?.objectPath ?? data?.path ?? "").toString().replace(/^\/+/, "");
     const resolvedPublicUrl = (data?.publicUrl ?? data?.url ?? "").toString().trim();
 
-    if (resolvedPublicUrl && objectPath) return { publicUrl: resolvedPublicUrl, objectKey: objectPath };
-    if (objectPath) return { publicUrl: `${env.r2PublicBaseUrl.replace(/\/+$/, "")}/${objectPath}`, objectKey: objectPath };
-    throw new Error("R2 upload response missing publicUrl/objectPath.");
+    if (resolvedPublicUrl && objectPath) {
+      return { publicUrl: resolvedPublicUrl, objectKey: objectPath };
+    }
+    if (objectPath) {
+      return {
+        publicUrl: `${env.r2PublicBaseUrl.replace(/\/+$/, "")}/${objectPath}`,
+        objectKey: objectPath,
+      };
+    }
+  } catch (err) {
+    console.error("R2 proxy upload failed, falling back to signed URL flow:", err);
   }
 
   // Fallback for signed URL flow

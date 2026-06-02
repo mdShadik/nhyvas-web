@@ -89,17 +89,18 @@ export async function requestJson<TResponse>(
   url: string,
   init?: RequestInit,
 ): Promise<TResponse> {
+  const { headers: customHeaders, ...restInit } = init || {};
   const isFormDataBody =
     typeof FormData !== "undefined" && init?.body instanceof FormData;
 
   const token = getWebToken();
   const response = await fetch(toV1ApiUrl(url), {
+    ...restInit,
     headers: {
       ...(isFormDataBody ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers ?? {}),
+      ...(customHeaders ?? {}),
     },
-    ...init,
   });
 
   // Handle 401 Unauthorized - session expired or not logged in

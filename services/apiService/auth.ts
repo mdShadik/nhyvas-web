@@ -26,6 +26,15 @@ export async function logout(): Promise<void> {
 }
 
 export async function getCurrentUserId(): Promise<string | null> {
+  if (typeof window !== "undefined") {
+    const cached = localStorage.getItem("nhyvas_user");
+    if (cached) {
+      try {
+        const user = JSON.parse(cached);
+        if (user?.id) return user.id;
+      } catch {}
+    }
+  }
   const { user } = await requestJson<{ user: { id: string } | null }>("/api/auth/me", { method: "GET" });
   return user?.id ?? null;
 }
