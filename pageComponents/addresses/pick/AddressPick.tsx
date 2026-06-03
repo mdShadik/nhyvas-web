@@ -257,7 +257,7 @@ export default function AddressPickpage({searchParams}: Props) {
                       {resolvingAdmin
                         ? t("addresses.locating")
                         : adminLabel ||
-                          (coord
+                          (coord && coord.latitude != null && coord.longitude != null
                             ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
                             : t("addresses.map_hint"))}
                     </p>
@@ -277,7 +277,7 @@ export default function AddressPickpage({searchParams}: Props) {
                           Coordinates
                         </div>
                         <div className="mt-1 text-sm text-text-primary">
-                          {coord
+                          {coord && coord.latitude != null && coord.longitude != null
                             ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
                             : "--"}
                         </div>
@@ -361,7 +361,7 @@ export default function AddressPickpage({searchParams}: Props) {
                     {resolvingAdmin
                       ? t("addresses.locating")
                       : adminLabel ||
-                        (coord
+                        (coord && coord.latitude != null && coord.longitude != null
                           ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
                           : t("addresses.map_hint"))}
                   </p>
@@ -381,7 +381,7 @@ export default function AddressPickpage({searchParams}: Props) {
                         Coordinates
                       </div>
                       <div className="mt-1 text-sm text-text-primary">
-                        {coord
+                        {coord && coord.latitude != null && coord.longitude != null
                           ? `${coord.latitude.toFixed(5)}, ${coord.longitude.toFixed(5)}`
                           : "--"}
                       </div>

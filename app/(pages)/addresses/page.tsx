@@ -113,7 +113,7 @@ function AddressesContent() {
                       </div>
 
                       <div className="mt-2 text-xs text-text-tertiary">
-                        {entry.latitude !== null && entry.longitude !== null
+                        {entry.latitude != null && entry.longitude != null
                           ? `${entry.latitude.toFixed(5)}, ${entry.longitude.toFixed(5)}`
                           : "No coordinates"}
                       </div>

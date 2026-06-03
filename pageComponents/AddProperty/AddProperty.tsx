@@ -119,12 +119,6 @@ export default function AddPropertyPage({ searchParams }: Props) {
     addressEntries.length > 0 ? "existing" : "search"
   );
 
-  useEffect(() => {
-    if (addressEntries.length > 0 && locationMode === "search" && !locationTouched) {
-      setLocationMode("existing");
-    }
-  }, [addressEntries.length, locationMode, locationTouched]);
-
   const {
     register,
     control,
@@ -1070,7 +1064,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
                         if (addressEntries.length >= maxAddresses) {
                           showToast({
                             variant: "error",
-                            message: t("landlord.create.address_limit_error", `You already have ${maxAddresses} addresses to be selected from`),
+                            message: t("landlord.create.address_limit_error", `You cannot add more than ${maxAddresses} locations. Please manage your existing addresses to add a new one.`),
                           });
                           return;
                         }
@@ -1198,8 +1192,9 @@ export default function AddPropertyPage({ searchParams }: Props) {
                           {selectedLocation.label}
                         </div>
                         <div className="mt-0.5 text-xs text-text-tertiary">
-                          {selectedLocation.latitude.toFixed(5)},{" "}
-                          {selectedLocation.longitude.toFixed(5)}
+                          {selectedLocation.latitude != null && selectedLocation.longitude != null
+                            ? `${selectedLocation.latitude.toFixed(5)}, ${selectedLocation.longitude.toFixed(5)}`
+                            : "--"}
                         </div>
                       </>
                     ) : (

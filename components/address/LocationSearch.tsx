@@ -33,19 +33,27 @@ export function LocationSearch({ onSelect, currentCoord, className }: LocationSe
       );
       // Map FeatureCollection features to the format we need
       const mappedResults = data.features
-        .filter(f => f.properties.searchedItem)
-        .map(f => ({
-          id: f.properties.searchedItem + Math.random(), // Galli currentLocation doesn't have unique IDs in properties
-          name: f.properties.searchedItem,
-          province: f.properties.province,
-          district: f.properties.district,
-          municipality: f.properties.municipality,
-          ward: String(f.properties.ward || ""),
-          geometry: f.geometry.type,
-          nameLower: f.properties.searchedItem.toLowerCase(),
-          distance: String(f.properties.distance || ""),
-          coord: { latitude: f.geometry.coordinates[1], longitude: f.geometry.coordinates[0] }
-        }));
+        .filter(f => f.properties.searchedItem && f.geometry?.coordinates?.length >= 2)
+        .map(f => {
+          const latitude = f.geometry.coordinates[1];
+          const longitude = f.geometry.coordinates[0];
+          
+          if (typeof latitude !== 'number' || typeof longitude !== 'number') return null;
+
+          return {
+            id: f.properties.searchedItem + Math.random(), // Galli currentLocation doesn't have unique IDs in properties
+            name: f.properties.searchedItem,
+            province: f.properties.province,
+            district: f.properties.district,
+            municipality: f.properties.municipality,
+            ward: String(f.properties.ward || ""),
+            geometry: f.geometry.type,
+            nameLower: f.properties.searchedItem.toLowerCase(),
+            distance: String(f.properties.distance || ""),
+            coord: { latitude, longitude }
+          };
+        })
+        .filter(Boolean);
       setResults(mappedResults as any);
       setShowDropdown(true);
     } catch (error) {
@@ -56,7 +64,7 @@ export function LocationSearch({ onSelect, currentCoord, className }: LocationSe
   };
 
   const handleSelect = (item: any) => {
-    if (item.coord) {
+    if (item.coord && typeof item.coord.latitude === 'number' && typeof item.coord.longitude === 'number') {
         onSelect(item.coord, item.name);
         setQuery(item.name);
         setShowDropdown(false);

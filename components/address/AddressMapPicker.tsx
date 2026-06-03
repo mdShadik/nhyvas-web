@@ -239,7 +239,9 @@ export function AddressMapPicker({
             </div>
           ) : (
             <div className="w-fit rounded-2xl border border-white/40 bg-white/90 px-3 py-2 text-xs text-slate-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-900/85 dark:text-slate-200">
-              {value.latitude.toFixed(5)}, {value.longitude.toFixed(5)}
+              {value.latitude != null && value.longitude != null 
+                ? `${value.latitude.toFixed(5)}, ${value.longitude.toFixed(5)}`
+                : "--"}
             </div>
           )}
         </div>
