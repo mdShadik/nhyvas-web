@@ -27,7 +27,7 @@ export function useNotifications() {
           if (newest) {
             showToast({
               title: newest.title || "New Notification",
-              message: newest.body ?? undefined,
+              message: newest.body ?? "",
               variant: "default",
             });
           }
