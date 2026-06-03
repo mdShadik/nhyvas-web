@@ -146,7 +146,7 @@ export default function ExplorePage({ searchParams }: Props) {
       amenityTags: filters.amenityIds,
       filterLat: hasLocationPoint ? (location?.latitude ?? null) : null,
       filterLng: hasLocationPoint ? (location?.longitude ?? null) : null,
-      filterRadiusKm: hasLocationPoint ? 2 : null,
+      filterRadiusKm: hasLocationPoint ? 10 : null,
       userLat: useUserLocation ? (userLocation?.latitude ?? null) : null,
       userLng: useUserLocation ? (userLocation?.longitude ?? null) : null,
       userRadiusKm: useUserLocation ? 5 : null,
@@ -171,19 +171,17 @@ export default function ExplorePage({ searchParams }: Props) {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [aiResponse, setAiResponse] = useState<any | null>(null);
-  const [aiListings, setAiListings] = useState<ExploreListing[] | null>(null);
 
   const handleSearch = async (query: string) => {
     setIsSearching(true);
     try {
-      const { analysis, listings } = await exploreService.aiSearch(
+      const { analysis } = await exploreService.aiSearch(
         query,
         userLocation?.latitude,
         userLocation?.longitude
       );
 
       setAiResponse(analysis);
-      setAiListings(listings);
 
       if (analysis) {
         let locationNode: FilterState["locationNode"] = null;
@@ -265,13 +263,12 @@ export default function ExplorePage({ searchParams }: Props) {
 
   const handleApplyFilters = () => {
     setFilters(draftFilters);
-    setAiListings(null); // Clear AI results when manually refining
     setAiResponse(null);
     setFiltersOpen(false);
   };
 
-  const displayedListings = (aiListings && aiListings.length > 0) ? aiListings : listings;
-  const isUsingAiResults = aiListings !== null && aiListings.length > 0;
+  const displayedListings = listings;
+  const isUsingAiResults = aiResponse !== null;
 
   // Helper to get labels for AI feedback
   const getCategoryLabel = (id: string) => {
@@ -345,7 +342,6 @@ export default function ExplorePage({ searchParams }: Props) {
               onReset={(reset) => {
                 setDraftFilters(reset);
                 setFilters(reset);
-                setAiListings(null);
                 setAiResponse(null);
               }}
             />
@@ -367,7 +363,6 @@ export default function ExplorePage({ searchParams }: Props) {
             onReset={(reset) => {
               setDraftFilters(reset);
               setFilters(reset);
-              setAiListings(null);
               setAiResponse(null);
             }}
           />
