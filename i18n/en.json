@@ -367,7 +367,8 @@
       "payment_history": "Payment History",
       "payment_history_subtitle": "Track your listing verification payments and their statuses.",
       "edit_profile": "Edit Profile & Preferences",
-      "terms": "Terms & Conditions"
+      "terms": "Terms & Conditions",
+      "privacy": "Privacy Policy"
     },
     "form": {
       "avatar": "Avatar",

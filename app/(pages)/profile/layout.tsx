@@ -52,7 +52,7 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 
           {/* Desktop layout */}
           <div className="hidden gap-6 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="h-fit border border-border bg-bg-page p-3 shadow-sm">
+            <aside className="sticky top-8 h-fit max-h-[calc(100vh-64px)] overflow-y-auto border border-border bg-bg-page p-3 shadow-sm scrollbar-hide">
               <ProfileNav />
             </aside>
 

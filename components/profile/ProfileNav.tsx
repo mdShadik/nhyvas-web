@@ -20,6 +20,7 @@ import {
   ReceiptText,
   Sparkles,
   Info,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useCallback, Fragment, useMemo } from "react";
@@ -188,6 +189,12 @@ export function ProfileNav() {
         href: "/profile/terms-and-conditions",
         label: t("profile.menu.terms"),
         icon: <FileText className="h-[18px] w-[18px]" />,
+        group: "legal",
+      },
+      {
+        href: "/profile/privacy-policy",
+        label: t("profile.menu.privacy"),
+        icon: <ShieldCheck className="h-[18px] w-[18px]" />,
         group: "legal",
       }
     );

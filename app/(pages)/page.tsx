@@ -132,7 +132,7 @@ function NearbyListings({ userLocation, isLocating }: { userLocation: { latitude
         <div className="flex items-end justify-between gap-4">
           <div className="relative">
             {/* Decorative line accent */}
-            <div className="absolute -left-4 top-10 hidden h-8 w-1 rounded-full bg-gradient-to-b from-primary-500 to-tertiary-500 sm:block" />
+            <div className="absolute -left-4 top-10 hidden h-8 w-1 rounded-full bg-linear-to-b from-primary-500 to-tertiary-500 sm:block" />
 
             <div className="flex items-center gap-2">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-200/60 bg-primary-50/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700 backdrop-blur-sm dark:border-primary-500/20 dark:bg-primary-900/30 dark:text-primary-300">
@@ -205,7 +205,7 @@ function CategoryPropertiesSection({ category, userLocation, isLocating }: { cat
         <div className="flex items-end justify-between gap-4">
           <div className="relative">
             {/* Decorative line accent */}
-            <div className="absolute -left-4 top-1 hidden h-8 w-1 rounded-full bg-gradient-to-b from-primary-500 to-tertiary-500 sm:block" />
+            <div className="absolute -left-4 top-1 hidden h-8 w-1 rounded-full bg-linear-to-b from-primary-500 to-tertiary-500 sm:block" />
 
             <h2 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
               {name}
@@ -250,7 +250,7 @@ function HeroBannerSkeleton() {
   return (
     <div className="relative animate-pulse overflow-hidden rounded-[28px] border border-border bg-secondary-100 dark:bg-secondary-800">
       <div className="h-95 w-full bg-secondary-200/70 dark:bg-secondary-700/50 sm:h-110" />
-      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/10 to-transparent" />
     </div>
   );
 }
@@ -344,9 +344,9 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
           />
 
           {/* Multi-layered overlays for depth */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/10 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-900/30 via-transparent to-tertiary-900/20 pointer-events-none mix-blend-overlay" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/50 to-black/10 pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-primary-900/30 via-transparent to-tertiary-900/20 pointer-events-none mix-blend-overlay" />
 
           {/* Decorative grid pattern */}
           <div
@@ -361,9 +361,9 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
           <div className="relative z-10 flex h-full flex-col justify-between p-5 sm:p-10 pointer-events-none">
             {/* Top badges row */}
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative overflow-hidden rounded-full w-fit bg-gradient-to-r from-primary-500 to-tertiary-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-primary-500/30 backdrop-blur-md">
+              <div className="relative overflow-hidden rounded-full w-fit bg-linear-to-r from-primary-500 to-tertiary-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-primary-500/30 backdrop-blur-md">
                 <div className="absolute inset-0 overflow-hidden rounded-full">
-                  <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                  <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/40 to-transparent" />
                 </div>
                 <span className="relative z-10 flex items-center gap-1.5">
                   <Sparkles className="h-3 w-3" />
@@ -388,7 +388,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
               </p>
 
               <div className="mt-5 flex items-baseline gap-2">
-                <div className="text-2xl font-bold text-white sm:text-4xl bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                <div className="text-2xl font-bold text-white sm:text-4xl bg-linear-to-r from-white to-white/80 bg-clip-text text-transparent">
                   {formatPrice(listing.price, listing.currency_code)}
                 </div>
               </div>
@@ -396,9 +396,9 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href={{ pathname: "/property", query: { id: listing.id } }}
-                  className="group/btn relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-500/40 transition-all hover:shadow-xl hover:shadow-primary-500/50 hover:-translate-y-0.5 active:translate-y-0 pointer-events-auto cursor-pointer"
+                  className="group/btn relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-500/40 transition-all hover:shadow-xl hover:shadow-primary-500/50 hover:-translate-y-0.5 active:translate-y-0 pointer-events-auto cursor-pointer"
                 >
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                  <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
                   <span className="relative">{t("home.view_property")}</span>
                   <ArrowRight className="relative h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                 </Link>
@@ -444,7 +444,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
               }}
               className={`h-1.5 rounded-full transition-all ${
                 idx === currentIndex
-                  ? "w-8 bg-gradient-to-r from-primary-400 to-tertiary-400"
+                  ? "w-8 bg-linear-to-r from-primary-400 to-tertiary-400"
                   : "w-1.5 bg-white/50 hover:bg-white/80"
               }`}
             />
@@ -549,12 +549,12 @@ export default function HomePage() {
         {/* Enhanced Footer */}
         <footer className="hidden md:block relative mt-5 mb-20 sm:mb-0">
           {/* Top gradient divider */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+          <div className="h-px w-full bg-linear-to-r from-transparent via-border to-transparent" />
 
           <div className="pt-8 text-sm text-text-tertiary">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-tertiary-500 text-white shadow-sm">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-primary-500 to-tertiary-500 text-white shadow-sm">
                   <Image src={logoSingleN} className="p-1.5" alt="logo"/>
                 </div>
                 <span>© {new Date().getFullYear()} Nhyvas</span>
@@ -566,6 +566,12 @@ export default function HomePage() {
                   className="font-medium transition-colors hover:text-text-primary"
                 >
                   {t("common.terms")}
+                </Link>
+                <Link
+                  href="/privacy"
+                  className="font-medium transition-colors hover:text-text-primary"
+                >
+                  {t("common.privacy")}
                 </Link>
               </div>
             </div>

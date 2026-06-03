@@ -21,6 +21,10 @@ export const legalService = {
     return await requestJson<TermsDocument>("/api/legal/terms", { method: "POST" });
   },
 
+  async getPrivacyPolicy(): Promise<TermsDocument> {
+    return await requestJson<TermsDocument>("/api/legal/privacy", { method: "POST" });
+  },
+
   async getHelpFaqs(): Promise<HelpFaq[]> {
     const { rows } = await requestJson<{ rows: HelpFaq[] }>("/api/legal/faqs", { method: "POST" });
     return rows ?? [];
