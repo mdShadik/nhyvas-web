@@ -89,7 +89,7 @@ export function ListingCard({
   const cardContent = (
     <article
       className={cn(
-        "group relative overflow-hidden border border-white/20 bg-white/5 shadow-sm transition-all duration-500 backdrop-blur-md hover:border-primary-500/40 hover:shadow-2xl hover:shadow-primary-500/10 dark:shadow-none",
+        "group relative overflow-hidden border border-border bg-linear-to-br from-primary-50 via-primary-200/30 to-tertiary-100/30 dark:from-primary-900/20 dark:via-primary-900/20 dark:to-tertiary-800/20 shadow-sm transition-all duration-500 backdrop-blur-md hover:border-primary-500/40 hover:shadow-2xl hover:shadow-primary-500/10 dark:shadow-none",
         isCompact ? "flex flex-col p-3 sm:flex-row" : "flex flex-col lg:flex-row lg:min-h-[260px]",
         className,
       )}
