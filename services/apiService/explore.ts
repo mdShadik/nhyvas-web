@@ -185,9 +185,42 @@ export type MasterPriceConfig = {
   step_value: number;
 };
 
+export type HomeGroupedCategory = {
+  category_id: string;
+  category_code: string;
+  category_name: string;
+  listings: ExploreListing[];
+};
+
 export const exploreService = {
   mapExploreRows(rows: any[]): ExploreListing[] {
     return mapExploreListingRows(rows);
+  },
+
+  async getHomeGroupedListings(params: {
+    userLat?: number | null;
+    userLng?: number | null;
+    userRadiusKm?: number | null;
+    listingsPerCategory?: number;
+  }): Promise<HomeGroupedCategory[]> {
+    const { rows } = await requestJson<{ rows: any[] }>("/api/explore/home-grouped", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+
+    const groups = (rows ?? []).map((row: any) => ({
+      ...row,
+      listings: mapExploreListingRows(row.listings ?? []),
+    })) as HomeGroupedCategory[];
+
+    // Register categories for translation mapping
+    registerMasterPropertyCategories(groups.map(g => ({
+      id: g.category_id,
+      code: g.category_code,
+      name: g.category_name,
+    })));
+
+    return groups;
   },
 
   async getHomeHeroListings(limit = 8): Promise<HomeHeroListing[]> {

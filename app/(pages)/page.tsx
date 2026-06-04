@@ -6,7 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, TrendingUp, MapPin, ArrowRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, MapPin, ArrowRight } from "lucide-react";
 import { exploreService } from "@/services/apiService";
 import { logoSingleN, noImagePlaceholder } from "../../assets";
 import { formatPrice } from "@/lib/formatPrice";
@@ -14,11 +14,10 @@ import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { useTranslation } from "react-i18next";
-import { tPropertyCategory, tPropertyCategoryDescription } from "@/i18n/masterData";
+import { tPropertyCategory } from "@/i18n/masterData";
 import { StoryFeed } from "@/components/stories/StoryFeed";
 import { type ExploreListing } from "@/services/apiService/explore";
 
-type Category = Awaited<ReturnType<typeof exploreService.getHomeCategories>>[number];
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
 
 /**
@@ -178,26 +177,20 @@ function NearbyListings({ userLocation, isLocating }: { userLocation: { latitude
   );
 }
 
-function CategoryPropertiesSection({ category, userLocation, isLocating }: { category: Category; userLocation: { latitude: number; longitude: number } | null; isLocating: boolean }) {
+function CategoryPropertiesSection({ 
+  title, 
+  categoryId, 
+  listings, 
+  isLoading 
+}: { 
+  title: string; 
+  categoryId: string; 
+  listings: ExploreListing[]; 
+  isLoading?: boolean 
+}) {
   const { t } = useTranslation();
-  const name = tPropertyCategory(category.code ?? category.name ?? "") || "Category";
 
-  const { data: listings = [], isLoading } = useQuery({
-    queryKey: ["home", "category", category.id, userLocation],
-    queryFn: () => {
-      if (!userLocation) return [];
-      return exploreService.getRecommendedListings({
-        categoryIds: [category.id],
-        userLat: userLocation.latitude,
-        userLng: userLocation.longitude,
-        userRadiusKm: 10,
-        limit: 5,
-      });
-    },
-    enabled: !!userLocation,
-  });
-
-  if (!isLocating && !isLoading && listings.length === 0) return null;
+  if (!isLoading && listings.length === 0) return null;
 
   return (
     <section className="mt-14">
@@ -208,17 +201,17 @@ function CategoryPropertiesSection({ category, userLocation, isLocating }: { cat
             <div className="absolute -left-4 top-1 hidden h-8 w-1 rounded-full bg-linear-to-b from-primary-500 to-tertiary-500 sm:block" />
 
             <h2 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-              {name}
+              {title}
             </h2>
             <p className="mt-1.5 text-sm text-text-secondary">
-              {t("home.category_explore_near_you", { category: name })}
+              {t("home.category_explore_near_you", { category: title })}
             </p>
           </div>
 
           <Link
             href={{
               pathname: "/explore",
-              query: { categories: category.id },
+              query: { categories: categoryId },
             }}
             className="group/link inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-primary-600 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 dark:text-primary-400 dark:hover:border-primary-500/50"
           >
@@ -232,7 +225,7 @@ function CategoryPropertiesSection({ category, userLocation, isLocating }: { cat
       </div>
 
       <div className="scrollbar-hide -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 pt-6 sm:mx-0 sm:px-0">
-        {isLocating || isLoading ? (
+        {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <NearbyListingSkeleton key={i} />)
         ) : (
           listings.map((listing) => (
@@ -464,26 +457,32 @@ export default function HomePage() {
 
   const { userLocation, isLocating } = useNearbyLocation();
 
-  const categoriesQuery = useQuery({
-    queryKey: ["home", "categories"],
-    queryFn: () => exploreService.getHomeCategories(12),
-  });
-
   const heroQuery = useQuery({
     queryKey: ["home", "hero"],
     queryFn: () => exploreService.getHomeHeroListings(8),
   });
 
-  const categories = categoriesQuery.data ?? [];
-  const heroListings = heroQuery.data ?? [];
+  const groupedQuery = useQuery({
+    queryKey: ["home", "grouped-listings", userLocation],
+    queryFn: () => exploreService.getHomeGroupedListings({
+      userLat: userLocation?.latitude,
+      userLng: userLocation?.longitude,
+      userRadiusKm: 10,
+      listingsPerCategory: 5,
+    }),
+    enabled: !isLocating,
+  });
 
-  const filteredCategories = useMemo(() => {
+  const heroListings = heroQuery.data ?? [];
+  const groupedCategories = groupedQuery.data ?? [];
+
+  const filteredGroups = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return categories;
-    return categories.filter((c) =>
-      `${c.code ?? ""} ${c.name ?? ""}`.toLowerCase().includes(q)
+    if (!q) return groupedCategories;
+    return groupedCategories.filter((g) =>
+      `${g.category_code ?? ""} ${g.category_name ?? ""}`.toLowerCase().includes(q)
     );
-  }, [categories, search]);
+  }, [groupedCategories, search]);
 
   return (
     <main className="relative flex-1 overflow-hidden">
@@ -515,7 +514,7 @@ export default function HomePage() {
 
           {/* Categories Sections */}
           <div className="mb-25 md:mb-5">
-            {categoriesQuery.isLoading ? (
+            {groupedQuery.isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="mt-14 animate-pulse">
                   <div className="h-8 w-48 rounded bg-secondary-100 dark:bg-secondary-800" />
@@ -524,13 +523,14 @@ export default function HomePage() {
                   </div>
                 </div>
               ))
-            ) : filteredCategories.length > 0 ? (
-              filteredCategories.map((category) => (
+            ) : filteredGroups.length > 0 ? (
+              filteredGroups.map((group) => (
                 <CategoryPropertiesSection
-                  key={category.id}
-                  category={category}
-                  userLocation={userLocation}
-                  isLocating={isLocating}
+                  key={group.category_id}
+                  title={tPropertyCategory(group.category_code || group.category_name)}
+                  categoryId={group.category_id}
+                  listings={group.listings}
+                  isLoading={groupedQuery.isFetching}
                 />
               ))
             ) : (
