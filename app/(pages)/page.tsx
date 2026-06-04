@@ -59,32 +59,32 @@ function NearbyPropertyCard({ listing }: { listing: ExploreListing }) {
   return (
     <Link
       href={{ pathname: "/property", query: { id: listing.id } }}
-      className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-border bg-bg-card/40 p-2 transition-all hover:border-primary-500/30 hover:shadow-lg dark:hover:bg-bg-card/60"
+      className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-bg-card/40 p-2 transition-all hover:border-primary-500/30 hover:shadow-lg dark:hover:bg-bg-card/60"
     >
-      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-secondary-100 dark:bg-secondary-800">
+      <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl bg-secondary-100 dark:bg-secondary-800">
         <Image
           src={listing.thumbnail_url || noImagePlaceholder}
           alt={listing.property_title}
           fill
           unoptimized
           className="object-cover transition-transform duration-500 group-hover:scale-115 scale-110"
-          sizes="96px"
+          sizes="128px"
         />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center py-1">
+      <div className="flex min-w-0 flex-1 flex-col justify-center py-2.5">
         <div className="flex items-center gap-1.5 overflow-hidden">
-          <span className="truncate text-[10px] font-black uppercase tracking-wider text-primary-600 dark:text-primary-400">
+          <span className="truncate text-[11px] font-black uppercase tracking-wider text-primary-600 dark:text-primary-400">
             {tPropertyCategory(listing.property_category_name || listing.property_category)}
           </span>
         </div>
-        <h3 className="mt-0.5 line-clamp-1 text-sm font-bold text-text-primary">
+        <h3 className="mt-1 line-clamp-2 text-[15px] font-bold leading-tight text-text-primary">
           {listing.property_title}
         </h3>
-        <div className="mt-1 flex items-center gap-1 text-[11px] text-text-secondary">
-          <MapPin className="h-3 w-3 shrink-0 text-primary-500" />
+        <div className="mt-1.5 flex items-center gap-1 text-[12px] text-text-secondary">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-primary-500" />
           <span className="truncate">{listing.location_text}</span>
         </div>
-        <div className="mt-1.5 text-sm font-black text-primary-600 dark:text-primary-400">
+        <div className="mt-2 text-base font-black text-primary-600 dark:text-primary-400">
           {formatPrice(listing.price, listing.currency_code)}
         </div>
       </div>
@@ -94,9 +94,9 @@ function NearbyPropertyCard({ listing }: { listing: ExploreListing }) {
 
 function NearbyListingSkeleton() {
   return (
-    <div className="flex w-[280px] shrink-0 items-center gap-3 rounded-2xl border border-border bg-bg-card/40 p-2">
-      <div className="h-24 w-24 shrink-0 animate-pulse rounded-xl bg-secondary-100 dark:bg-secondary-800" />
-      <div className="flex flex-1 flex-col gap-2">
+    <div className="flex w-[310px] shrink-0 items-center gap-4 rounded-2xl border border-border bg-bg-card/40 p-2">
+      <div className="h-32 w-32 shrink-0 animate-pulse rounded-xl bg-secondary-100 dark:bg-secondary-800" />
+      <div className="flex flex-1 flex-col gap-2.5 py-2.5">
         <div className="h-3 w-16 animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
         <div className="h-4 w-full animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
         <div className="h-3 w-24 animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
@@ -167,7 +167,7 @@ function NearbyListings({ userLocation, isLocating }: { userLocation: { latitude
           Array.from({ length: 4 }).map((_, i) => <NearbyListingSkeleton key={i} />)
         ) : (
           listings.map((listing) => (
-            <div key={listing.id} className="w-[280px] shrink-0 sm:w-[320px]">
+            <div key={listing.id} className="w-[310px] shrink-0 sm:w-[350px]">
               <NearbyPropertyCard listing={listing} />
             </div>
           ))
@@ -229,7 +229,7 @@ function CategoryPropertiesSection({
           Array.from({ length: 3 }).map((_, i) => <NearbyListingSkeleton key={i} />)
         ) : (
           listings.map((listing) => (
-            <div key={listing.id} className="w-[280px] shrink-0 sm:w-[320px]">
+            <div key={listing.id} className="w-[310px] shrink-0 sm:w-[350px]">
               <NearbyPropertyCard listing={listing} />
             </div>
           ))
