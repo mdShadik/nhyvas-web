@@ -3,17 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ExploreListing, exploreService } from "@/services/apiService/explore";
 import { galliMapService } from "@/services/galliMap";
-import { SlidersHorizontal, Search } from "lucide-react";
+import { SlidersHorizontal, Search, ChevronDown, ArrowUpDown, ArrowUpWideNarrow, ArrowDownWideNarrow, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { useTranslation } from "react-i18next";
 import { ListingCard } from "@/components/explore/ListingCard";
+import { formatPrice } from "@/lib/formatPrice";
 import { SearchParamsProps } from "@/app/(pages)/explore/page";
 import { AiSearch } from "@/components/AiSearch/Aisearch";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -26,6 +28,8 @@ export default function ExplorePage({ searchParams }: Props) {
   const [draftFilters, setDraftFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | null>(null);
+  const [sortExpanded, setSortExpanded] = useState(false);
 
   const { isAuthenticated, profile, preferences, isLoading: authLoading } = useAuth();
   const isLoggedIn = isAuthenticated;
@@ -164,8 +168,29 @@ export default function ExplorePage({ searchParams }: Props) {
     queryFn: () => exploreService.getRecommendedListings(listingFilters),
   });
 
+  const sidebarRecommendationsQuery = useQuery({
+    queryKey: ["explore", "sidebar-recommendations", userLocation, preferences],
+    queryFn: () => exploreService.getRecommendedListings({
+      userLat: userLocation?.latitude,
+      userLng: userLocation?.longitude,
+      userRadiusKm: 10,
+      limit: 6,
+    }),
+    // Always fetch some defaults if location isn't available yet
+  });
+
   const listings = listingsQuery.data ?? [];
   const loading = listingsQuery.isLoading || listingsQuery.isFetching;
+
+  const displayedListings = useMemo(() => {
+    let result = [...listings];
+    if (sortBy === "price_asc") {
+      result.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price_desc") {
+      result.sort((a, b) => b.price - a.price);
+    }
+    return result;
+  }, [listings, sortBy]);
 
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -267,7 +292,6 @@ export default function ExplorePage({ searchParams }: Props) {
     setFiltersOpen(false);
   };
 
-  const displayedListings = listings;
   const isUsingAiResults = aiResponse !== null;
 
   // Helper to get labels for AI feedback
@@ -282,31 +306,149 @@ export default function ExplorePage({ searchParams }: Props) {
   };
 
   return (
-    <div className={`flex min-h-screen flex-col`}>
+    <div className={`flex min-h-screen flex-col bg-page`}>
+      {/* Mobile Sticky Filter/Sort Bar */}
+      <div className="sticky top-16 z-30 bg-page/95 backdrop-blur-md border-b border-border min-[748px]:hidden">
+        <div className="flex items-center justify-between p-4 gap-3">
+          <div
+            className={`flex items-center gap-2 transition-all duration-300 overflow-hidden ${
+              sortExpanded ? "flex-1" : "w-auto"
+            }`}
+          >
+            <button
+              onClick={() => setSortExpanded(!sortExpanded)}
+              className={`flex items-center gap-2 rounded-2xl border border-border bg-bg-card px-4 py-2.5 text-sm font-bold text-text-primary shadow-sm whitespace-nowrap transition-all ${
+                sortBy ? "border-primary-500/50 bg-primary-500/5" : ""
+              }`}
+            >
+              <ArrowUpDown className="h-4 w-4 text-primary-500" />
+              {sortExpanded ? "Sort" : sortBy ? (sortBy === "price_asc" ? "Low to High" : "High to Low") : "Sort By"}
+            </button>
 
-      <main className="flex w-full max-w-screen-2xl flex-1 gap-4 p-4 sm:p-6 lg:gap-6 lg:p-8 mx-auto">
-        {/* Main Content Area */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="mb-6 flex items-center justify-end sm:justify-between">
-            <div className="hidden sm:block">
-              <h1 className="text-3xl font-bold text-text-primary">
-                {isUsingAiResults ? t("explore.ai_results_title") : t("explore.title")}
-              </h1>
-              <p className="mt-1 text-text-secondary">
-                {t("explore.subtitle", { count: displayedListings.length })}
-              </p>
-            </div>
+            {sortExpanded && (
+              <div className="flex gap-2 items-center overflow-x-auto scrollbar-hide animate-in slide-in-from-left-4 duration-300 pr-2">
+                <button
+                  onClick={() => {
+                    setSortBy("price_asc");
+                    setSortExpanded(false);
+                  }}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold whitespace-nowrap transition-all ${
+                    sortBy === "price_asc"
+                      ? "border-primary-500 bg-primary-500/10 text-primary-600"
+                      : "border-border bg-bg-card text-text-secondary"
+                  }`}
+                >
+                  <ArrowUpWideNarrow className="h-3.5 w-3.5" />
+                  Low to High
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy("price_desc");
+                    setSortExpanded(false);
+                  }}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold whitespace-nowrap transition-all ${
+                    sortBy === "price_desc"
+                      ? "border-primary-500 bg-primary-500/10 text-primary-600"
+                      : "border-border bg-bg-card text-text-secondary"
+                  }`}
+                >
+                  <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+                  High to Low
+                </button>
+                {sortBy && (
+                  <button
+                    onClick={() => {
+                      setSortBy(null);
+                      setSortExpanded(false);
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-xs font-bold text-accent whitespace-nowrap transition-all"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {!sortExpanded && (
             <button
               type="button"
               onClick={() => {
                 setDraftFilters(filters);
                 setFiltersOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-(--surface) px-4 py-3 text-sm font-semibold text-text-primary shadow-sm transition hover:bg-(--surface)/80 min-[748px]:hidden"
+              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-bg-card px-4 py-2.5 text-sm font-bold text-text-primary shadow-sm transition-all active:scale-95"
             >
-              <SlidersHorizontal className="h-4 w-4 text-accent" />
+              <SlidersHorizontal className="h-4 w-4 text-primary-500" />
               {t("common.filters")}
             </button>
+          )}
+        </div>
+      </div>
+
+      <main className="flex w-full max-w-screen-2xl flex-1 gap-4 p-4 sm:p-6 lg:gap-6 lg:p-8 mx-auto">
+        {/* Main Content Area */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="sticky top-0 min-[748px]:top-24 z-20 mb-6 flex items-center justify-between bg-page/95 py-4 backdrop-blur-md min-[748px]:pb-6">
+            <div className="hidden sm:block">
+              <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">
+                {isUsingAiResults ? t("explore.ai_results_title") : t("explore.title")}
+              </h1>
+              <p className="mt-1 text-text-secondary font-medium">
+                {t("explore.subtitle", { count: displayedListings.length })}
+              </p>
+            </div>
+
+            {/* Desktop Sort Dropdown */}
+            <div className="hidden min-[748px]:flex items-center gap-3">
+              <div className="relative group">
+                <button className="flex items-center gap-2 rounded-2xl border border-border bg-bg-card px-4 py-3 text-sm font-bold text-text-primary hover:border-primary-500/50 transition-all hover:shadow-md">
+                  <ArrowUpDown className="h-4 w-4 text-primary-500" />
+                  {sortBy === "price_asc"
+                    ? "Price: Low to High"
+                    : sortBy === "price_desc"
+                      ? "Price: High to Low"
+                      : "Sort By Price"}
+                  <ChevronDown className="h-4 w-4 text-text-secondary group-hover:rotate-180 transition-transform" />
+                </button>
+                {/* Bridge to fix hover gap */}
+                <div className="absolute right-0 top-full w-full h-4 pointer-events-none group-hover:pointer-events-auto" />
+                <div className="absolute right-0 top-[calc(100%+8px)] w-56 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50">
+                  <div className="rounded-2xl border border-border bg-bg-card shadow-2xl p-1.5 backdrop-blur-xl">
+                    <button
+                      onClick={() => setSortBy("price_asc")}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                        sortBy === "price_asc"
+                          ? "bg-primary-500/10 text-primary-600"
+                          : "hover:bg-secondary-50 dark:hover:bg-secondary-800 text-text-secondary"
+                      }`}
+                    >
+                      <ArrowUpWideNarrow className="h-4 w-4" />
+                      Price: Low to High
+                    </button>
+                    <button
+                      onClick={() => setSortBy("price_desc")}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                        sortBy === "price_desc"
+                          ? "bg-primary-500/10 text-primary-600"
+                          : "hover:bg-secondary-50 dark:hover:bg-secondary-800 text-text-secondary"
+                      }`}
+                    >
+                      <ArrowDownWideNarrow className="h-4 w-4" />
+                      Price: High to Low
+                    </button>
+                    {sortBy && (
+                      <button
+                        onClick={() => setSortBy(null)}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-accent hover:bg-accent/5 transition-all border-t border-border mt-1"
+                      >
+                        Clear Sorting
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {loading && !isUsingAiResults ? (
@@ -325,26 +467,79 @@ export default function ExplorePage({ searchParams }: Props) {
             <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-(--card-bg) p-12 text-center">
               <Search className="mb-4 h-12 w-12 text-muted" />
               <h3 className="text-lg font-semibold text-text-primary">{t("explore.no_properties")}</h3>
-              <p className="mt-2 max-w-sm text-text-secondary">
-                {t("explore.no_properties_desc")}
-              </p>
+              <p className="mt-2 max-w-sm text-text-secondary">{t("explore.no_properties_desc")}</p>
             </div>
           )}
         </div>
 
-        {/* Right Sidebar - Filters */}
-        <aside className="mt-21 hidden w-[260px] shrink-0 min-[748px]:block md:w-[280px] lg:w-[320px] xl:w-[360px] 2xl:w-[400px]">
-          <div className="sticky top-6 rounded-3xl border border-border bg-page-bg-from p-4 shadow-sm lg:p-6">
-            <ExploreFiltersPanel
-              value={draftFilters}
-              onChange={handleFilterChange}
-              onApply={handleApplyFilters}
-              onReset={(reset) => {
-                setDraftFilters(reset);
-                setFilters(reset);
-                setAiResponse(null);
-              }}
-            />
+        {/* Right Sidebar - Filters & Recommendations */}
+        <aside className="hidden w-[260px] shrink-0 min-[748px]:block md:w-[280px] lg:w-[320px] xl:w-[360px] 2xl:w-[400px]">
+          <div className="sticky top-24 flex flex-col gap-6">
+            <div className="rounded-3xl border border-border bg-page-bg-from p-4 shadow-sm lg:p-6">
+              <ExploreFiltersPanel
+                value={draftFilters}
+                onChange={handleFilterChange}
+                onApply={handleApplyFilters}
+                onReset={(reset) => {
+                  setDraftFilters(reset);
+                  setFilters(reset);
+                  setAiResponse(null);
+                }}
+              />
+            </div>
+
+            <div className="rounded-3xl border border-border bg-bg-card/40 p-4 shadow-sm lg:p-6">
+              <h3 className="text-lg font-black text-text-primary mb-5 tracking-tight">
+                Recommended For You
+              </h3>
+              <div className="flex flex-col gap-5">
+                {sidebarRecommendationsQuery.isLoading ? (
+                  [1, 2, 3].map((n) => (
+                    <div key={n} className="flex gap-3 animate-pulse">
+                      <div className="h-16 w-16 shrink-0 rounded-xl bg-secondary-100 dark:bg-secondary-800" />
+                      <div className="flex-1 space-y-2 py-1">
+                        <div className="h-3 w-3/4 rounded bg-secondary-100 dark:bg-secondary-800" />
+                        <div className="h-3 w-1/2 rounded bg-secondary-100 dark:bg-secondary-800" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  sidebarRecommendationsQuery.data?.slice(0, 5).map((listing) => (
+                    <Link
+                      key={listing.id}
+                      href={{ pathname: "/property", query: { id: listing.id } }}
+                      className="group flex gap-3 items-center"
+                    >
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-secondary-100 dark:bg-secondary-800">
+                        {listing.thumbnail_url ? (
+                          <img
+                            src={listing.thumbnail_url}
+                            alt={listing.property_title}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-115"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-secondary-100 dark:bg-secondary-800">
+                            <Search className="h-6 w-6 text-text-secondary/20" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-text-primary truncate transition-colors group-hover:text-primary-600">
+                          {listing.property_title}
+                        </h4>
+                        <div className="flex items-center gap-1 text-[11px] text-text-secondary mt-0.5">
+                          <MapPin className="h-3 w-3 text-primary-500" />
+                          <span className="truncate">{listing.location_text}</span>
+                        </div>
+                        <p className="text-sm font-black text-primary-600 dark:text-primary-400 mt-1">
+                          {formatPrice(listing.price, listing.currency_code)}
+                        </p>
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </aside>
       </main>

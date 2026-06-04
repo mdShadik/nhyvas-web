@@ -49,6 +49,7 @@ export function AddressMapPicker({
   className,
   fullScreen = false,
   noPanZoom = false,
+  noDrag = false,
 }: {
   value: Coordinate | null;
   onChange: (coord: Coordinate) => void;
@@ -57,6 +58,7 @@ export function AddressMapPicker({
   className?: string;
   fullScreen?: boolean;
   noPanZoom?: boolean;
+  noDrag?: boolean;
 }) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -125,7 +127,7 @@ export function AddressMapPicker({
       ]);
 
       const marker = new maplibregl.Marker({
-        draggable: !noPanZoom,
+        draggable: !noPanZoom && !noDrag,
       })
         .setLngLat([initialCenter.longitude, initialCenter.latitude])
         .addTo(map);
@@ -141,7 +143,7 @@ export function AddressMapPicker({
         onChangeRef(next);
       };
 
-      if (!noPanZoom) {
+      if (!noPanZoom && !noDrag) {
         marker.on("dragend", emitCenter);
       }
       map.on("load", emitCenter);
@@ -177,6 +179,13 @@ export function AddressMapPicker({
       duration: 600,
     });
   }, [value?.latitude, value?.longitude, value]);
+
+  useEffect(() => {
+    const marker = markerRef.current;
+    if (marker) {
+      marker.setDraggable(!noPanZoom && !noDrag);
+    }
+  }, [noDrag, noPanZoom]);
 
   const insideNepal = value ? isInsideNepal(value) : true;
 

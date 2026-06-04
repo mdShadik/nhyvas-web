@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { LoginModal } from "@/components/auth/LoginModal";
+import { useAddPropertyStore } from "@/stores/addPropertyStore";
 
 interface ListPropertyButtonProps {
   className?: string;
@@ -19,6 +20,8 @@ export function ListPropertyButton({ className, children }: ListPropertyButtonPr
   const { isAuthenticated, profile, isLoading: authLoading } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
 
+  const { resetStore } = useAddPropertyStore();
+
   const handlePress = async () => {
     if (!isAuthenticated) {
       setLoginOpen(true);
@@ -28,6 +31,7 @@ export function ListPropertyButton({ className, children }: ListPropertyButtonPr
     if (!profile) return;
 
     if (profile.landlord_verified) {
+      resetStore();
       router.push("/add-property");
     } else {
       router.push("/profile/landlord-verify");

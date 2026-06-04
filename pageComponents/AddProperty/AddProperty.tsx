@@ -38,6 +38,8 @@ import { SearchParamsProps } from "@/app/(pages)/add-property/page";
 import { LocationSearch } from "@/components/address/LocationSearch";
 import { AddressMapPicker } from "@/components/address/AddressMapPicker";
 import { useAuth } from "@/context/AuthContext";
+import { galliMapService } from "@/services/galliMap";
+import { useAddPropertyStore, type AddPropertyFormValues, type AddPropertyLocation } from "@/stores/addPropertyStore";
 
 function parseOptionalNumber(value: string): number | null {
   const normalized = value.trim();
@@ -89,6 +91,20 @@ export default function AddPropertyPage({ searchParams }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
 
+  const currentStep = useAddPropertyStore((s) => s.currentStep);
+  const setStep = useAddPropertyStore((s) => s.setStep);
+  const storedFormValues = useAddPropertyStore((s) => s.formValues);
+  const updateForm = useAddPropertyStore((s) => s.updateForm);
+  const locationMode = useAddPropertyStore((s) => s.locationMode);
+  const setLocationMode = useAddPropertyStore((s) => s.setLocationMode);
+  const selectedAddressId = useAddPropertyStore((s) => s.selectedAddressId);
+  const setSelectedAddressId = useAddPropertyStore((s) => s.setSelectedAddressId);
+  const prefilledLocation = useAddPropertyStore((s) => s.prefilledLocation);
+  const setPrefilledLocation = useAddPropertyStore((s) => s.setPrefilledLocation);
+  const existingPhotoUrls = useAddPropertyStore((s) => s.existingPhotoUrls);
+  const setExistingPhotoUrls = useAddPropertyStore((s) => s.setExistingPhotoUrls);
+  const resetStore = useAddPropertyStore((s) => s.resetStore);
+
   const listingId =
     (searchParams.listingId && searchParams.listingId.trim()) || "";
   const initialCategoryId = (searchParams.categoryId ?? "").trim() || "";
@@ -97,27 +113,26 @@ export default function AddPropertyPage({ searchParams }: Props) {
     useAddressBook();
 
   const totalSteps = 3;
-  const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPrefilling, setIsPrefilling] = useState(Boolean(listingId));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([]);
   const [prefillDetails, setPrefillDetails] = useState<PrefillDetails | null>(
     null,
   );
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null,
-  );
-  const [prefilledLocation, setPrefilledLocation] = useState<{
-    label: string;
-    latitude: number;
-    longitude: number;
-  } | null>(null);
   const [locationTouched, setLocationTouched] = useState(false);
 
-  const [locationMode, setLocationMode] = useState<"existing" | "search">(
-    addressEntries.length > 0 ? "existing" : "search"
-  );
+  useEffect(() => {
+    if (!listingId && addressEntries.length === 0 && locationMode === "existing") {
+      setLocationMode("search");
+    }
+  }, [addressEntries.length, listingId, locationMode, setLocationMode]);
+
+  useEffect(() => {
+    if (listingId) {
+      resetStore();
+      setStep(1);
+    }
+  }, [listingId, resetStore, setStep]);
 
   const {
     register,
@@ -131,56 +146,19 @@ export default function AddPropertyPage({ searchParams }: Props) {
   } = useForm<FormValues>({
     mode: "onTouched",
     reValidateMode: "onChange",
-    defaultValues: {
-      categoryId: initialCategoryId,
-      subcategoryId: "",
-      propertyTitle: "",
-      description: "",
-      price: "",
-      isNegotiable: true,
-      totalFloor: "",
-      propertyFloorNo: "",
-      totalAreaSqft: "",
-      carpetAreaSqft: "",
-      landlordPhone: "",
-      amenityIds: [],
-    },
+    defaultValues: useMemo(() => ({
+      ...storedFormValues,
+      categoryId: initialCategoryId || storedFormValues.categoryId,
+    }), [storedFormValues, initialCategoryId]),
   });
 
-  // Persist form state to sessionStorage
+  // Sync form values to Zustand store as they change
   const allValues = watch();
   useEffect(() => {
-    if (!listingId && Object.keys(allValues).length > 0) {
-      const stateToSave = {
-        ...allValues,
-        currentStep,
-        locationMode,
-        selectedAddressId,
-        prefilledLocation,
-      };
-      sessionStorage.setItem("nhyvas.addPropertyForm", JSON.stringify(stateToSave));
+    if (!listingId) {
+      updateForm(allValues);
     }
-  }, [allValues, currentStep, locationMode, selectedAddressId, prefilledLocation, listingId]);
-
-  // Restore form state from sessionStorage
-  useEffect(() => {
-    if (listingId) return;
-    const saved = sessionStorage.getItem("nhyvas.addPropertyForm");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const { currentStep: savedStep, locationMode: savedMode, selectedAddressId: savedAddrId, prefilledLocation: savedLoc, ...formValues } = parsed;
-        
-        reset(formValues);
-        if (savedStep) setCurrentStep(savedStep);
-        if (savedMode) setLocationMode(savedMode);
-        if (savedAddrId) setSelectedAddressId(savedAddrId);
-        if (savedLoc) setPrefilledLocation(savedLoc);
-      } catch (e) {
-        console.error("Failed to restore form state", e);
-      }
-    }
-  }, [listingId, reset]);
+  }, [allValues, updateForm, listingId]);
 
   const categoriesQuery = useQuery({
     queryKey: ["explore", "categories"],
@@ -416,7 +394,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
           title: t("common.error", "Error"),
           message,
         });
-        router.replace("/my-ads");
+        router.replace("/profile/my-ads");
       } finally {
         setIsPrefilling(false);
       }
@@ -553,7 +531,8 @@ export default function AddPropertyPage({ searchParams }: Props) {
       });
 
       sessionStorage.removeItem("nhyvas.addPropertyForm");
-      router.replace("/");
+      resetStore();
+      router.replace("/profile/my-ads");
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Submission failed.";
@@ -606,8 +585,21 @@ export default function AddPropertyPage({ searchParams }: Props) {
       }
     }
 
-    if (currentStep < totalSteps) setCurrentStep((s) => s + 1);
-    else void handleSubmit(onSubmit)();
+    if (currentStep < totalSteps) {
+      setStep(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      void handleSubmit(onSubmit)();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep === 1) {
+      router.push("/profile/my-ads");
+    } else {
+      setStep(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   return (
@@ -621,7 +613,7 @@ export default function AddPropertyPage({ searchParams }: Props) {
           <div className="mb-4 flex items-center gap-3 text-sm text-text-tertiary">
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={handleBack}
               className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-text-secondary hover:bg-bg-input hover:text-text-primary transition"
               aria-label={t("common.back", "Back")}
             >
@@ -1212,15 +1204,36 @@ export default function AddPropertyPage({ searchParams }: Props) {
                     <div className="h-80 w-full">
                       <AddressMapPicker 
                         value={selectedLocation}
-                        onChange={(next) => {
+                        onChange={async (next) => {
                           if (locationMode === "search") {
-                            setPrefilledLocation((prev) => ({
+                            setPrefilledLocation((prev: AddPropertyLocation) => ({
                               ...next,
                               label: prev?.label || "Selected location",
                             }));
+
+                            // Perform reverse geocoding to update the label based on coordinates
+                            try {
+                              const data = await galliMapService.reverseGeocode(next.latitude, next.longitude);
+                              if (data) {
+                                const parts = [
+                                  data.place,
+                                  data.ward ? `${t("common.ward", "Ward")} ${data.ward}` : "",
+                                  data.municipality,
+                                  data.district
+                                ].filter(Boolean);
+                                
+                                if (parts.length > 0) {
+                                  const newLabel = parts.join(", ");
+                                  setPrefilledLocation(prev => prev ? { ...prev, label: newLabel } : null);
+                                }
+                              }
+                            } catch (err) {
+                              console.error("Reverse geocode failed:", err);
+                            }
                           }
                         }}
                         noPanZoom={false}
+                        noDrag={locationMode === "existing"}
                         className="h-full border-0 rounded-none"
                       />
                     </div>
@@ -1311,19 +1324,28 @@ export default function AddPropertyPage({ searchParams }: Props) {
                 <label className="block text-sm font-semibold text-text-secondary">
                   {t("listing_media.select", "Select photos")}
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    setSelectedFiles((prev) =>
-                      [...prev, ...files].slice(0, 10),
-                    );
-                    e.target.value = "";
-                  }}
-                  className="border border-primary-400 p-4 pr-0 rounded-full "
-                />
+                <div className="relative group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      setSelectedFiles((prev) =>
+                        [...prev, ...files].slice(0, 10),
+                      );
+                      e.target.value = "";
+                    }}
+                    className="block w-full text-sm text-text-tertiary
+                      file:mr-4 file:py-2.5 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-xs file:font-bold file:uppercase file:tracking-wider
+                      file:bg-linear-to-br file:from-primary-500 file:to-tertiary-600
+                      file:text-white file:shadow-md
+                      hover:file:opacity-90 file:cursor-pointer
+                      border border-border rounded-2xl p-2 bg-bg-input/50"
+                  />
+                </div>
                 <div className="text-xs text-text-tertiary">
                   {t(
                     "listing_media.tip_cover",
@@ -1342,42 +1364,45 @@ export default function AddPropertyPage({ searchParams }: Props) {
                     )}
                     )
                   </div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                     {existingPhotoUrls.map((url, idx) => (
                       <div
                         key={`${url}-${idx}`}
-                        className="relative overflow-hidden rounded-2xl border border-border bg-bg-input"
+                        className="group relative aspect-square overflow-hidden rounded-2xl border border-border bg-bg-input shadow-sm"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={url}
                           alt=""
-                          className="h-28 w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
                         <button
                           type="button"
                           onClick={() =>
-                            setExistingPhotoUrls((prev) =>
-                              prev.filter((_, i) => i !== idx),
+                            setExistingPhotoUrls(
+                              existingPhotoUrls.filter((_, i) => i !== idx),
                             )
                           }
-                          className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
+                          className="absolute right-2 top-2 h-7 w-7 rounded-full bg-black/60 text-white backdrop-blur-md flex items-center justify-center hover:bg-red-500 transition-colors"
+                          title={t("common.remove", "Remove")}
                         >
-                          {t("common.remove", "Remove")}
+                          <span className="text-lg leading-none">×</span>
                         </button>
                       </div>
                     ))}
                     {selectedFiles.map((file, idx) => (
                       <div
                         key={`${file.name}-${idx}`}
-                        className="relative overflow-hidden rounded-2xl border border-border bg-bg-input"
+                        className="group relative aspect-square overflow-hidden rounded-2xl border border-border bg-bg-input shadow-sm"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={URL.createObjectURL(file)}
                           alt=""
-                          className="h-28 w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
                         <button
                           type="button"
                           onClick={() =>
@@ -1385,9 +1410,10 @@ export default function AddPropertyPage({ searchParams }: Props) {
                               prev.filter((_, i) => i !== idx),
                             )
                           }
-                          className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
+                          className="absolute right-2 top-2 h-7 w-7 rounded-full bg-black/60 text-white backdrop-blur-md flex items-center justify-center hover:bg-red-500 transition-colors"
+                          title={t("common.remove", "Remove")}
                         >
-                          {t("common.remove", "Remove")}
+                          <span className="text-lg leading-none">×</span>
                         </button>
                       </div>
                     ))}
