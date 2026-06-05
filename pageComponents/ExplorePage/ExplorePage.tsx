@@ -16,6 +16,8 @@ import { AiSearch } from "@/components/AiSearch/Aisearch";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import { TourGuide } from "@/components/common/TourGuide";
+import { Step } from "react-joyride";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -305,8 +307,29 @@ export default function ExplorePage({ searchParams }: Props) {
     return sub ? sub.name : null;
   };
 
+  const tourSteps: Step[] = [
+    {
+      target: "#tour-sort, #tour-sort-mobile",
+      title: t("tour.steps.sort.title"),
+      content: t("tour.steps.sort.content"),
+      skipBeacon: true,
+    },
+    {
+      target: "#tour-filter, #tour-filter-mobile",
+      title: t("tour.steps.filter.title"),
+      content: t("tour.steps.filter.content"),
+    },
+    {
+      target: "#tour-ai-search",
+      title: t("tour.steps.ai_search.title"),
+      content: t("tour.steps.ai_search.content"),
+    },
+  ];
+
   return (
     <div className={`flex min-h-screen flex-col bg-page`}>
+      <TourGuide steps={tourSteps} tourKey="explore_page_tour" />
+
       {/* Mobile Sticky Filter/Sort Bar */}
       <div className="sticky top-16 z-30 bg-page/95 backdrop-blur-md border-b border-border min-[748px]:hidden">
         <div className="flex items-center justify-between p-4 gap-3">
@@ -316,6 +339,7 @@ export default function ExplorePage({ searchParams }: Props) {
             }`}
           >
             <button
+              id="tour-sort-mobile"
               onClick={() => setSortExpanded(!sortExpanded)}
               className={`flex items-center gap-2 rounded-2xl border border-border bg-bg-card px-4 py-2.5 text-sm font-bold text-text-primary shadow-sm whitespace-nowrap transition-all ${
                 sortBy ? "border-primary-500/50 bg-primary-500/5" : ""
@@ -372,6 +396,7 @@ export default function ExplorePage({ searchParams }: Props) {
 
           {!sortExpanded && (
             <button
+              id="tour-filter-mobile"
               type="button"
               onClick={() => {
                 setDraftFilters(filters);
@@ -401,7 +426,7 @@ export default function ExplorePage({ searchParams }: Props) {
 
             {/* Desktop Sort Dropdown */}
             <div className="hidden min-[748px]:flex items-center gap-3">
-              <div className="relative group">
+              <div className="relative group" id="tour-sort">
                 <button className="flex items-center gap-2 rounded-2xl border border-border bg-bg-card px-4 py-3 text-sm font-bold text-text-primary hover:border-primary-500/50 transition-all hover:shadow-md">
                   <ArrowUpDown className="h-4 w-4 text-primary-500" />
                   {sortBy === "price_asc"
@@ -475,7 +500,7 @@ export default function ExplorePage({ searchParams }: Props) {
         {/* Right Sidebar - Filters & Recommendations */}
         <aside className="hidden w-[260px] shrink-0 min-[748px]:block md:w-[280px] lg:w-[320px] xl:w-[360px] 2xl:w-[400px]">
           <div className="sticky top-24 flex flex-col gap-6">
-            <div className="rounded-3xl border border-border bg-page-bg-from p-4 shadow-sm lg:p-6">
+            <div className="rounded-3xl border border-border bg-page-bg-from p-4 shadow-sm lg:p-6" id="tour-filter">
               <ExploreFiltersPanel
                 value={draftFilters}
                 onChange={handleFilterChange}
@@ -572,6 +597,7 @@ export default function ExplorePage({ searchParams }: Props) {
       />
 
       <AiSearch
+        id="tour-ai-search"
         open={aiSearchOpen}
         onOpenChange={(open) => {
           if (open && !isLoggedIn) {

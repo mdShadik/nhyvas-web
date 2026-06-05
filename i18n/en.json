@@ -180,6 +180,27 @@
     "map_hint": "Drag the map to pick a location in Nepal.",
     "nepal_only": "Please pick a location inside Nepal."
   },
+  "tour": {
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "finish": "Finish",
+    "close": "Close",
+    "steps": {
+      "sort": {
+        "title": "Sort Listings",
+        "content": "Easily sort properties by price to find the best deals or luxury options."
+      },
+      "filter": {
+        "title": "Refine Your Search",
+        "content": "Use filters to narrow down properties by category, price range, and amenities."
+      },
+      "ai_search": {
+        "title": "AI-Powered Search",
+        "content": "Search naturally! Just tell us what you're looking for, like '3 bedroom flat in Baneshwor'."
+      }
+    }
+  },
   "explore": {
     "title": "Explore Properties",
     "ai_results_title": "AI Search Results",

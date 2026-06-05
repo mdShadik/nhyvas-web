@@ -46,6 +46,7 @@ export interface AiSearchProps {
   buttonLabel?: string;
   buttonClassName?: string;
   panelClassName?: string;
+  id?: string;
   minQueryLength?: number;
   showMic?: boolean;
   onMicPress?: () => void;
@@ -350,6 +351,7 @@ export function AiSearch({
   buttonLabel = "AI Search",
   buttonClassName,
   panelClassName,
+  id,
   minQueryLength = 2,
   showMic = false,
   onMicPress,
@@ -612,6 +614,7 @@ export function AiSearch({
             onPointerLeave={() => setIsHovered(false)}
           >
             <motion.button
+              id={id}
               ref={fabRef}
               type="button"
               disabled={disabled}
