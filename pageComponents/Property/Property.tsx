@@ -120,11 +120,54 @@ export default function PropertyPage({searchParams}: Props) {
   const canPayForListing = isOwner && listingStatus === "awaiting_payment";
   const canUsePublicActions = !isOwner && isApprovedListing;
 
+  const { data: hasViewedData } = useQuery({
+    queryKey: ["listing-has-viewed", id, currentUserId],
+    queryFn: () => activityService.hasViewedListing(id),
+    enabled: Boolean(id && currentUserId && listing && !isOwner),
+  });
+
   useEffect(() => {
-    if (id && listing && !isOwner) {
-      void activityService.recordPropertyView(id);
+    if (process.env.NODE_ENV === "development") {
+      console.log("[PropertyPage] View Debug:", {
+        id,
+        listingStatus: listing?.status,
+        isOwner,
+        currentUserId,
+        hasViewedData,
+      });
     }
-  }, [id, listing, isOwner]);
+
+    if (id && listing && !isOwner) {
+      if (currentUserId && hasViewedData === false) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[PropertyPage] Recording unique view for logged-in user...");
+        }
+        // Optimistically increment view count in cache for unique logged-in view
+        queryClient.setQueryData(["listing-details", id], (old: any) => {
+          if (!old || !old.listing) return old;
+          return {
+            ...old,
+            listing: {
+              ...old.listing,
+              view_count: (Number(old.listing.view_count) || 0) + 1,
+            },
+          };
+        });
+        
+        // Mark as viewed in cache immediately
+        queryClient.setQueryData(["listing-has-viewed", id, currentUserId], true);
+        
+        void activityService.recordPropertyView(id);
+      } else if (!currentUserId) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[PropertyPage] Recording anonymous view...");
+        }
+        // Still record for anonymous (though backend currently ignores it, 
+        // this keeps it ready if we enable anonymous tracking)
+        void activityService.recordPropertyView(id);
+      }
+    }
+  }, [id, listing, isOwner, currentUserId, hasViewedData, queryClient]);
 
   const hasMap = Boolean(listing?.latitude != null && listing?.longitude != null);
   const lat = listing?.latitude != null ? Number(listing.latitude) : NaN;

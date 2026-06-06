@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { activityService } from "@/services/apiService/activity";
 import { useTranslation } from "react-i18next";
@@ -32,6 +32,12 @@ export default function ProfileRecentlyViewedPage() {
   });
 
   const allRows = recentlyQuery.data ?? [];
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[RecentlyViewedPage] Data:", allRows);
+    }
+  }, [allRows]);
 
   const filteredRows = useMemo(() => {
     if (dateFilter === "all") return allRows;

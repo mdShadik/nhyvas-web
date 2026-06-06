@@ -44,16 +44,16 @@ export const activityService = {
     return viewers ?? [];
   },
 
-  async recordPropertyView(propertyId: string): Promise<void> {
+  async recordPropertyView(listingId: string): Promise<void> {
     await requestJson("/api/activity/record-view", {
       method: "POST",
-      body: JSON.stringify({ propertyId, source: "property_details" }),
+      body: JSON.stringify({ listingId, source: "property_details" }),
     });
   },
-  async hasViewedListing(propertyId: string): Promise<boolean> {
+  async hasViewedListing(listingId: string): Promise<boolean> {
     const { viewed } = await requestJson<{ viewed: boolean }>("/api/activity/has-viewed", {
       method: "POST",
-      body: JSON.stringify({ propertyId }),
+      body: JSON.stringify({ listingId }),
     });
     return Boolean(viewed);
   },
