@@ -659,6 +659,8 @@ export default function ExplorePage({ searchParams }: Props) {
           title={t("explore.refine_search")}
           description={t("explore.apply_filters_desc")}
           onClose={() => setFiltersOpen(false)}
+          snapPoints={[0, 1]}
+          initialSnap={1}
         >
           <ExploreFiltersPanel
             value={draftFilters}

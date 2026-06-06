@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, MapPin, Loader2 } from "lucide-react";
+import { Search, MapPin, Loader2, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,10 +91,9 @@ export function LocationSearch({ onSelect, currentCoord, className }: LocationSe
         <Button 
           onClick={handleSearch} 
           disabled={isSearching || !query.trim()}
-          className="rounded-2xl shrink-0"
+          className="rounded-2xl shrink-0 w-12 h-12 p-0 bg-linear-to-br from-tertiary-500 to-primary-500 hover:opacity-90 border-0 transition-opacity"
         >
-          <Search className="h-4 w-4 mr-2" />
-          {t("common.search", "Search")}
+          <ArrowRight className="h-5 w-5 text-white" />
         </Button>
       </div>
 

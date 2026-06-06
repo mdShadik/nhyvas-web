@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import {
   ChevronDown,
   MapPin,
@@ -251,69 +250,56 @@ export function ExploreFiltersPanel({
   }, [categories, priceConfig, subcategories, value]);
 
   return (
-    <motion.aside
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    <aside
       className={`w-full shrink-0 ${className ?? ""}`}
     >
-      <div className="lg:sticky lg:top-24">
-        <div className="flex flex-col lg:h-full lg:max-h-[calc(100dvh-6rem)] lg:overflow-hidden bg-page-bg-from shadow-[0_18px_55px_-30px_rgba(15,23,42,0.45)] dark:shadow-[0_18px_55px_-30px_rgba(2,6,23,0.7)]">
-          {/* Header */}
-          <div className="relative border-b border-border/70 px-5 py-5">
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-primary-500/5 via-transparent to-tertiary-500/5" />
-
-            <div className="relative flex items-start gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary-100 text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-                <SlidersHorizontal className="h-5 w-5" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-text-tertiary">
-                  {t("explore.explore_filters", "Explore filters")}
-                </p>
-                <h2 className="mt-1 text-lg font-semibold text-text-primary">
-                  {t("explore.refine_search", "Refine search")}
-                </h2>
-                <p className="mt-1 text-sm text-text-secondary">
-                  {t("explore.narrow_results", "Narrow results by location, price, and amenities.")}
-                </p>
-              </div>
+      <div className="lg:sticky lg:top-24 h-full">
+        <div className="flex flex-col h-full max-h-[calc(100vh-4rem)] lg:max-h-[calc(100dvh-6rem)] overflow-hidden bg-page-bg-from">
+          {/* Header - Simplified */}
+          <div className="sticky top-0 z-10 border-b border-border/70 bg-page-bg-from px-5 py-4 shrink-0">
+            <div className="flex items-center justify-between mb-4">
+               <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-500/10 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400">
+                    <SlidersHorizontal className="h-4.5 w-4.5" />
+                  </div>
+                  <h2 className="text-lg font-black text-text-primary tracking-tight">
+                    {t("explore.filters", "Filters")}
+                  </h2>
+               </div>
+               {activeCount > 0 && (
+                 <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-primary-500 px-1.5 text-[11px] font-black text-white shadow-sm">
+                    {activeCount}
+                 </span>
+               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Pill className="bg-primary-100 text-primary-700 dark:bg-primary-900/35 dark:text-primary-200">
-                {activeCount} {t("common.active", "active")}
-              </Pill>
-
+            <div className="flex flex-wrap items-center gap-2">
               {activeChips.length ? (
                 activeChips.map((chip) => (
                   <Pill
                     key={chip.key}
-                    className="bg-secondary-100 text-text-secondary dark:bg-secondary-800"
+                    className="bg-bg-card text-text-secondary dark:bg-secondary-800 border border-border/60 shadow-xs"
                   >
                     {chip.label}
                   </Pill>
                 ))
               ) : (
-                <Pill className="bg-secondary-100 text-text-secondary dark:bg-secondary-800">
-                  {t("explore.all_filters_open", "All filters open")}
-                </Pill>
+                <p className="text-xs text-text-tertiary font-medium">
+                  {t("explore.showing_all_results", "Showing all results")}
+                </p>
               )}
             </div>
           </div>
 
           {/* Scrollable body */}
-          <div className="flex-1 px-5 py-5 lg:overflow-y-auto">
+          <div className="flex-1 px-5 py-5 overflow-y-auto overscroll-contain scrollbar-hide">
             <div className="space-y-6">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-text-secondary">
                   {t("explore.location", "Location")}
                 </label>
                 {value.locationNode ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
+                  <div
                     className="rounded-2xl border border-border bg-bg-input px-4 py-3 shadow-sm"
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -341,7 +327,7 @@ export function ExploreFiltersPanel({
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 ) : (
                   <LocationSearch 
                     onSelect={(coord, label) => {
@@ -474,11 +460,13 @@ export function ExploreFiltersPanel({
                   })
                 }
               />
+              {/* Spacer for bottom sticky footer on mobile */}
+              <div className="h-4 lg:hidden" />
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="border-t border-border bg-bg-card px-5 py-4">
+          {/* Footer - Fixed at bottom */}
+          <div className="sticky bottom-[70px] z-10 border-t border-border bg-bg-card px-5 py-4 shrink-0 pb-[max(env(safe-area-inset-bottom),1rem)]">
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-sm text-text-tertiary">
                 <Sparkles className="h-4 w-4 text-primary-500" />
@@ -486,10 +474,8 @@ export function ExploreFiltersPanel({
               </div>
 
               <div className="flex gap-3">
-                <motion.button
+                <button
                   type="button"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     const reset: FilterState = {
                       ...EMPTY_FILTERS,
@@ -499,26 +485,24 @@ export function ExploreFiltersPanel({
                     onChange(reset);
                     onReset(reset);
                   }}
-                  className="inline-flex flex-1 items-center justify-center rounded-full border border-border bg-bg-input px-4 py-3 text-sm font-semibold text-text-primary transition hover:border-primary-200 hover:dark:border-tertiary-700 hover:bg-primary-50 hover:dark:bg-tertiary-500/30"
+                  className="inline-flex flex-1 items-center justify-center rounded-full border border-border bg-bg-input px-4 py-3 text-sm font-semibold text-text-primary transition active:scale-[0.98] hover:border-primary-200 hover:dark:border-tertiary-700 hover:bg-primary-50 hover:dark:bg-tertiary-500/30"
                 >
                   {t("explore.reset", "Reset")}
-                </motion.button>
+                </button>
 
-                <motion.button
+                <button
                   type="button"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.98 }}
                   onClick={onApply}
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-linear-to-br hover:from-tertiary-500 hover:to-primary-500 from-primary-500 via-primary-500 to-tertiary-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-400"
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all active:scale-[0.98] hover:shadow-md"
                 >
                   {t("explore.apply_filters", "Apply Filters")}
-                </motion.button>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </motion.aside>
+    </aside>
   );
 }
 

@@ -44,6 +44,7 @@ export function MobileBottomSheet({
       disableDismiss={disableDismiss}
       snapPoints={snapPoints}
       initialSnap={initialSnap}
+      springConfig={{ stiffness: 350, damping: 32, mass: 0.5 }}
       onSnap={(index) => {
         // If we snap to a point below minSnap (usually 0), snap back to minSnap
         const snapped = snapPoints[index];
@@ -59,7 +60,7 @@ export function MobileBottomSheet({
       {modal && (
         <Sheet.Backdrop
           onTap={onClose}
-          className="bg-slate-950/55!"
+          className="bg-slate-950/40! backdrop-blur-[1px]!"
         />
       )}
 
@@ -70,13 +71,14 @@ export function MobileBottomSheet({
           "rounded-t-[28px]!",
           "shadow-2xl!",
           "overflow-hidden!",
+          "will-change-transform!",
           !modal && "pointer-events-auto!"
         )}
       >
         <Sheet.Header
           className={cn(
             "bg-bg-page!",
-            "border-b! !borde-border",
+            "border-b! border-border/50!",
             "px-4! pt-2.5! pb-3!"
           )}
         >
@@ -84,8 +86,8 @@ export function MobileBottomSheet({
           <div
             className={cn(
               "mx-auto mb-2.5",
-              "h-1.25px w-11 rounded-full",
-              "bg-bg-page"
+              "h-1.5 w-12 rounded-full",
+              "bg-secondary-200 dark:bg-secondary-800"
             )}
           />
 
@@ -124,7 +126,7 @@ export function MobileBottomSheet({
         </Sheet.Header>
 
         <Sheet.Content
-          className="bg-linear-to-br! dark:from-bg-page dark:via-primary-900/10 dark:to-tertiary-500/20 to-tertiary-50"
+          className="bg-bg-page!"
         >
             {children}
         </Sheet.Content>
