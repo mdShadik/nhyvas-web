@@ -21,6 +21,7 @@ import { getUnreadCount } from "@/services/notifications";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { LoginModal } from "@/components/auth/LoginModal";
+import { NavbarSearch } from "./NavbarSearch";
 
 export default function LoginButton({
   loginText,
@@ -157,6 +158,8 @@ export function MobileTopBar() {
                 ) : null}
               </button>
 
+              <NavbarSearch />
+
               <MobileBottomSheet
                 open={notifOpen}
                 title=""
@@ -167,10 +170,13 @@ export function MobileTopBar() {
               </MobileBottomSheet>
             </>
           ) : (
-            <LoginButton
-              loginText={t("common.login")}
-              onClick={() => setLoginOpen(true)}
-            />
+            <div className="flex items-center gap-2">
+              <NavbarSearch />
+              <LoginButton
+                loginText={t("common.login")}
+                onClick={() => setLoginOpen(true)}
+              />
+            </div>
           )}
         </div>
       </div>

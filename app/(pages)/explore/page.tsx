@@ -11,6 +11,10 @@ export interface SearchParamsProps {
   subcategories?: string;
   amenities?: string;
   location?: string;
+  lat?: string;
+  lng?: string;
+  nearMe?: string;
+  search?: string;
 }
 
 interface PageProps {

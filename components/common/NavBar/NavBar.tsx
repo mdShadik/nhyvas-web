@@ -26,6 +26,7 @@ import { NotificationsPanel } from "@/components/notifications/NotificationsPane
 import { motion } from "framer-motion";
 import LoginButton from "./MobileTopBar";
 import { LoginModal } from "@/components/auth/LoginModal";
+import { NavbarSearch } from "./NavbarSearch";
 
 const BRAND_ANIMATION_KEY = "nhyvas-navbar-logo-played";
 const BRAND_ANIMATION_DURATION = 2200;
@@ -300,6 +301,8 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
                       ) : null}
                     </div>
 
+                    <NavbarSearch />
+
                     <div className="hidden sm:block h-6 w-px bg-border" />
 
                     <Link
@@ -323,10 +326,13 @@ export function NavBar({ hideMobile }: { hideMobile?: boolean }) {
                     </Link>
                   </div>
                 ) : (
-                  <LoginButton
-                    loginText={t("common.login")}
-                    onClick={() => setLoginOpen(true)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <NavbarSearch />
+                    <LoginButton
+                      loginText={t("common.login")}
+                      onClick={() => setLoginOpen(true)}
+                    />
+                  </div>
                 )}
               </div>
             </div>

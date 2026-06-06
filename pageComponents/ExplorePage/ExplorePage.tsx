@@ -48,9 +48,13 @@ export default function ExplorePage({ searchParams }: Props) {
     const subcategoryIdsRaw = searchParams.subcategoryId || searchParams.subcategories;
     const amenityIdsRaw = searchParams.amenities;
     const locationRaw = searchParams.location;
+    const lat = searchParams.lat;
+    const lng = searchParams.lng;
+    const nearMeParam = searchParams.nearMe === "true";
+    const searchQuery = searchParams.search;
 
     const hasUrlFilters = Boolean(
-      categoryIdsRaw || minPrice || maxPrice || subcategoryIdsRaw || amenityIdsRaw || locationRaw
+      categoryIdsRaw || minPrice || maxPrice || subcategoryIdsRaw || amenityIdsRaw || locationRaw || lat || lng || nearMeParam || searchQuery
     );
 
     let locationNode: FilterState["locationNode"] = null;
@@ -61,6 +65,20 @@ export default function ExplorePage({ searchParams }: Props) {
           locationNode = parsed;
         }
       } catch {}
+    }
+
+    if (!locationNode && lat && lng) {
+      locationNode = {
+        level: "ward",
+        id: "coordinates",
+        label: t("common.custom_location", "Custom Location"),
+        latitude: Number(lat),
+        longitude: Number(lng),
+        state_id: null,
+        district_id: null,
+        municipality_id: null,
+        ward_id: null,
+      };
     }
 
     const prefs = preferences;
@@ -80,6 +98,8 @@ export default function ExplorePage({ searchParams }: Props) {
       categoryIds,
       subcategoryIds,
       locationNode,
+      nearMe: nearMeParam,
+      search: searchQuery || "",
       minPrice: (minPrice?.trim() || (!hasUrlFilters && prefs?.min_price !== null)) ? (minPrice?.trim() || String(prefs?.min_price ?? "")) : "",
       maxPrice: (maxPrice?.trim() || (!hasUrlFilters && prefs?.max_price !== null)) ? (maxPrice?.trim() || String(prefs?.max_price ?? "")) : "",
       amenityIds: amenityIdsRaw?.trim()
@@ -135,7 +155,8 @@ export default function ExplorePage({ searchParams }: Props) {
       (filters.minPrice && filters.minPrice.trim()) ||
       (filters.maxPrice && filters.maxPrice.trim()) ||
       (filters.amenityIds && filters.amenityIds.length > 0) ||
-      filters.locationNode
+      filters.locationNode ||
+      (filters.search && filters.search.trim())
     );
 
     const useUserLocation = filters.nearMe || !isFiltered;
@@ -156,6 +177,7 @@ export default function ExplorePage({ searchParams }: Props) {
       userLat: useUserLocation ? (userLocation?.latitude ?? null) : null,
       userLng: useUserLocation ? (userLocation?.longitude ?? null) : null,
       userRadiusKm: useUserLocation ? 5 : null,
+      search: filters.search.trim() || null,
       limit: 120,
       offset: 0,
     };
@@ -167,7 +189,7 @@ export default function ExplorePage({ searchParams }: Props) {
 
   const listingsQuery = useQuery({
     queryKey: ["explore", "recommended-listings", listingFilters],
-    queryFn: () => exploreService.getRecommendedListings(listingFilters),
+    queryFn: () => exploreService.getExploreListings(listingFilters),
   });
 
   const sidebarRecommendationsQuery = useQuery({
@@ -271,6 +293,7 @@ export default function ExplorePage({ searchParams }: Props) {
           amenityIds: analysis.features || [],
           nearMe: Boolean(analysis.nearMe),
           locationNode,
+          search: analysis.semanticQuery || "",
         };
         setFilters(nextFilters);
         setDraftFilters(nextFilters);

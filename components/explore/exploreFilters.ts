@@ -8,6 +8,7 @@ export type FilterState = {
   maxPrice: string;
   amenityIds: string[];
   nearMe: boolean;
+  search: string;
 };
 
 export const EMPTY_FILTERS: FilterState = {
@@ -18,5 +19,6 @@ export const EMPTY_FILTERS: FilterState = {
   maxPrice: "",
   amenityIds: [],
   nearMe: false,
+  search: "",
 };
 

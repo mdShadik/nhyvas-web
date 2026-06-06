@@ -102,6 +102,7 @@ export type ExploreFilters = {
   userLat?: number | null;
   userLng?: number | null;
   userRadiusKm?: number | null;
+  search?: string | null;
   limit?: number;
   offset?: number;
 };
@@ -280,8 +281,7 @@ export const exploreService = {
     if (safeQuery.length < 1) return [];
 
     try {
-      // Use Kathmandu as default center if needed, or omit if the API supports it
-      // Let's use Kathmandu coordinates as default fallback for location searches in Nepal
+      // Use Kathmandu as default center if needed
       const data = await galliMapService.searchWithCurrentLocation(
         safeQuery,
         27.7172,
@@ -292,10 +292,17 @@ export const exploreService = {
       const mapped = features
         .filter((f) => f.properties && f.properties.searchedItem)
         .map((f) => {
+          const p = f.properties;
+          const labelParts = [p.searchedItem];
+          if (p.municipality) labelParts.push(p.municipality);
+          if (p.district) labelParts.push(p.district);
+          
+          const fullLabel = labelParts.filter(Boolean).join(", ");
+
           return {
-            level: "ward" as const, // Map to 'ward' to satisfy type constraints and ExplorePage logic
-            id: String(f.properties.searchedItem) + Math.random(),
-            label: String(f.properties.searchedItem),
+            level: "ward" as const, 
+            id: `${p.searchedItem}-${f.geometry.coordinates[1]}-${f.geometry.coordinates[0]}`,
+            label: fullLabel,
             state_id: null,
             district_id: null,
             municipality_id: null,
