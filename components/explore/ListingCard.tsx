@@ -122,7 +122,7 @@ export function ListingCard({
       {/* Image Section */}
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden bg-secondary-900/10",
+          "relative shrink-0 overflow-hidden bg-secondary-900/10 dark:bg-secondary-500 scale-110",
           isCompact
             ? "h-40 w-full rounded-xl sm:h-auto sm:w-40"
             : "h-44 w-full lg:h-auto lg:w-[200px] 2xl:w-[240px]",

@@ -335,7 +335,7 @@ export default function ExplorePage({ searchParams }: Props) {
           amenityIds: analysis.features || [],
           nearMe: Boolean(analysis.nearMe),
           locationNode,
-          search: analysis.semanticQuery || "",
+          search: "",
         };
         setFilters(nextFilters);
         setDraftFilters(nextFilters);
