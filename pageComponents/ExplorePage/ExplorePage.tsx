@@ -339,6 +339,9 @@ export default function ExplorePage({ searchParams }: Props) {
         };
         setFilters(nextFilters);
         setDraftFilters(nextFilters);
+        
+        // Refresh the user's AI credits since a search consumes them
+        queryClient.invalidateQueries({ queryKey: ["profile", "bootstrap"] });
       }
       setAiSearchOpen(false);
     } catch (err) {
