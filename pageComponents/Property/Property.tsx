@@ -157,7 +157,10 @@ export default function PropertyPage({searchParams}: Props) {
         // Mark as viewed in cache immediately
         queryClient.setQueryData(["listing-has-viewed", id, currentUserId], true);
         
-        void activityService.recordPropertyView(id);
+        void activityService.recordPropertyView(id).then(() => {
+          // Invalidate recently viewed list so it's fresh when they go back
+          queryClient.invalidateQueries({ queryKey: ["profile", "recently-viewed"] });
+        });
       } else if (!currentUserId) {
         if (process.env.NODE_ENV === "development") {
           console.log("[PropertyPage] Recording anonymous view...");
