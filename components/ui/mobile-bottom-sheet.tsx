@@ -44,7 +44,6 @@ export function MobileBottomSheet({
       disableDismiss={disableDismiss}
       snapPoints={snapPoints}
       initialSnap={initialSnap}
-      springConfig={{ stiffness: 350, damping: 32, mass: 0.5 }}
       onSnap={(index) => {
         // If we snap to a point below minSnap (usually 0), snap back to minSnap
         const snapped = snapPoints[index];
