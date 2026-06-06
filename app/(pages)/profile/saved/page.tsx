@@ -2,9 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { HeartOff } from "lucide-react";
 import { favouritesService, type SavedListing } from "@/services/apiService/favourites";
-import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/context/ToastContext";
 import { ListingCard } from "@/components/explore/ListingCard";
@@ -67,21 +65,13 @@ export default function ProfileSavedPage() {
               key={item.id}
               listing={item}
               variant="compact"
-              action={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    removeMutation.mutate(item.id);
-                  }}
-                  disabled={busyIds.has(item.id)}
-                  className="h-9 px-3 border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white"
-                >
-                  <HeartOff className="mr-2 h-4 w-4" />
-                  {busyIds.has(item.id) ? "..." : "Remove"}
-                </Button>
-              }
+              isFavorite={true}
+              onFavoriteClick={(e) => {
+                e.preventDefault();
+                if (!busyIds.has(item.id)) {
+                  removeMutation.mutate(item.id);
+                }
+              }}
             />
           ))}
         </div>

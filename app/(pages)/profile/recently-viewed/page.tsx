@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { activityService } from "@/services/apiService/activity";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { activityService, favouritesService } from "@/services/apiService";
 import { useTranslation } from "react-i18next";
 import { ListingCard } from "@/components/explore/ListingCard";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 function formatRelativeTime(date: Date) {
   const diffMs = Date.now() - date.getTime();
@@ -22,9 +25,16 @@ function formatRelativeTime(date: Date) {
 
 export default function ProfileRecentlyViewedPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const { isAuthenticated, user } = useAuth();
+  const isLoggedIn = isAuthenticated;
+  const currentUserId = user?.id;
+
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "7d" | "30d" | "range">("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const recentlyQuery = useQuery({
     queryKey: ["profile", "recently-viewed"],
@@ -32,6 +42,41 @@ export default function ProfileRecentlyViewedPage() {
   });
 
   const allRows = recentlyQuery.data ?? [];
+
+  const shortlistIdsQuery = useQuery({
+    queryKey: ["my-shortlist-ids", allRows.map(r => r.listing.id)],
+    queryFn: () => favouritesService.getMyFavouriteListingIdsForListings(allRows.map(r => r.listing.id)),
+    enabled: isLoggedIn && allRows.length > 0,
+  });
+
+  const shortlistedIds = shortlistIdsQuery.data ?? [];
+
+  const toggleShortlistMutation = useMutation({
+    mutationFn: async ({ listingId, isFavorite }: { listingId: string; isFavorite: boolean }) => {
+      if (isFavorite) {
+        await favouritesService.removeFavourite(listingId);
+      } else {
+        await favouritesService.addFavourite(listingId);
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData(["my-shortlist-ids", allRows.map(r => r.listing.id)], (old: string[] | undefined) => {
+        if (!old) return old;
+        if (variables.isFavorite) {
+          return old.filter(id => id !== variables.listingId);
+        } else {
+          return [...old, variables.listingId];
+        }
+      });
+      showToast({
+        variant: "success",
+        message: variables.isFavorite ? t("property.actions.removed_shortlist") : t("property.actions.added_shortlist"),
+      });
+    },
+    onError: () => {
+      showToast({ variant: "error", message: t("common.something_went_wrong") });
+    },
+  });
 
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
@@ -87,6 +132,12 @@ export default function ProfileRecentlyViewedPage() {
 
   return (
     <div className="space-y-6">
+      <LoginModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        title={t("auth.login_required")}
+        description={t("auth.login_required_desc")}
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-lg font-bold text-text-primary">
           {t("profile.menu.recently_viewed")}
@@ -161,6 +212,18 @@ export default function ProfileRecentlyViewedPage() {
                 key={`${item.id}_${row.viewed_at}`}
                 listing={item}
                 variant="compact"
+                isOwnAd={item.listed_by === currentUserId}
+                isFavorite={shortlistedIds.includes(item.id)}
+                onFavoriteClick={() => {
+                  if (!isLoggedIn) {
+                    setLoginOpen(true);
+                    return;
+                  }
+                  toggleShortlistMutation.mutate({
+                    listingId: item.id,
+                    isFavorite: shortlistedIds.includes(item.id),
+                  });
+                }}
                 action={
                   viewedLabel ? (
                     <span className="shrink-0 rounded-full bg-primary-500/10 border border-primary-500/20 px-3 py-1 text-[10px] font-bold text-primary-600 dark:text-primary-400">

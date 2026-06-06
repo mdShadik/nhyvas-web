@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ExploreListing, exploreService } from "@/services/apiService/explore";
 import { galliMapService } from "@/services/galliMap";
 import { SlidersHorizontal, Search, ChevronDown, ArrowUpDown, ArrowUpWideNarrow, ArrowDownWideNarrow, MapPin } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { favouritesService } from "@/services/apiService/favourites";
+import { useToast } from "@/context/ToastContext";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
 import { EMPTY_FILTERS, type FilterState } from "@/components/explore/exploreFilters";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
@@ -215,6 +217,46 @@ export default function ExplorePage({ searchParams }: Props) {
     }
     return result;
   }, [listings, sortBy]);
+
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+
+  const listingIdsForShortlist = useMemo(() => [...listings].map((l) => l.id).sort(), [listings]);
+
+  const shortlistIdsQuery = useQuery({
+    queryKey: ["my-shortlist-ids", listingIdsForShortlist],
+    queryFn: () => favouritesService.getMyFavouriteListingIdsForListings(listingIdsForShortlist),
+    enabled: isLoggedIn && listingIdsForShortlist.length > 0,
+  });
+
+  const shortlistedIds = shortlistIdsQuery.data ?? [];
+
+  const toggleShortlistMutation = useMutation({
+    mutationFn: async ({ listingId, isFavorite }: { listingId: string; isFavorite: boolean }) => {
+      if (isFavorite) {
+        await favouritesService.removeFavourite(listingId);
+      } else {
+        await favouritesService.addFavourite(listingId);
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData(["my-shortlist-ids", listingIdsForShortlist], (old: string[] | undefined) => {
+        if (!old) return old;
+        if (variables.isFavorite) {
+          return old.filter((id) => id !== variables.listingId);
+        } else {
+          return [...old, variables.listingId];
+        }
+      });
+      showToast({
+        variant: "success",
+        message: variables.isFavorite ? t("property.actions.removed_shortlist", "Removed from shortlist") : t("property.actions.added_shortlist", "Added to shortlist"),
+      });
+    },
+    onError: () => {
+      showToast({ variant: "error", message: t("common.something_went_wrong", "Something went wrong") });
+    },
+  });
 
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -508,7 +550,23 @@ export default function ExplorePage({ searchParams }: Props) {
           ) : displayedListings.length > 0 ? (
             <div className="flex min-w-0 flex-col gap-6">
               {displayedListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
+                <ListingCard 
+                  key={listing.id} 
+                  listing={listing} 
+                  isFavorite={shortlistedIds.includes(listing.id)}
+                  onFavoriteClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isLoggedIn) {
+                      showToast({ variant: "default", message: t("auth.login_required_favorite", "Please login to add favorites") });
+                      return;
+                    }
+                    toggleShortlistMutation.mutate({
+                      listingId: listing.id,
+                      isFavorite: shortlistedIds.includes(listing.id),
+                    });
+                  }}
+                />
               ))}
             </div>
           ) : (
