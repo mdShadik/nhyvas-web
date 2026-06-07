@@ -18,6 +18,9 @@ import {
   Pencil,
   Share2,
   Users,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -86,6 +89,8 @@ export default function PropertyPage({searchParams}: Props) {
   const { showToast } = useToast();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
@@ -456,7 +461,11 @@ export default function PropertyPage({searchParams}: Props) {
                   setActiveImageIndex((p) => Math.max(0, p - 1));
                 }
               }}
-              className="absolute inset-0 bg-white"
+              onClick={() => {
+                setLightboxIndex(activeImageIndex);
+                setLightboxOpen(true);
+              }}
+              className="absolute inset-0 bg-white cursor-pointer"
             >
               <Image
                 src={images[activeImageIndex] ?? noImagePlaceholder}
@@ -820,7 +829,11 @@ export default function PropertyPage({searchParams}: Props) {
                           setActiveImageIndex((p) => Math.max(0, p - 1));
                         }
                       }}
-                      className="absolute inset-0 bg-white"
+                      onClick={() => {
+                        setLightboxIndex(activeImageIndex);
+                        setLightboxOpen(true);
+                      }}
+                      className="absolute inset-0 bg-white cursor-pointer"
                     >
                       <Image
                         src={images[activeImageIndex] ?? noImagePlaceholder}
@@ -877,7 +890,11 @@ export default function PropertyPage({searchParams}: Props) {
                     <button
                       key={`thumb-${idx}`}
                       type="button"
-                      onClick={() => setActiveImageIndex(idx)}
+                      onClick={() => {
+                        setActiveImageIndex(idx);
+                        setLightboxIndex(idx);
+                        setLightboxOpen(true);
+                      }}
                       className={`relative h-20 w-28 shrink-0 overflow-hidden border-2 transition ${idx === activeImageIndex ? "border-primary-400" : "border-transparent opacity-70 hover:opacity-100"}`}
                     >
                       <Image src={src} alt="" fill unoptimized className="object-cover" sizes="112px" />
@@ -1144,7 +1161,127 @@ export default function PropertyPage({searchParams}: Props) {
           </div>
         </div>
       ) : null}
+
+      <ImageLightbox
+        images={images}
+        isOpen={lightboxOpen}
+        initialIndex={lightboxIndex}
+        onClose={() => setLightboxOpen(false)}
+      />
     </>
+  );
+}
+
+function ImageLightbox({
+  images,
+  isOpen,
+  initialIndex,
+  onClose,
+}: {
+  images: (string | any)[];
+  isOpen: boolean;
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [index, setIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIndex(initialIndex);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [isOpen, initialIndex]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-6 top-6 z-[110] rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20 active:scale-90"
+      >
+        <X className="h-6 w-6" />
+      </button>
+
+      <div className="relative h-full w-full overflow-hidden flex items-center justify-center">
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.6}
+            onDragEnd={(_, info) => {
+              const swipe = info.offset.x;
+              if (swipe < -100 && index < images.length - 1) {
+                setIndex(index + 1);
+              } else if (swipe > 100 && index > 0) {
+                setIndex(index - 1);
+              }
+            }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+             <div className="relative h-full w-full p-4 md:p-12 pointer-events-none">
+              <Image
+                src={images[index]}
+                alt=""
+                fill
+                priority
+                unoptimized
+                className="object-contain"
+                sizes="100vw"
+              />
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Navigation (Desktop) */}
+        <div className="absolute inset-x-8 top-1/2 z-[110] hidden -translate-y-1/2 justify-between md:flex pointer-events-none">
+          <button
+            type="button"
+            disabled={index === 0}
+            onClick={() => setIndex(index - 1)}
+            className="rounded-full bg-white/10 p-4 text-white transition-colors hover:bg-white/20 disabled:opacity-0 pointer-events-auto active:scale-90"
+          >
+            <ChevronLeft className="h-8 w-8" />
+          </button>
+          <button
+            type="button"
+            disabled={index === images.length - 1}
+            onClick={() => setIndex(index + 1)}
+            className="rounded-full bg-white/10 p-4 text-white transition-colors hover:bg-white/20 disabled:opacity-0 pointer-events-auto active:scale-90"
+          >
+            <ChevronRight className="h-8 w-8" />
+          </button>
+        </div>
+
+        {/* Indicators */}
+        <div className="absolute bottom-10 left-1/2 z-[110] -translate-x-1/2 flex gap-2">
+          {images.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setIndex(idx)}
+              className={cn(
+                "h-1.5 transition-all rounded-full",
+                idx === index ? "w-8 bg-white" : "w-1.5 bg-white/40"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Count */}
+        <div className="absolute top-8 left-1/2 z-[110] -translate-x-1/2 rounded-full border border-white/10 bg-black/40 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-md">
+          {index + 1} / {images.length}
+        </div>
+      </div>
+    </div>
   );
 }
 
