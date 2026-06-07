@@ -584,18 +584,17 @@ export default function ExplorePage({ searchParams }: Props) {
         {/* Right Sidebar - Filters & Recommendations */}
         <aside className="hidden w-[260px] shrink-0 min-[748px]:block md:w-[280px] lg:w-[320px] xl:w-[360px] 2xl:w-[400px]">
           <div className="sticky top-24 flex flex-col gap-6">
-            <div className="rounded-3xl border border-border bg-page-bg-from p-4 shadow-sm lg:p-6" id="tour-filter">
-              <ExploreFiltersPanel
-                value={draftFilters}
-                onChange={handleFilterChange}
-                onApply={handleApplyFilters}
-                onReset={(reset) => {
-                  setDraftFilters(reset);
-                  setFilters(reset);
-                  setAiResponse(null);
-                }}
-              />
-            </div>
+            <ExploreFiltersPanel
+              id="tour-filter"
+              value={draftFilters}
+              onChange={handleFilterChange}
+              onApply={handleApplyFilters}
+              onReset={(reset) => {
+                setDraftFilters(reset);
+                setFilters(reset);
+                setAiResponse(null);
+              }}
+            />
 
             <div className="rounded-3xl border border-border bg-bg-card/40 p-4 shadow-sm lg:p-6">
               <h3 className="text-lg font-black text-text-primary mb-5 tracking-tight">
@@ -656,8 +655,6 @@ export default function ExplorePage({ searchParams }: Props) {
       <div className="min-[748px]:hidden">
         <MobileBottomSheet
           open={filtersOpen}
-          title={t("explore.refine_search")}
-          description={t("explore.apply_filters_desc")}
           onClose={() => setFiltersOpen(false)}
           snapPoints={[0, 1]}
           initialSnap={1}

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
-  title: string;
+  title?: React.ReactNode;
   description?: string;
   onClose: () => void;
   children: ReactNode;
