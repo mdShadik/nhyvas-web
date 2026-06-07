@@ -71,6 +71,7 @@ export function toV1ApiUrl(url: string): string {
 }
 
 const WEB_TOKEN_KEY = "nhyvas_at";
+const REFRESH_TOKEN_KEY = "nhyvas_rt";
 
 export function getWebToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -83,6 +84,55 @@ export function setWebToken(token: string) {
 
 export function clearWebToken() {
   localStorage.removeItem(WEB_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function setRefreshToken(token: string) {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
+let isRefreshing = false;
+let refreshSubscribers: ((token: string | null) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string | null) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onTokenRefreshed(token: string | null) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
+async function performTokenRefresh(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(toV1ApiUrl("/api/auth/refresh"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!res.ok) throw new Error("Refresh failed");
+
+    const data = await res.json();
+    const newToken = data.token;
+    const newRefreshToken = data.refresh_token;
+
+    if (newToken) setWebToken(newToken);
+    if (newRefreshToken) setRefreshToken(newRefreshToken);
+
+    return newToken;
+  } catch (err) {
+    clearWebToken();
+    return null;
+  }
 }
 
 export async function requestJson<TResponse>(
@@ -109,6 +159,38 @@ export async function requestJson<TResponse>(
     const message = body?.error ?? "You need to be logged in.";
     
     if (isAuthFailureMessage(message)) {
+      if (getRefreshToken()) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          const newToken = await performTokenRefresh();
+          isRefreshing = false;
+          onTokenRefreshed(newToken);
+
+          if (!newToken) {
+            handleUnauthorized();
+            throw new ApiError(message, 401);
+          }
+        }
+
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh((newToken) => {
+            if (newToken) {
+              requestJson<TResponse>(url, {
+                ...init,
+                headers: {
+                  ...(init?.headers ?? {}),
+                  Authorization: `Bearer ${newToken}`,
+                },
+              })
+                .then(resolve)
+                .catch(reject);
+            } else {
+              reject(new ApiError(message, 401));
+            }
+          });
+        });
+      }
+
       handleUnauthorized();
     }
     

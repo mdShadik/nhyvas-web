@@ -1,3 +1,5 @@
+import { requestJson } from "@/services/apiService/http";
+
 const DEFAULT_API_URL = "http://localhost:8080";
 
 export function getNhyvasApiUrl(): string {
@@ -17,29 +19,24 @@ export type NhyvasMe = {
   is_onboarded: boolean;
 };
 
-export async function nhyvasGoogleLogin(idToken: string): Promise<{ token: string }> {
-  const res = await fetch(`${getNhyvasApiUrl()}/api/v1/auth/google`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id_token: idToken }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error ?? "Google authentication failed");
-  }
-  return data as { token: string };
+export async function nhyvasGoogleLogin(idToken: string): Promise<{ token: string; refresh_token?: string }> {
+	const res = await fetch(`${getNhyvasApiUrl()}/api/v1/auth/google`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ id_token: idToken }),
+	});
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) {
+		throw new Error(data.error ?? "Google authentication failed");
+	}
+	return data as { token: string; refresh_token?: string };
 }
 
-export async function nhyvasFetchMe(token: string): Promise<NhyvasMe> {
-  const res = await fetch(`${getNhyvasApiUrl()}/api/v1/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+export async function nhyvasFetchMe(): Promise<NhyvasMe> {
+  return await requestJson<NhyvasMe>("/api/auth/me", {
+    method: "GET",
     cache: "no-store",
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error ?? "Failed to load profile");
-  }
-  return data as NhyvasMe;
 }
 
 export function useNhyvasAuth(): boolean {

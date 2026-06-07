@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const me = await nhyvasFetchMe(token);
+        const me = await nhyvasFetchMe();
         if (mounted) {
           const nextUser = {
             id: me.id,

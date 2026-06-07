@@ -9,7 +9,7 @@ import { X } from "lucide-react";
 
 import { env } from "@/lib/env";
 import { nhyvasFetchMe, nhyvasGoogleLogin } from "@/lib/nhyvasApi";
-import { setWebToken } from "@/services/apiService/http";
+import { setRefreshToken, setWebToken } from "@/services/apiService/http";
 import { useTheme } from "@/context/ThemeContext";
 import { darkLogo, lightLogo } from "@/assets";
 
@@ -60,9 +60,10 @@ export function LoginCard({
     setError(null);
 
     try {
-      const { token } = await nhyvasGoogleLogin(idToken);
+      const { token, refresh_token } = await nhyvasGoogleLogin(idToken);
       setWebToken(token);
-      const me = await nhyvasFetchMe(token);
+      if (refresh_token) setRefreshToken(refresh_token);
+      const me = await nhyvasFetchMe();
       finishLogin(!me.is_onboarded);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("auth.authentication_failed", "Authentication failed");
