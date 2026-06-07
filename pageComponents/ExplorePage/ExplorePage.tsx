@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ExploreListing, exploreService } from "@/services/apiService/explore";
 import { galliMapService } from "@/services/galliMap";
-import { SlidersHorizontal, Search, ChevronDown, ArrowUpDown, ArrowUpWideNarrow, ArrowDownWideNarrow, MapPin } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SlidersHorizontal, Search, ChevronDown, ArrowUpDown, ArrowUpWideNarrow, ArrowDownWideNarrow, MapPin, Sparkles } from "lucide-react";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { favouritesService } from "@/services/apiService/favourites";
 import { useToast } from "@/context/ToastContext";
 import { ExploreFiltersPanel } from "@/components/explore/ExploreFiltersPanel";
@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { TourGuide } from "@/components/common/TourGuide";
 import { Step } from "react-joyride";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -31,9 +32,10 @@ export default function ExplorePage({ searchParams }: Props) {
   const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
   const [draftFilters, setDraftFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | null>(null);
+  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "newest" | null>(null);
   const [sortExpanded, setSortExpanded] = useState(false);
+
+  const { userLocation, isLocating } = useUserLocation();
 
   const { isAuthenticated, profile, preferences, isLoading: authLoading } = useAuth();
   const isLoggedIn = isAuthenticated;
@@ -118,29 +120,17 @@ export default function ExplorePage({ searchParams }: Props) {
     setDraftFilters(next);
   }, [searchParams, authLoading, preferences]);
 
-  useEffect(() => {
-    if (!("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-      },
-      () => {},
-      { enableHighAccuracy: false, timeout: 6000 }
-    );
-  }, []);
-
   const categoriesQuery = useQuery({
     queryKey: ["explore", "categories"],
     queryFn: () => exploreService.getHomeCategories(200),
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const appliedSubcategoriesQuery = useQuery({
     queryKey: ["explore", "subcategories-applied", filters.categoryIds],
     queryFn: () => exploreService.getSubcategoriesByCategoryIds(filters.categoryIds),
     enabled: filters.categoryIds.length > 0,
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const listingFilters = useMemo(() => {
@@ -180,18 +170,29 @@ export default function ExplorePage({ searchParams }: Props) {
       userLng: useUserLocation ? (userLocation?.longitude ?? null) : null,
       userRadiusKm: useUserLocation ? 5 : null,
       search: filters.search.trim() || null,
-      limit: 120,
-      offset: 0,
+      sortBy,
+      limit: 20, // Smaller limit for infinite scroll
     };
   }, [
     filters,
     userLocation?.latitude,
     userLocation?.longitude,
+    sortBy,
   ]);
 
-  const listingsQuery = useQuery({
+  const listingsQuery = useInfiniteQuery({
     queryKey: ["explore", "recommended-listings", listingFilters],
-    queryFn: () => exploreService.getExploreListings(listingFilters),
+    queryFn: ({ pageParam = 0 }) => 
+      exploreService.getExploreListings({
+        ...listingFilters,
+        offset: pageParam as number,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < (listingFilters.limit ?? 20)) return undefined;
+      return allPages.flat().length;
+    },
+    staleTime: 1000 * 60 * 1, // 1 minute
   });
 
   const sidebarRecommendationsQuery = useQuery({
@@ -202,21 +203,15 @@ export default function ExplorePage({ searchParams }: Props) {
       userRadiusKm: 10,
       limit: 6,
     }),
-    // Always fetch some defaults if location isn't available yet
+    enabled: !isLocating,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
-  const listings = listingsQuery.data ?? [];
-  const loading = listingsQuery.isLoading || listingsQuery.isFetching;
+  const listings = useMemo(() => listingsQuery.data?.pages.flat() ?? [], [listingsQuery.data]);
+  const loading = listingsQuery.isLoading;
+  const isFetchingMore = listingsQuery.isFetchingNextPage;
 
-  const displayedListings = useMemo(() => {
-    let result = [...listings];
-    if (sortBy === "price_asc") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "price_desc") {
-      result.sort((a, b) => b.price - a.price);
-    }
-    return result;
-  }, [listings, sortBy]);
+  const displayedListings = listings; // Sorting is now done on API side
 
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -227,9 +222,28 @@ export default function ExplorePage({ searchParams }: Props) {
     queryKey: ["my-shortlist-ids", listingIdsForShortlist],
     queryFn: () => favouritesService.getMyFavouriteListingIdsForListings(listingIdsForShortlist),
     enabled: isLoggedIn && listingIdsForShortlist.length > 0,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const shortlistedIds = shortlistIdsQuery.data ?? [];
+
+  // Observer for infinite scroll
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!loadMoreRef.current || !listingsQuery.hasNextPage || listingsQuery.isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          listingsQuery.fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [listingsQuery.hasNextPage, listingsQuery.isFetchingNextPage, listingsQuery.fetchNextPage]);
 
   const toggleShortlistMutation = useMutation({
     mutationFn: async ({ listingId, isFavorite }: { listingId: string; isFavorite: boolean }) => {
@@ -414,11 +428,25 @@ export default function ExplorePage({ searchParams }: Props) {
               }`}
             >
               <ArrowUpDown className="h-4 w-4 text-primary-500" />
-              {sortExpanded ? "Sort" : sortBy ? (sortBy === "price_asc" ? "Low to High" : "High to Low") : "Sort By"}
+              {sortExpanded ? "Sort" : sortBy ? (sortBy === "price_asc" ? "Low to High" : (sortBy === "price_desc" ? "High to Low" : "Newest First")) : "Sort By"}
             </button>
 
             {sortExpanded && (
               <div className="flex gap-2 items-center overflow-x-auto scrollbar-hide animate-in slide-in-from-left-4 duration-300 pr-2">
+                <button
+                  onClick={() => {
+                    setSortBy("newest");
+                    setSortExpanded(false);
+                  }}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold whitespace-nowrap transition-all ${
+                    sortBy === "newest"
+                      ? "border-primary-500 bg-primary-500/10 text-primary-600"
+                      : "border-border bg-bg-card text-text-secondary"
+                  }`}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Newest
+                </button>
                 <button
                   onClick={() => {
                     setSortBy("price_asc");
@@ -501,13 +529,26 @@ export default function ExplorePage({ searchParams }: Props) {
                     ? "Price: Low to High"
                     : sortBy === "price_desc"
                       ? "Price: High to Low"
-                      : "Sort By Price"}
+                      : sortBy === "newest"
+                        ? "Newest First"
+                        : "Sort By Price"}
                   <ChevronDown className="h-4 w-4 text-text-secondary group-hover:rotate-180 transition-transform" />
                 </button>
                 {/* Bridge to fix hover gap */}
                 <div className="absolute right-0 top-full w-full h-4 pointer-events-none group-hover:pointer-events-auto" />
                 <div className="absolute right-0 top-[calc(100%+8px)] w-56 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50">
                   <div className="rounded-2xl border border-border bg-bg-card shadow-2xl p-1.5 backdrop-blur-xl">
+                    <button
+                      onClick={() => setSortBy("newest")}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                        sortBy === "newest"
+                          ? "bg-primary-500/10 text-primary-600"
+                          : "hover:bg-secondary-50 dark:hover:bg-secondary-800 text-text-secondary"
+                      }`}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Newest First
+                    </button>
                     <button
                       onClick={() => setSortBy("price_asc")}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
@@ -571,6 +612,16 @@ export default function ExplorePage({ searchParams }: Props) {
                   }}
                 />
               ))}
+
+              {/* Load More Sentinel */}
+              <div ref={loadMoreRef} className="h-10 w-full flex items-center justify-center mt-4">
+                {isFetchingMore && (
+                  <div className="flex items-center gap-2 text-text-tertiary">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                    <span className="text-xs font-medium">Loading more...</span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-(--card-bg) p-12 text-center">

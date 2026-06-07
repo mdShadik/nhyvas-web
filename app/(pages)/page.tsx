@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,42 +17,9 @@ import { useTranslation } from "react-i18next";
 import { tPropertyCategory } from "@/i18n/masterData";
 import { StoryFeed } from "@/components/stories/StoryFeed";
 import { type ExploreListing } from "@/services/apiService/explore";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
-
-/**
- * Custom hook to get user location or fallback to Kathmandu
- */
-function useNearbyLocation() {
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [isLocating, setIsLocating] = useState(true);
-
-  useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setUserLocation({ latitude: 27.7172, longitude: 85.3240 });
-      setIsLocating(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-        setIsLocating(false);
-      },
-      () => {
-        // Fallback to Kathmandu if user declined or error
-        setUserLocation({ latitude: 27.7172, longitude: 85.3240 });
-        setIsLocating(false);
-      },
-      { enableHighAccuracy: false, timeout: 10000 }
-    );
-  }, []);
-
-  return { userLocation, isLocating };
-}
 
 function NearbyPropertyCard({ listing }: { listing: ExploreListing }) {
   const { t } = useTranslation();
@@ -103,77 +70,6 @@ function NearbyListingSkeleton() {
         <div className="h-4 w-20 animate-pulse rounded bg-secondary-100 dark:bg-secondary-800" />
       </div>
     </div>
-  );
-}
-
-function NearbyListings({ userLocation, isLocating }: { userLocation: { latitude: number; longitude: number } | null; isLocating: boolean }) {
-  const { t } = useTranslation();
-
-  const { data: listings = [], isLoading } = useQuery({
-    queryKey: ["home", "nearby", userLocation],
-    queryFn: () => {
-      if (!userLocation) return [];
-      return exploreService.getRecommendedListings({
-        userLat: userLocation.latitude,
-        userLng: userLocation.longitude,
-        userRadiusKm: 10,
-        limit: 10,
-      });
-    },
-    enabled: !!userLocation,
-  });
-
-  if (!isLocating && !isLoading && listings.length === 0) return null;
-
-  return (
-    <section className="mt-14">
-      <div className="relative">
-        <div className="flex items-end justify-between gap-4">
-          <div className="relative">
-            {/* Decorative line accent */}
-            <div className="absolute -left-4 top-10 hidden h-8 w-1 rounded-full bg-linear-to-b from-primary-500 to-tertiary-500 sm:block" />
-
-            <div className="flex items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-200/60 bg-primary-50/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700 backdrop-blur-sm dark:border-primary-500/20 dark:bg-primary-900/30 dark:text-primary-300">
-                <MapPin className="h-3 w-3" />
-                {t("home.nearby_properties")}
-              </div>
-            </div>
-
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-              {t("home.nearby_properties")}
-            </h2>
-
-            <p className="mt-1.5 text-sm text-text-secondary">
-              {t("home.around_you")}
-            </p>
-          </div>
-
-          <Link
-            href="/explore"
-            className="group/link inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-card px-4 py-2 text-sm font-semibold text-primary-600 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 dark:text-primary-400 dark:hover:border-primary-500/50"
-          >
-            {t("common.view_all")}
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
-          </Link>
-        </div>
-
-        {/* Divider after title */}
-        <div className="mt-6 h-px w-full bg-gradient-to-r from-border via-border/20 to-border" />
-      </div>
-
-      <div className="scrollbar-hide -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 pt-6 sm:mx-0 sm:px-0">
-        {isLocating || isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <NearbyListingSkeleton key={i} />)
-        ) : (
-          listings.map((listing) => (
-            <div key={listing.id} className="w-[310px] shrink-0 sm:w-[350px]">
-              <NearbyPropertyCard listing={listing} />
-            </div>
-          ))
-        )}
-      </div>
-    </section>
   );
 }
 
@@ -253,22 +149,6 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-
-  useEffect(() => {
-    if (isPaused || listings.length <= 1) return;
-
-    const timer = setInterval(() => {
-      if (currentIndex < listings.length - 1) {
-        setDirection(1);
-        setCurrentIndex((prev) => prev + 1);
-      } else {
-        setDirection(-1);
-        setCurrentIndex(0);
-      }
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [currentIndex, isPaused, listings.length]);
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -455,11 +335,12 @@ export default function HomePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
 
-  const { userLocation, isLocating } = useNearbyLocation();
+  const { userLocation, isLocating } = useUserLocation();
 
   const heroQuery = useQuery({
     queryKey: ["home", "hero"],
     queryFn: () => exploreService.getHomeHeroListings(8),
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const groupedQuery = useQuery({
@@ -471,6 +352,7 @@ export default function HomePage() {
       listingsPerCategory: 5,
     }),
     enabled: !isLocating,
+    staleTime: 1000 * 60 * 15, // 15 minutes
   });
 
   const heroListings = heroQuery.data ?? [];
@@ -509,12 +391,9 @@ export default function HomePage() {
             ) : null}
           </section>
 
-          {/* Nearby Listings Section */}
-          <NearbyListings userLocation={userLocation} isLocating={isLocating} />
-
           {/* Categories Sections */}
           <div className="mb-25 md:mb-5">
-            {groupedQuery.isLoading ? (
+            {(groupedQuery.isLoading || isLocating) ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="mt-14 animate-pulse">
                   <div className="h-8 w-48 rounded bg-secondary-100 dark:bg-secondary-800" />

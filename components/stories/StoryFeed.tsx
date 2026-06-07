@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { storiesService, groupStoryFeed, type StoryGroup } from "@/services/apiService/stories";
 import { manageService } from "@/services/apiService/manage";
-import { authApi } from "@/services/apiService/index";
 import { StoryCircle } from "./StoryCircle";
 import { StoryViewer } from "./StoryViewer";
 import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
@@ -15,41 +14,22 @@ import { Plus, Eye, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { noImagePlaceholder } from "@/assets";
 import { ListPropertyButton } from "../common/ListPropertyButton";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
 export function StoryFeed() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const { isAuthenticated, user } = useAuth();
+  const { userLocation, isLocating } = useUserLocation();
   const [viewerOpen, setViewerOpen] = useState(false);
   const [initialGroupIndex, setInitialGroupIndex] = useState(0);
   const [ownerOptionsOpen, setOwnerOptionsOpen] = useState(false);
   const [propertySelectorOpen, setPropertySelectorOpen] = useState(false);
   const [selectedOwnerGroup, setSelectedOwnerGroup] = useState<StoryGroup | null>(null);
 
-  // Get current user ID
-  const { data: currentUserId } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: authApi.getCurrentUserId,
-    enabled: isAuthenticated,
-  });
+  const currentUserId = user?.id;
 
-  // Get user location
-  useEffect(() => {
-    if (!("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-      },
-      () => {},
-      { enableHighAccuracy: false, timeout: 10000 }
-    );
-  }, []);
-
-  // Infinite query for stories
+  // Infinite query for stories - only run after location is determined to prevent duplicate calls
   const storiesQuery = useInfiniteQuery({
     queryKey: ["stories", "recommended", userLocation],
     queryFn: ({ pageParam = 0 }) =>
@@ -65,6 +45,8 @@ export function StoryFeed() {
       if (lastPage.length < 10) return undefined;
       return allPages.flat().length;
     },
+    enabled: !isLocating,
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
   });
 
   const allStories = useMemo(() => storiesQuery.data?.pages.flat() ?? [], [storiesQuery.data]);
@@ -72,11 +54,12 @@ export function StoryFeed() {
 
   const hasMyStory = useMemo(() => storyGroups.some(g => g.landlordId === currentUserId), [storyGroups, currentUserId]);
 
-  // My Ads for property selector and visibility check
+  // My Ads for property selector and visibility check - only fetch if authenticated and actually needed
   const myAdsQuery = useQuery({
     queryKey: ["profile", "my-ads"],
     queryFn: () => manageService.getMyAds(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !isLocating,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 
   const hasApprovedListings = useMemo(() => {

@@ -103,6 +103,7 @@ export type ExploreFilters = {
   userLng?: number | null;
   userRadiusKm?: number | null;
   search?: string | null;
+  sortBy?: "price_asc" | "price_desc" | "newest" | "oldest" | null;
   limit?: number;
   offset?: number;
 };

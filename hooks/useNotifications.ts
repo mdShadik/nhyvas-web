@@ -54,6 +54,8 @@ export function useNotifications() {
     eventSource.addEventListener("new_notification", () => {
       // Fetch latest notifications when an event is received
       void refresh(true);
+      // Also invalidate chat rooms to update last message/unread status
+      void queryClient.invalidateQueries({ queryKey: ["chat_rooms"] });
     });
 
     eventSource.onerror = (err) => {

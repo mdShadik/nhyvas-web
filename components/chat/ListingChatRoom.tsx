@@ -24,13 +24,13 @@ import { ChevronLeft, MoreVertical, Send, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { noImagePlaceholder } from "@/assets";
-import { authApi } from "@/services/apiService";
 import { chatService, type ChatMessage, type ChatMessagesPage } from "@/services/apiService/chat";
 import { env } from "@/lib/env";
 import { getWebToken } from "@/services/apiService/http";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ChatRoomSkeleton } from "./ChatRoomSkeleton";
+import { useAuth } from "@/context/AuthContext";
 
 const CHAT_PAGE_SIZE = 10;
 const TOP_FETCH_THRESHOLD = 40;
@@ -201,6 +201,7 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [messageText, setMessageText] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -212,15 +213,13 @@ export function ListingChatRoom({ roomId, embedded }: ListingChatRoomProps) {
   const initialScrollDoneRef = useRef(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: currentUserId } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: authApi.getCurrentUserId,
-  });
+  const currentUserId = user?.id;
 
   const { data: roomDetails } = useQuery({
     queryKey: ["chat_room", roomId],
     queryFn: () => chatService.getRoomDetails(roomId, currentUserId ?? ""),
     enabled: Boolean(roomId && currentUserId),
+    staleTime: 1000 * 60 * 5,
   });
 
   const counterpartyId = roomDetails?.counterparty?.id ?? null;

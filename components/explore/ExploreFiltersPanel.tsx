@@ -124,27 +124,32 @@ export function ExploreFiltersPanel({
   const categoriesQuery = useQuery({
     queryKey: ["explore", "categories"],
     queryFn: () => exploreService.getHomeCategories(200),
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const priceConfigQuery = useQuery({
     queryKey: ["explore", "price-config", "mobile_search_default"],
     queryFn: () => exploreService.getPriceRangeConfig("mobile_search_default"),
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const amenitiesQuery = useQuery({
     queryKey: ["explore", "amenities"],
     queryFn: () => exploreService.getAmenities(),
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const amenityCategoriesQuery = useQuery({
     queryKey: ["explore", "amenity-categories"],
     queryFn: () => exploreService.getAmenityCategories(),
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const subcategoriesQuery = useQuery({
     queryKey: ["explore", "subcategories", value.categoryIds],
     queryFn: () => exploreService.getSubcategoriesByCategoryIds(value.categoryIds),
     enabled: value.categoryIds.length > 0,
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const categories = categoriesQuery.data ?? [];

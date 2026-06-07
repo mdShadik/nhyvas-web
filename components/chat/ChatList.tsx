@@ -7,11 +7,11 @@ import { useQuery } from "@tanstack/react-query";
 import { MessageCircle, User, Building2, ArrowLeft, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { authApi } from "@/services/apiService";
-import { chatService } from "@/services/apiService/chat";
-import { manageService } from "@/services/apiService/manage";
-import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import { ChatListSkeleton } from "./ChatListSkeleton";
+import { cn } from "@/lib/utils";
+import { manageService } from "@/services/apiService/manage";
+import { chatService } from "@/services/apiService";
 
 interface ChatListProps {
   activeRoomId?: string;
@@ -20,22 +20,21 @@ interface ChatListProps {
 
 export function ChatList({ activeRoomId, className }: ChatListProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [activeListingId, setActiveListingId] = useState<string>("all");
 
-  const { data: currentUserId } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: authApi.getCurrentUserId,
-  });
+  const currentUserId = user?.id;
 
   const { data: myAds = [], isLoading: myAdsLoading } = useQuery({
     queryKey: ["chat_my_ads"],
     queryFn: () => manageService.getMyAds(),
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: rooms, isLoading: roomsLoading } = useQuery({
     queryKey: ["chat_rooms"],
     queryFn: () => chatService.getChatRooms(),
-    refetchInterval: 10000,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache, invalidated by SSE
   });
 
   const listingTabs = useMemo(() => {
@@ -108,7 +107,7 @@ export function ChatList({ activeRoomId, className }: ChatListProps) {
           <ChatListSkeleton />
         ) : filteredRooms.length ? (
           <div className="divide-y divide-border/50">
-            {filteredRooms.map((item) => {
+            {filteredRooms.map((item:any) => {
               const counterparty = item.counterparty;
               const name = counterparty?.full_name || t("chat.unknown_user");
               const avatar = counterparty?.avatar_url;
@@ -210,7 +209,7 @@ export function ChatList({ activeRoomId, className }: ChatListProps) {
                 ? t("chat.empty_title")
                 : t("chat.empty_title_for_listing")}
             </p>
-            <p className="max-w-[240px] mx-auto text-sm text-text-tertiary leading-relaxed">
+            <p className="max-w-60 mx-auto text-sm text-text-tertiary leading-relaxed">
               {activeListingId === "all" ? t("chat.empty_hint") : t("chat.empty_hint_for_listing")}
             </p>
           </div>

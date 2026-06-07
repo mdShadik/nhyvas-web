@@ -5,12 +5,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
-import { authApi } from "@/services/apiService";
 import { chatService } from "@/services/apiService/chat";
 import { leadsService, type PropertyLead } from "@/services/apiService/leads";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 
 function safeDate(value: string) {
   const d = new Date(value);
@@ -24,6 +24,7 @@ function ProfileLeadsContent() {
   const leadsQuery = useQuery({
     queryKey: ["profile", "leads", listingId],
     queryFn: () => leadsService.getLeadsForUser(listingId),
+    staleTime: 1000 * 60 * 5,
   });
 
   const [q, setQ] = useState("");
@@ -95,11 +96,9 @@ function LeadRow({ lead }: { lead: PropertyLead }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { showToast } = useToast();
+  const { user } = useAuth();
 
-  const { data: currentUserId } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: authApi.getCurrentUserId,
-  });
+  const currentUserId = user?.id;
 
   const chatMutation = useMutation({
     mutationFn: () => chatService.createRoom(lead.property_id, lead.inquirer_id),
