@@ -4,7 +4,7 @@
 
 export async function processImageWithWatermark(
   file: File,
-  watermarkSrc: string,
+  watermarkSrc?: string,
   options: {
     maxWidth?: number;
     maxHeight?: number;
@@ -50,29 +50,7 @@ export async function processImageWithWatermark(
         // Draw original image
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Load and draw watermark
-        const wm = new Image();
-        wm.crossOrigin = "anonymous";
-        wm.onload = () => {
-          const wmWidth = width * watermarkSize;
-          const wmHeight = (wm.height / wm.width) * wmWidth;
-          const padding = width * 0.02; // 2% padding
-
-          // Top Left
-          ctx.globalAlpha = 0.6;
-          ctx.drawImage(wm, padding, padding, wmWidth, wmHeight);
-
-          // Bottom Right
-          ctx.drawImage(
-            wm,
-            width - wmWidth - padding,
-            height - wmHeight - padding,
-            wmWidth,
-            wmHeight
-          );
-          ctx.globalAlpha = 1.0;
-
-          // Export as blob
+        const exportBlob = () => {
           canvas.toBlob(
             (blob) => {
               if (blob) {
@@ -85,8 +63,39 @@ export async function processImageWithWatermark(
             quality
           );
         };
-        wm.onerror = () => reject(new Error("Failed to load watermark"));
-        wm.src = watermarkSrc;
+
+        if (watermarkSrc) {
+          // Load and draw watermark
+          const wm = new Image();
+          wm.crossOrigin = "anonymous";
+          wm.onload = () => {
+            const wmWidth = width * watermarkSize;
+            const wmHeight = (wm.height / wm.width) * wmWidth;
+            const padding = width * 0.02; // 2% padding
+
+            // Top Left
+            ctx.globalAlpha = 0.6;
+            ctx.drawImage(wm, padding, padding, wmWidth, wmHeight);
+
+            // Bottom Right
+            ctx.drawImage(
+              wm,
+              width - wmWidth - padding,
+              height - wmHeight - padding,
+              wmWidth,
+              wmHeight
+            );
+            ctx.globalAlpha = 1.0;
+            exportBlob();
+          };
+          wm.onerror = () => {
+            console.warn("Watermark failed to load, exporting clean image");
+            exportBlob();
+          };
+          wm.src = watermarkSrc;
+        } else {
+          exportBlob();
+        }
       };
       img.onerror = () => reject(new Error("Failed to load image"));
       img.src = e.target?.result as string;

@@ -2,29 +2,34 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Eye,
   Heart,
+  Image as ImageIcon,
   Link as LinkIcon,
   Loader2,
+  Lock,
   Map,
   MapPin,
   MessageCircle,
   Pencil,
+  Plus,
   Share2,
+  Sparkles,
+  UploadCloud,
   Users,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { noImagePlaceholder } from "@/assets";
+import { noImagePlaceholder, logoSingleNForLight } from "@/assets";
 import {
   authApi,
   chatService,
@@ -48,6 +53,7 @@ import { CameraCapture } from "@/components/ui/camera-capture";
 import { SearchParamsProps } from "@/app/(pages)/property/page";
 import { cn } from "@/lib/utils";
 import { getVideoDuration, MAX_VIDEO_DURATION, MAX_VIDEO_SIZE, MAX_VIDEO_UPLOAD_SIZE } from "@/lib/video/videoUtils";
+import { processImageWithWatermark } from "@/lib/imageProcessing";
 
 function getListingImages(listing: ExploreListing | null) {
   if (!listing) return [];
@@ -132,21 +138,8 @@ export default function PropertyPage({searchParams}: Props) {
   });
 
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("[PropertyPage] View Debug:", {
-        id,
-        listingStatus: listing?.status,
-        isOwner,
-        currentUserId,
-        hasViewedData,
-      });
-    }
-
     if (id && listing && !isOwner) {
       if (currentUserId && hasViewedData === false) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[PropertyPage] Recording unique view for logged-in user...");
-        }
         // Optimistically increment view count in cache for unique logged-in view
         queryClient.setQueryData(["listing-details", id], (old: any) => {
           if (!old || !old.listing) return old;
@@ -167,11 +160,6 @@ export default function PropertyPage({searchParams}: Props) {
           queryClient.invalidateQueries({ queryKey: ["profile", "recently-viewed"] });
         });
       } else if (!currentUserId) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[PropertyPage] Recording anonymous view...");
-        }
-        // Still record for anonymous (though backend currently ignores it, 
-        // this keeps it ready if we enable anonymous tracking)
         void activityService.recordPropertyView(id);
       }
     }
@@ -317,20 +305,6 @@ export default function PropertyPage({searchParams}: Props) {
 
   const renderListingAction = (variant: "mobile" | "desktop") => {
     const fullWidth = variant === "mobile";
-
-    // Debugging logs to help identify missing CTAs
-    if (process.env.NODE_ENV === "development") {
-      console.log("[PropertyPage] CTA Debug:", {
-        id,
-        listingStatus,
-        isOwner,
-        isApprovedListing,
-        canEditListing,
-        canPayForListing,
-        canUsePublicActions,
-        currentUserId
-      });
-    }
 
     const primaryClass = fullWidth
       ? "flex w-full items-center justify-center gap-2 bg-linear-to-br from-primary-500 via-primary-500 to-tertiary-500 py-3.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] rounded-2xl"
@@ -639,7 +613,7 @@ export default function PropertyPage({searchParams}: Props) {
                 {description ? <div className="mx-5 h-px bg-border" /> : null}
 
                 {/* Walkthrough story */}
-                {listing.is_story ? (
+                {(listing?.is_story || isOwner) && listing ? (
                   <>
                     <div className="px-5 py-5">
                       <PropertyWalkthroughSection listing={listing} isOwner={isOwner} />
@@ -950,7 +924,7 @@ export default function PropertyPage({searchParams}: Props) {
               ) : null}
 
               {/* Walkthrough - desktop */}
-              {listing?.is_story ? (
+              {(listing?.is_story || isOwner) && listing ? (
                 <PropertyWalkthroughSection listing={listing} isOwner={isOwner} />
               ) : null}
             </div>
@@ -1298,6 +1272,8 @@ function PropertyWalkthroughSection({
   const { showToast } = useToast();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  const router = useRouter();
 
   const storyQuery = useQuery({
     queryKey: ["property-story", listingId],
@@ -1314,6 +1290,8 @@ function PropertyWalkthroughSection({
 
   const imageRemaining = Math.max(0, imageLimit - imageStories.length);
   const videoRemaining = Math.max(0, videoLimit - videoStories.length);
+
+  const isStoryEnabled = listing.is_story;
 
   const publishMutation = useMutation({
     mutationFn: async ({ file, thumbnailFile }: { file: File; thumbnailFile?: File }) => {
@@ -1339,8 +1317,17 @@ function PropertyWalkthroughSection({
          );
       }
 
+      let finalFile = file;
+      if (!isVideo) {
+        try {
+          finalFile = await processImageWithWatermark(file, logoSingleNForLight.src, { quality: 0.75 });
+        } catch (err) {
+          console.error("Watermarking failed, using original:", err);
+        }
+      }
+
       const folder = isVideo ? "property-walkthrough-story/videos" : "property-walkthrough-story/images";
-      const { publicUrl: mediaUrl, objectKey: mediaKey } = await uploadToR2({ file: file, folder });
+      const { publicUrl: mediaUrl, objectKey: mediaKey } = await uploadToR2({ file: finalFile, folder });
 
       let thumbnailUrl: string | null = null;
       let thumbnailKey: string | undefined = undefined;
@@ -1370,6 +1357,7 @@ function PropertyWalkthroughSection({
         message: t("property.story.published"),
       });
       setCameraOpen(false);
+      setMobileActionsOpen(false);
     },
     onError: (err: any) => {
       showToast({
@@ -1399,40 +1387,95 @@ function PropertyWalkthroughSection({
     setCameraOpen(false);
   };
 
-  return (
-    <div className="border border-border bg-bg-page p-5 shadow-sm sm:p-6">
-      <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-        <span className="h-1 w-1 bg-tertiary-400" />
-        {t("property.story.title")}
+  if (!isStoryEnabled && isOwner) {
+    return (
+      <div className="relative group overflow-hidden border border-border bg-bg-page p-8 shadow-sm sm:p-10 rounded-[28px] text-center">
+        <div className="absolute inset-0 bg-secondary-50/50 dark:bg-secondary-900/10 pointer-events-none" />
+        <div className="relative z-10 flex flex-col items-center">
+           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 mb-4">
+             <Lock className="h-7 w-7" />
+           </div>
+           <h3 className="text-lg font-bold text-text-primary">{t("property.story.locked_title", "Walkthrough Locked")}</h3>
+           <p className="mt-2 text-sm text-text-tertiary max-w-xs mx-auto">
+             {t("property.story.locked_desc", "This feature is currently disabled for this listing. Contact support to enable property walkthroughs.")}
+           </p>
+           <button 
+             type="button"
+             className="mt-6 text-sm font-black uppercase tracking-widest text-primary-500 hover:text-primary-600"
+             onClick={() => router.push("/support")}
+           >
+             {t("property.story.contact_support", "Contact Support")}
+           </button>
+        </div>
       </div>
-      <p className="mt-1 text-xs text-text-tertiary">Upload a video (max 30s, 10MB) or photo (max 1MB) for your property.</p>
+    );
+  }
+
+  return (
+    <div className="border border-border bg-bg-page p-5 shadow-sm sm:p-6 rounded-[28px]">
+      <div className="flex items-center justify-between mb-4">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2 text-sm font-black text-text-primary uppercase tracking-tight">
+            <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse" />
+            {t("property.story.title")}
+          </div>
+          <p className="text-[11px] text-text-tertiary font-medium">{t("property.story.desc_short", "24h property walkthroughs")}</p>
+        </div>
+        
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => setMobileActionsOpen(true)}
+            className="md:hidden flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 text-primary-600 text-xs font-bold transition active:scale-95"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("property.story.add_new", "Add Story")}
+          </button>
+        )}
+      </div>
 
       {storyQuery.isLoading ? (
-        <div className="mt-4 flex items-center gap-2 text-sm text-text-secondary">
+        <div className="flex items-center gap-2 text-sm text-text-secondary py-4">
           <Loader2 className="h-4 w-4 animate-spin" />
           {t("property.loading_listing")}
         </div>
       ) : (
-        <div className="mt-4 space-y-4">
+        <div className="space-y-4">
           {selected ? (
             <>
-              {isProbablyVideoUrl(selected.media_url) ? (
-                <video
-                  src={selected.media_url}
-                  controls
-                  playsInline
-                  className="aspect-video w-full overflow-hidden bg-black"
-                />
-              ) : (
-                <img
-                  src={selected.media_url}
-                  alt={t("property.story.preview_alt", "Walkthrough story")}
-                  className="aspect-video w-full overflow-hidden bg-black object-cover"
-                />
-              )}
+              <div className="relative aspect-video w-full overflow-hidden rounded-[20px] bg-black shadow-lg">
+                {isProbablyVideoUrl(selected.media_url) ? (
+                  <video
+                    src={selected.media_url}
+                    controls
+                    playsInline
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <img
+                    src={selected.media_url}
+                    alt={t("property.story.preview_alt", "Walkthrough story")}
+                    className="h-full w-full object-cover"
+                  />
+                )}
+                
+                {/* Overlay info */}
+                <div className="absolute top-4 left-4 flex items-center gap-2">
+                   <div className="h-8 w-8 rounded-full border-2 border-white/20 overflow-hidden bg-black/40 backdrop-blur-md">
+                     {listing.thumbnail_url && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                       <img src={listing.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                     )}
+                   </div>
+                   <div className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg">
+                     <p className="text-[10px] font-bold text-white leading-none">{listing.landlord_name || "Owner"}</p>
+                     <p className="text-[9px] text-white/70 font-medium leading-none mt-1">{new Date(selected.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                   </div>
+                </div>
+              </div>
 
               {stories.length > 1 ? (
-                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                <div className="flex gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-hide">
                   {stories.map((s) => {
                     const isActive = s.story_id === selected.story_id;
                     return (
@@ -1441,20 +1484,19 @@ function PropertyWalkthroughSection({
                         type="button"
                         onClick={() => setSelectedStoryId(s.story_id)}
                         className={cn(
-                          "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border bg-black",
-                          isActive ? "border-primary-500" : "border-border"
+                          "relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition-all active:scale-95",
+                          isActive ? "border-primary-500 scale-105 shadow-md" : "border-border/50 opacity-70"
                         )}
-                        title={new Date(s.created_at).toLocaleString()}
                       >
                         {isProbablyVideoUrl(s.media_url) ? (
-                          <video
-                            src={s.media_url}
-                            muted
-                            playsInline
-                            preload="metadata"
-                            className="h-full w-full object-cover opacity-90"
-                          />
+                          <div className="h-full w-full bg-black relative">
+                            <video src={s.media_url} className="h-full w-full object-cover" />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <div className="h-4 w-4 rounded-full border border-white/40 border-t-white animate-spin opacity-0 group-hover:opacity-100" />
+                            </div>
+                          </div>
                         ) : (
+                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img src={s.media_url} alt="" className="h-full w-full object-cover" />
                         )}
                       </button>
@@ -1463,109 +1505,174 @@ function PropertyWalkthroughSection({
                 </div>
               ) : null}
 
-              <div className="text-xs text-text-tertiary">
-                {t("property.story.expires")}: {new Date(selected.expires_at).toLocaleString()}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+                  <div className="h-1 w-1 rounded-full bg-border" />
+                  {t("property.story.expires")}: {new Date(selected.expires_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                </div>
               </div>
             </>
           ) : !isOwner ? (
-            <p className="text-sm text-text-secondary">{t("property.story.none_visitor")}</p>
-          ) : null}
-
-          {isOwner ? (
-            <div className="space-y-3">
-              <div className="flex flex-col gap-1">
-                <div className="text-xs text-text-tertiary">
-                  {t("property.story.image_limit", { defaultValue: "Images left today: {{remaining}}/{{max}}", remaining: imageRemaining, max: imageLimit })}
-                </div>
-                <div className="text-xs text-text-tertiary">
-                  {t("property.story.video_limit", { defaultValue: "Videos left today: {{remaining}}/{{max}}", remaining: videoRemaining, max: videoLimit })}
-                </div>
-                {imageRemaining <= 0 && videoRemaining <= 0 ? (
-                  <div className="text-xs font-semibold text-destructive">
-                    {t("property.story.limit_reached", "Limit reached (24 hours).")}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <button
-                  type="button"
-                  disabled={publishMutation.isPending || imageRemaining <= 0}
-                  onClick={() => setCameraOpen(true)}
-                  className={cn(
-                    "flex w-full items-center justify-center gap-2 border border-dashed border-border bg-bg-input px-4 py-4 text-center text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800",
-                    (publishMutation.isPending || imageRemaining <= 0) && "opacity-60"
-                  )}
-                >
-                  {t("property.story.take_photo_cta", "Take Photo")}
-                </button>
-
-                <label
-                  className={cn(
-                    "flex cursor-pointer items-center justify-center gap-2 border border-dashed border-border bg-bg-input px-4 py-4 text-center text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800",
-                    (publishMutation.isPending || imageRemaining <= 0) && "cursor-not-allowed opacity-60"
-                  )}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    disabled={publishMutation.isPending || imageRemaining <= 0}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = "";
-                      if (file) publishMutation.mutate({ file });
-                    }}
-                  />
-                  {t("property.story.upload_image", "Upload Image")}
-                </label>
-
-                <label
-                  className={cn(
-                    "flex cursor-pointer items-center justify-center gap-2 border border-dashed border-border bg-bg-input px-4 py-4 text-center text-sm font-semibold text-text-primary transition hover:bg-secondary-100 dark:hover:bg-secondary-800",
-                    (publishMutation.isPending || videoRemaining <= 0) && "cursor-not-allowed opacity-60"
-                  )}
-                >
-                  <input
-                    type="file"
-                    accept="video/*"
-                    className="sr-only"
-                    disabled={publishMutation.isPending || videoRemaining <= 0}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = "";
-                      if (!file) return;
-
-                      try {
-                        if (file.size > MAX_VIDEO_UPLOAD_SIZE) {
-                          showToast({ variant: "error", message: "Video too large (max 20MB)." });
-                          return;
-                        }
-                        const duration = await getVideoDuration(file);
-                        if (duration > MAX_VIDEO_DURATION) {
-                          showToast({ variant: "error", message: "Video too long (max 30s)." });
-                          return;
-                        }
-                        publishMutation.mutate({ file });
-                      } catch (err) {
-                        showToast({ variant: "error", message: "Could not read video." });
-                      }
-                    }}
-                  />
-                  {t("property.story.upload_video", "Upload Video")}
-                </label>
-              </div>
-
-              {publishMutation.isPending ? (
-                <div className="inline-flex items-center gap-2 text-sm text-text-secondary">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("property.story.uploading")}
-                </div>
-              ) : null}
+            <div className="py-10 text-center rounded-2xl bg-secondary-50/50 dark:bg-secondary-900/10 border border-dashed border-border">
+               <ImageIcon className="h-10 w-10 text-text-tertiary mx-auto opacity-20 mb-3" />
+               <p className="text-sm font-semibold text-text-secondary">{t("property.story.none_visitor")}</p>
             </div>
           ) : null}
+
+          {isOwner && (
+            <div className="hidden md:block space-y-4 pt-2">
+              <div className="h-px bg-border w-full" />
+              <div className="grid grid-cols-3 gap-3">
+                 <div className="flex flex-col gap-1">
+                    <p className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{t("property.story.remaining")}</p>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-bg-input border border-border rounded-xl px-3 py-2">
+                         <p className="text-xs font-bold text-text-primary">{imageRemaining} / {imageLimit}</p>
+                         <p className="text-[9px] text-text-tertiary font-medium uppercase">{t("property.story.images", "Images")}</p>
+                      </div>
+                      <div className="flex-1 bg-bg-input border border-border rounded-xl px-3 py-2">
+                         <p className="text-xs font-bold text-text-primary">{videoRemaining} / {videoLimit}</p>
+                         <p className="text-[9px] text-text-tertiary font-medium uppercase">{t("property.story.videos", "Videos")}</p>
+                      </div>
+                    </div>
+                 </div>
+                 
+                 <div className="col-span-2 flex items-end gap-2">
+                    <button
+                      type="button"
+                      disabled={publishMutation.isPending || imageRemaining <= 0}
+                      onClick={() => setCameraOpen(true)}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 border border-border bg-bg-card h-12 text-xs font-bold text-text-primary transition hover:border-primary-500/50 hover:bg-primary-500/5 active:scale-95 rounded-xl",
+                        (publishMutation.isPending || imageRemaining <= 0) && "opacity-50 grayscale cursor-not-allowed"
+                      )}
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t("property.story.take_photo_cta", "Capture")}
+                    </button>
+                    
+                    <label className={cn(
+                        "flex-1 flex items-center justify-center gap-2 bg-linear-to-br from-primary-500 to-tertiary-600 h-12 text-xs font-bold text-white transition hover:shadow-lg active:scale-95 cursor-pointer rounded-xl",
+                        (publishMutation.isPending || (imageRemaining <= 0 && videoRemaining <= 0)) && "opacity-50 grayscale cursor-not-allowed"
+                      )}>
+                       <input
+                        type="file"
+                        accept="image/*,video/*"
+                        className="sr-only"
+                        disabled={publishMutation.isPending || (imageRemaining <= 0 && videoRemaining <= 0)}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (!file) return;
+                          
+                          const isVideo = file.type.startsWith("video/");
+                          if (isVideo) {
+                            if (file.size > MAX_VIDEO_UPLOAD_SIZE) {
+                              showToast({ variant: "error", message: "Video too large (max 20MB)." });
+                              return;
+                            }
+                            const duration = await getVideoDuration(file);
+                            if (duration > MAX_VIDEO_DURATION) {
+                              showToast({ variant: "error", message: "Video too long (max 30s)." });
+                              return;
+                            }
+                          }
+                          publishMutation.mutate({ file });
+                        }}
+                      />
+                      <UploadCloud className="h-4 w-4" />
+                      {t("property.story.upload", "Upload")}
+                    </label>
+                 </div>
+              </div>
+
+              {publishMutation.isPending && (
+                <div className="flex items-center gap-2 text-xs font-bold text-primary-500 animate-pulse">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t("property.story.publishing", "Publishing your story...")}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Redesigned Mobile Actions Bottom Sheet */}
+      <MobileBottomSheet
+        open={mobileActionsOpen}
+        onClose={() => setMobileActionsOpen(false)}
+        title={t("property.story.mobile_actions_title", "Add to Story")}
+        description={t("property.story.mobile_actions_desc", "Share a quick walkthrough to get 2x more leads.")}
+      >
+        <div className="px-4 pb-8 pt-2 space-y-6">
+           <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                disabled={publishMutation.isPending || imageRemaining <= 0}
+                onClick={() => setCameraOpen(true)}
+                className="flex flex-col items-center gap-3 p-5 rounded-3xl bg-primary-100/50 dark:bg-primary-900/20 border border-primary-500/10 transition active:scale-95"
+              >
+                <div className="h-14 w-14 rounded-2xl bg-white dark:bg-bg-card flex items-center justify-center text-primary-500 shadow-sm">
+                   <Plus className="h-7 w-7" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-black text-text-primary uppercase tracking-tight">{t("property.story.capture", "Capture")}</p>
+                  <p className="text-[10px] text-text-tertiary font-bold mt-0.5">{imageRemaining} {t("property.story.left", "left")}</p>
+                </div>
+              </button>
+
+              <label className="flex flex-col items-center gap-3 p-5 rounded-3xl bg-tertiary-100/50 dark:bg-tertiary-900/20 border border-tertiary-500/10 transition active:scale-95 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  className="sr-only"
+                  disabled={publishMutation.isPending || (imageRemaining <= 0 && videoRemaining <= 0)}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) return;
+                    publishMutation.mutate({ file });
+                  }}
+                />
+                <div className="h-14 w-14 rounded-2xl bg-white dark:bg-bg-card flex items-center justify-center text-tertiary-500 shadow-sm">
+                   <UploadCloud className="h-7 w-7" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-black text-text-primary uppercase tracking-tight">{t("property.story.upload", "Upload")}</p>
+                  <p className="text-[10px] text-text-tertiary font-bold mt-0.5">{videoRemaining} {t("property.story.vids_left", "videos left")}</p>
+                </div>
+              </label>
+           </div>
+
+           <div className="bg-secondary-50 dark:bg-secondary-900/20 rounded-2xl p-4 border border-border">
+              <div className="flex items-center gap-2 mb-2 text-xs font-bold text-text-primary uppercase tracking-widest">
+                 <Sparkles className="h-3.5 w-3.5 text-primary-500" />
+                 {t("property.story.tips_title", "Pro Tips")}
+              </div>
+              <ul className="space-y-2">
+                 <li className="flex items-start gap-2 text-xs text-text-secondary leading-relaxed font-medium">
+                   <div className="h-1.5 w-1.5 rounded-full bg-primary-400 shrink-0 mt-1.5" />
+                   {t("property.story.tip_1", "Short 15-30s videos work best.")}
+                 </li>
+                 <li className="flex items-start gap-2 text-xs text-text-secondary leading-relaxed font-medium">
+                   <div className="h-1.5 w-1.5 rounded-full bg-primary-400 shrink-0 mt-1.5" />
+                   {t("property.story.tip_2", "Shoot in portrait mode (vertical).")}
+                 </li>
+                 <li className="flex items-start gap-2 text-xs text-text-secondary leading-relaxed font-medium">
+                   <div className="h-1.5 w-1.5 rounded-full bg-primary-400 shrink-0 mt-1.5" />
+                   {t("property.story.tip_3", "Show the best features first (e.g. view, kitchen).")}
+                 </li>
+              </ul>
+           </div>
+           
+           {publishMutation.isPending && (
+             <div className="flex flex-col items-center gap-2 py-4">
+                <Loader2 className="h-10 w-10 text-primary-500 animate-spin" />
+                <p className="text-sm font-black text-primary-600 animate-pulse uppercase tracking-tight">{t("property.story.publishing", "Publishing...")}</p>
+             </div>
+           )}
+        </div>
+      </MobileBottomSheet>
 
       {/* Camera Capture Modal */}
       <CameraCapture

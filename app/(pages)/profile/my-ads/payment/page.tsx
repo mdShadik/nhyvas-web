@@ -16,6 +16,7 @@ import Image from "next/image";
 
 import { paymentService, exploreService } from "@/services/apiService";
 import { uploadToR2 } from "@/services/apiService/media";
+import { processImageWithWatermark } from "@/lib/imageProcessing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,8 +96,11 @@ function PaymentContent({ searchParamsPromise }: { searchParamsPromise: Promise<
 
     setSubmitting(true);
     try {
+      // Compress the screenshot before upload (no watermark needed for proof)
+      const processedFile = await processImageWithWatermark(screenshotFile, undefined, { quality: 0.7, maxWidth: 1600 });
+
       const { publicUrl } = await uploadToR2({
-        file: screenshotFile,
+        file: processedFile,
         folder: `payment/ss`,
       });
 

@@ -52,6 +52,7 @@ export type ExploreListing = {
   carpet_area_sqft?: number | null;
   total_floor?: number | null;
   property_floor_no?: number | null;
+  landlord_name?: string | null;
   landlord_is_verified: boolean;
   is_featured: boolean;
   is_rented?: boolean;
