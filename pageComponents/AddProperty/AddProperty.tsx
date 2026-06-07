@@ -28,6 +28,8 @@ import {
   tPropertyCategory,
   tPropertySubcategory,
 } from "@/i18n/masterData";
+import { logoSingleNForLight } from "@/assets";
+import { processImageWithWatermark } from "@/lib/imageProcessing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -471,13 +473,20 @@ export default function AddPropertyPage({ searchParams }: Props) {
 
       const uploadUrls: string[] = [];
       for (const file of selectedFiles) {
+        // Compress and watermark the image before upload
+        const processedFile = await processImageWithWatermark(
+          file,
+          logoSingleNForLight.src,
+          { quality: 0.75 }
+        );
+
         uploadUrls.push(
           (
             await uploadToR2({
-            file,
-            folder: "listing-media",
-          })
-          ).publicUrl,
+              file: processedFile,
+              folder: "listing-media",
+            })
+          ).publicUrl
         );
       }
 
