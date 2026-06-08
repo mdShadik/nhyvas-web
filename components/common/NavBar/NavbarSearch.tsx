@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { exploreService, ExploreListing } from "@/services/apiService/explore";
+import { setListingPreview } from "@/lib/previewCache";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { formatPrice } from "@/lib/formatPrice";
@@ -69,6 +70,7 @@ export function NavbarSearch() {
   }, [query]);
 
   const handleSelectProperty = (listing: ExploreListing) => {
+    setListingPreview(listing);
     router.push(`/property?id=${listing.id}`);
     setIsOpen(false);
     setQuery("");

@@ -18,6 +18,7 @@ import { tPropertyCategory } from "@/i18n/masterData";
 import { StoryFeed } from "@/components/stories/StoryFeed";
 import { type ExploreListing } from "@/services/apiService/explore";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { setListingPreview } from "@/lib/previewCache";
 
 type HeroListing = Awaited<ReturnType<typeof exploreService.getHomeHeroListings>>[number];
 
@@ -27,6 +28,7 @@ function NearbyPropertyCard({ listing }: { listing: ExploreListing }) {
     <Link
       href={{ pathname: "/property", query: { id: listing.id } }}
       className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-bg-card/40 p-2 transition-all hover:border-primary-500/30 hover:shadow-lg dark:hover:bg-bg-card/60"
+      onClick={() => setListingPreview(listing)}
     >
       <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl bg-secondary-100 dark:bg-secondary-800">
         <Image
@@ -270,6 +272,7 @@ function HeroBanner({ listings }: { listings: HeroListing[] }) {
                 <Link
                   href={{ pathname: "/property", query: { id: listing.id } }}
                   className="group/btn relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-linear-to-br from-primary-500 via-primary-600 to-tertiary-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-500/40 transition-all hover:shadow-xl hover:shadow-primary-500/50 hover:-translate-y-0.5 active:translate-y-0 pointer-events-auto cursor-pointer"
+                  onClick={() => setListingPreview(listing as any)}
                 >
                   <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
                   <span className="relative">{t("home.view_property")}</span>
@@ -351,7 +354,6 @@ export default function HomePage() {
       userRadiusKm: 10,
       listingsPerCategory: 5,
     }),
-    enabled: !isLocating,
     staleTime: 1000 * 60 * 15, // 15 minutes
   });
 

@@ -45,7 +45,7 @@ export function StoryFeed() {
       if (lastPage.length < 10) return undefined;
       return allPages.flat().length;
     },
-    enabled: !isLocating,
+    enabled: true,
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   });
 
@@ -58,7 +58,7 @@ export function StoryFeed() {
   const myAdsQuery = useQuery({
     queryKey: ["profile", "my-ads"],
     queryFn: () => manageService.getMyAds(),
-    enabled: isAuthenticated && !isLocating,
+    enabled: isAuthenticated,
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 

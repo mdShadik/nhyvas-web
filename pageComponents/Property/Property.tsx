@@ -52,6 +52,7 @@ import { MobileBottomSheet } from "@/components/ui/mobile-bottom-sheet";
 import { CameraCapture } from "@/components/ui/camera-capture";
 import { SearchParamsProps } from "@/app/(pages)/property/page";
 import { cn } from "@/lib/utils";
+import { getListingPreview } from "@/lib/previewCache";
 import { getVideoDuration, MAX_VIDEO_DURATION, MAX_VIDEO_SIZE, MAX_VIDEO_UPLOAD_SIZE } from "@/lib/video/videoUtils";
 import { processImageWithWatermark } from "@/lib/imageProcessing";
 
@@ -117,13 +118,17 @@ export default function PropertyPage({searchParams}: Props) {
 
   const currentUserId = user?.id;
 
+  const cachedPreview = getListingPreview(id);
+
   const listingQuery = useQuery({
     queryKey: ["listing-details", id],
     queryFn: () => exploreService.getListingDetails(id),
     enabled: Boolean(id),
+    placeholderData: cachedPreview ? { listing: cachedPreview as any, enrichedAmenities: [] } : undefined,
   });
 
   const listing = listingQuery.data?.listing ?? null;
+  const isInitialLoading = listingQuery.isPending && !listingQuery.isPlaceholderData;
   const isOwner = Boolean(currentUserId && listing?.listed_by && listing.listed_by === currentUserId);
   const listingStatus = (listing?.status ?? "").toLowerCase().trim();
   const isApprovedListing = listingStatus === "approved" || listingStatus === "published";
@@ -574,7 +579,7 @@ export default function PropertyPage({searchParams}: Props) {
             {/* Divider */}
             <div className="mx-5 h-px bg-border" />
 
-            {listingQuery.isLoading ? (
+            {isInitialLoading ? (
               <div className="p-5 space-y-3">
                 <div className="h-4 w-3/4 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
                 <div className="h-4 w-1/2 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
@@ -587,7 +592,19 @@ export default function PropertyPage({searchParams}: Props) {
             ) : (
               <>
                 {/* Description */}
-                {description ? (
+                {listingQuery.isPlaceholderData ? (
+                  <div className="px-5 py-5 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                      <span className="h-1 w-1 bg-primary-400" />
+                      {t("property.description_title", "Description")}
+                    </div>
+                    <div className="space-y-2 animate-pulse">
+                      <div className="h-3 w-full rounded bg-secondary-100 dark:bg-secondary-800" />
+                      <div className="h-3 w-5/6 rounded bg-secondary-100 dark:bg-secondary-800" />
+                      <div className="h-3 w-4/6 rounded bg-secondary-100 dark:bg-secondary-800" />
+                    </div>
+                  </div>
+                ) : description ? (
                   <div className="px-5 py-5">
                     <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                       <span className="h-1 w-1 bg-primary-400" />
@@ -610,7 +627,7 @@ export default function PropertyPage({searchParams}: Props) {
                 ) : null}
 
                 {/* Divider */}
-                {description ? <div className="mx-5 h-px bg-border" /> : null}
+                {(description || listingQuery.isPlaceholderData) ? <div className="mx-5 h-px bg-border" /> : null}
 
                 {/* Walkthrough story */}
                 {(listing?.is_story || isOwner) && listing ? (
@@ -629,7 +646,13 @@ export default function PropertyPage({searchParams}: Props) {
                     {t("explore.amenities", "Amenities")}
                   </div>
                   <div className="mt-4 space-y-4">
-                    {groupedAmenities.length ? (
+                    {listingQuery.isPlaceholderData ? (
+                      <div className="flex flex-wrap gap-2 animate-pulse">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                          <div key={i} className="h-8 w-24 rounded-full bg-secondary-100 dark:bg-secondary-800" />
+                        ))}
+                      </div>
+                    ) : groupedAmenities.length ? (
                       groupedAmenities.map((group) => (
                         <div key={group.category_name}>
                           <div className="mb-2.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
@@ -693,7 +716,7 @@ export default function PropertyPage({searchParams}: Props) {
         </div>
 
         {/* Fixed bottom bar */}
-        {listing && !listingQuery.isLoading ? (
+        {listing && !isInitialLoading ? (
           <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-page/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] backdrop-blur-xl">
             {renderListingAction("mobile")}
           </div>
@@ -878,7 +901,21 @@ export default function PropertyPage({searchParams}: Props) {
               ) : null}
 
               {/* Description - desktop */}
-              {description ? (
+              {listingQuery.isPlaceholderData ? (
+                <div className="border border-border bg-bg-page p-6 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                    <span className="h-1 w-1 bg-primary-400" />
+                    {t("property.description_title", "Description")}
+                  </div>
+                  <div className="space-y-2 animate-pulse">
+                    <div className="h-4 w-full rounded bg-secondary-100 dark:bg-secondary-800" />
+                    <div className="h-4 w-11/12 rounded bg-secondary-100 dark:bg-secondary-800" />
+                    <div className="h-4 w-4/5 rounded bg-secondary-100 dark:bg-secondary-800" />
+                    <div className="h-4 w-full rounded bg-secondary-100 dark:bg-secondary-800" />
+                    <div className="h-4 w-3/4 rounded bg-secondary-100 dark:bg-secondary-800" />
+                  </div>
+                </div>
+              ) : description ? (
                 <div className="border border-border bg-bg-page p-6 shadow-sm">
                   <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                     <span className="h-1 w-1 bg-primary-400" />
@@ -931,7 +968,7 @@ export default function PropertyPage({searchParams}: Props) {
 
             {/* Right - Details */}
             <div className="space-y-5">
-              {listingQuery.isLoading ? (
+              {isInitialLoading ? (
                 <div className="border border-border bg-bg-page p-6">
                   <div className="space-y-4">
                     <div className="h-6 w-2/3 animate-pulse bg-secondary-200 dark:bg-secondary-700" />
@@ -996,7 +1033,13 @@ export default function PropertyPage({searchParams}: Props) {
                       {t("explore.amenities", "Amenities")}
                     </div>
                     <div className="mt-4 space-y-5">
-                      {groupedAmenities.length ? (
+                      {listingQuery.isPlaceholderData ? (
+                        <div className="flex flex-wrap gap-2 animate-pulse">
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                            <div key={i} className="h-8 w-28 rounded-full bg-secondary-100 dark:bg-secondary-800" />
+                          ))}
+                        </div>
+                      ) : groupedAmenities.length ? (
                         groupedAmenities.map((group) => (
                           <div key={group.category_name}>
                             <div className="mb-2.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">

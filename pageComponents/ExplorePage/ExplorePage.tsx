@@ -21,6 +21,7 @@ import Link from "next/link";
 import { TourGuide } from "@/components/common/TourGuide";
 import { Step } from "react-joyride";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { setListingPreview } from "@/lib/previewCache";
 
 interface Props {
   searchParams: SearchParamsProps;
@@ -203,7 +204,6 @@ export default function ExplorePage({ searchParams }: Props) {
       userRadiusKm: 10,
       limit: 6,
     }),
-    enabled: !isLocating,
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
@@ -668,6 +668,7 @@ export default function ExplorePage({ searchParams }: Props) {
                       key={listing.id}
                       href={{ pathname: "/property", query: { id: listing.id } }}
                       className="group flex gap-3 items-center"
+                      onClick={() => setListingPreview(listing)}
                     >
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-secondary-100 dark:bg-secondary-800">
                         {listing.thumbnail_url ? (

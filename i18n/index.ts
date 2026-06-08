@@ -56,7 +56,10 @@ if (!i18n.isInitialized) {
 
   const initialLang = normalizeLanguage(i18n.language);
   loadCachedRemoteTranslations(i18n, initialLang);
-  void syncRemoteTranslations(i18n, initialLang);
+  // Defer remote sync to prioritize initial page load
+  setTimeout(() => {
+    void syncRemoteTranslations(i18n, initialLang);
+  }, 2000);
 
   i18n.on("languageChanged", (next) => {
     const lang = normalizeLanguage(next);

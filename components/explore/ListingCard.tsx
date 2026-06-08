@@ -12,6 +12,7 @@ import { tPropertyCategory, tPropertySubcategory } from "@/i18n/masterData";
 import { cn } from "@/lib/utils";
 import { ExploreListing } from "@/services/apiService/explore";
 import { useToast } from "@/context/ToastContext";
+import { setListingPreview } from "@/lib/previewCache";
 
 export type ListingCardVariant = "default" | "compact";
 
@@ -252,7 +253,11 @@ export function ListingCard({
   );
 
   return (
-    <Link href={{ pathname: "/property", query: { id: listing.id } }} className="block outline-none">
+    <Link
+      href={{ pathname: "/property", query: { id: listing.id } }}
+      className="block outline-none"
+      onClick={() => setListingPreview(listing)}
+    >
       {cardContent}
     </Link>
   );
